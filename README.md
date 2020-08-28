@@ -49,6 +49,8 @@ The subdomains you have to deal with are:
  - c6.ppy.sh
  - ce.ppy.sh
  
+ Using this with the hosts file should allow the server to be connected to by a modern osu! client
+ 
  Subdomains past c1.ppy.sh were added around 2018
  
  ## Things not included in this repo:
