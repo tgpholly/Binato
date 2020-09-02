@@ -6,6 +6,8 @@ module.exports = class {
     }
 
     addStream(streamName, removeIfEmpty, spectatorHostId = null) {
+        const streamNames = Object.keys(this.avaliableStreams);
+        if (streamNames.includes(streamName)) return global.consoleHelper.printBancho(`Did not add stream [${streamName}] A stream with the same name already exists`);
         // Add new stream to the list of streams
         this.avaliableStreams[streamName] = {
             streamUsers: [], // An array containing a list of user IDs of the users in a given stream
