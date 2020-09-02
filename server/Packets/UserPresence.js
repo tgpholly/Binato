@@ -2,8 +2,6 @@ const osu = require("osu-packet"),
       getUserById = require("../util/getUserById.js");
 
 module.exports = function(currentUser, id) {
-    if (id == 3) return; // Bot
-
     const osuPacketWriter = new osu.Bancho.Writer;
 
     const User = getUserById(id);
