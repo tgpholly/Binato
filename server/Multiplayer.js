@@ -204,6 +204,8 @@ module.exports = {
             osuPacketWriter.ChannelJoinSuccess("#multiplayer");
 
             currentUser.addActionToQueue(osuPacketWriter.toBuffer);
+
+            this.updateMatchListing();
         } catch (e) {
             const osuPacketWriter = new osu.Bancho.Writer;
 
@@ -250,6 +252,8 @@ module.exports = {
         osuPacketWriter.MatchUpdate(global.matches[currentUser.currentMatch][1]);
 
         global.StreamsHandler.sendToStream(global.matches[currentUser.currentMatch][0], osuPacketWriter.toBuffer, null);
+
+        this.updateMatchListing();
     },
 
     moveToSlot:function(currentUser, data) {
@@ -276,6 +280,8 @@ module.exports = {
         osuPacketWriter.MatchUpdate(mpLobby);
 
         global.StreamsHandler.sendToStream(global.matches[currentUser.currentMatch][0], osuPacketWriter.toBuffer, null);
+
+        this.updateMatchListing();
     },
 
     kickPlayer:function(currentUser, data) {
@@ -300,6 +306,8 @@ module.exports = {
         osuPacketWriter.MatchUpdate(mpLobby);
 
         global.StreamsHandler.sendToStream(global.matches[currentUser.currentMatch][0], osuPacketWriter.toBuffer, null);
+
+        this.updateMatchListing();
 
         if (cachedPlayerId !== null || cachedPlayerId !== -1) {
             global.StreamsHandler.removeUserFromStream(global.matches[currentUser.currentMatch][0], cachedPlayerId);
@@ -349,6 +357,8 @@ module.exports = {
         osuPacketWriter.MatchUpdate(global.matches[currentUser.currentMatch][1]);
 
         global.StreamsHandler.sendToStream(global.matches[currentUser.currentMatch][0], osuPacketWriter.toBuffer, null);
+
+        this.updateMatchListing();
     },
 
     startMatch(currentUser) {
@@ -377,6 +387,8 @@ module.exports = {
         global.StreamsHandler.sendToStream(global.matches[currentUser.currentMatch][0], osuPacketWriter.toBuffer, null);
 
         this.sendMatchUpdate(currentUser);
+
+        this.updateMatchListing();
     },
 
     setPlayerLoaded:function(currentUser) {
@@ -454,6 +466,8 @@ module.exports = {
         global.StreamsHandler.sendToStream(global.matches[currentUser.currentMatch][0], osuPacketWriter.toBuffer, null);
 
         this.sendMatchUpdate(currentUser);
+
+        this.updateMatchListing();
     },
 
     updatePlayerScore:function(currentUser, data) {
@@ -471,6 +485,19 @@ module.exports = {
     leaveMatch:function(currentUser) {
         try {
             const mpLobby = global.matches[currentUser.currentMatch][1];
+
+            let containsUser = false;
+            for (let i = 0; i < mpLobby.slots.length; i++) {
+                const slot = mpLobby.slots[i];
+                if (slot.playerId == currentUser.id) {
+                    containsUser = true;
+                    break;
+                }
+            }
+
+            // Make sure we don't run more than once
+            if (!containsUser) return;
+
             let osuPacketWriter = new osu.Bancho.Writer;
     
             for (let i = 0; i < mpLobby.slots.length; i++) {
@@ -485,6 +512,8 @@ module.exports = {
     
             osuPacketWriter.MatchUpdate(mpLobby);
     
+            global.StreamsHandler.removeUserFromStream(global.matches[currentUser.currentMatch][0], currentUser.id);
+
             global.StreamsHandler.sendToStream(global.matches[currentUser.currentMatch][0], osuPacketWriter.toBuffer, null);
 
             osuPacketWriter = new osu.Bancho.Writer;
@@ -514,15 +543,15 @@ module.exports = {
                 // Make sure we got a match index
                 if (matchIndex == null) return;
     
+                // Remove this match from the list of active matches
                 global.matches.splice(matchIndex, 1);
-    
-                
             }
         } catch (e) { }
         this.updateMatchListing();
 
+        // Delay a 2nd match listing update
         setTimeout(() => {
             this.updateMatchListing();
-        }, 500);
+        }, 1000);
     }
 }

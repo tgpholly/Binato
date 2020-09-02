@@ -16,7 +16,6 @@ An implementation of osu!bancho in Javascript
  
 ## Bugs:
  - If a client clicks the plus button in the chat window to join another channel the client will "crash", the game will keep running but the user will be unable to do anything
- - When a user leaves a multiplayer match they are not removed from the stream which will lead to a buildup of streams prefixed with mp_ as it is set to be removed when there are no users in it
  - BinatoStream can create duplicate streams
  
 ## How to connect:
