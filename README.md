@@ -7,9 +7,9 @@ An implementation of osu!bancho in Javascript
  - Spectator
  - User Panel (Missing Friends)
  - Chat & Channels
+ - Private Messages
 
 ### Currently unimplemented things:
- - Private Messages
  - Multiplayer Invites
  - Friends List
  - Bot
