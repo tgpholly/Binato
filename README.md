@@ -3,14 +3,13 @@ An implementation of osu!bancho in Javascript
 <hr>
 
 ### Features:
- - Multiplayer
+ - Multiplayer + Invites
  - Spectator
  - User Panel (Missing Friends)
  - Chat & Channels
  - Private Messages
 
 ### Currently unimplemented things:
- - Multiplayer Invites
  - Friends List
  - Bot
  

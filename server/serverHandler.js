@@ -89,7 +89,8 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
       ChannelPart = require("./Packets/ChannelPart.js"),
       UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
       UserPresence = require("./Packets/UserPresence.js"),
-      UserStatsRequest = require("./Packets/UserStatsRequest.js");
+      UserStatsRequest = require("./Packets/UserStatsRequest.js"),
+      MultiplayerInvite = require("./Packets/MultiplayerInvite.js");
 
 module.exports = function(req, res) {
     // Add to requests for logging
@@ -247,6 +248,10 @@ module.exports = function(req, res) {
 
                         case packetIDs.client_userStatsRequest:
                             UserStatsRequest(userClass, CurrentPacket.data);
+                        break;
+
+                        case packetIDs.client_invite:
+                            MultiplayerInvite(userClass, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_userPresenceRequest:
