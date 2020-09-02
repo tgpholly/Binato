@@ -1,4 +1,5 @@
 const osu = require("osu-packet"),
+      fs = require("fs"),
       packetIDs = require("./packetIDs.json"),
       loginHandler = require("./loginHandler.js"),
       parseUserData = require("./util/parseUserData.js"),
@@ -54,6 +55,28 @@ global.StreamsHandler.addStream("multiplayer_lobby", false);
 // Start stream checking interval
 global.StreamsHandler.streamChecker(5000);
 
+// Server stats
+global.usersOnline = 0;
+global.multiplayerMatches = [0, 0]
+global.httpRequestsPerLogInterval = 0;
+
+const logInterval = 10; // Secs
+
+setInterval(() => {
+    global.usersOnline = (global.users.length - 1);
+    global.multiplayerMatches = [global.matches.length, 0]; // TODO: Respect private matches
+
+    fs.appendFile(
+        "server-stats.log",
+        `${global.usersOnline}|${global.multiplayerMatches[0]},${global.multiplayerMatches[1]}|${global.httpRequestsPerLogInterval}|${new Date().getTime()}@`,
+        () => { }
+    );
+
+    global.usersOnline = 0;
+    global.multiplayerMatches = [0, 0];
+    global.httpRequestsPerLogInterval = 0;
+}, logInterval * 1000);
+
 // Include packets
 const ChangeAction = require("./Packets/ChangeAction.js"),
       SendPublicMessage = require("./Packets/SendPublicMessage.js"),
@@ -66,6 +89,9 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
       UserStatsRequest = require("./Packets/UserStatsRequest.js");
 
 module.exports = function(req, res) {
+    // Add to requests for logging
+    global.httpRequestsPerLogInterval++;
+
     // Get the client's token string and request data
     const requestTokenString = req.header("osu-token"),
           requestData = req.packet;
