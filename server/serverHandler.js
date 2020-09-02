@@ -9,7 +9,7 @@ const osu = require("osu-packet"),
       Streams = require("./Streams.js");
 
 global.users = [
-    new User(3, "BeanchoBot", "BeanchoBot", new Date().getTime())
+    new User(3, "SillyBot", "SillyBot", new Date().getTime())
 ];
 
 // Start a loop that gets new data for users from the database for use on the user panel
