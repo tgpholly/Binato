@@ -4,12 +4,10 @@ const osu = require("osu-packet"),
 module.exports = function(CurrentPacket, CurrentUser) {
     const osuPacketWriter = new osu.Bancho.Writer;
 
-    osuPacketWriter.ChannelJoinSuccess(CurrentUser.username);
-
     osuPacketWriter.SendMessage({
         sendingClient: CurrentUser.username,
         message: CurrentPacket.data.message,
-        target: CurrentPacket.data.target,
+        target: CurrentUser.username,
         senderId: CurrentUser.id
     });
 
