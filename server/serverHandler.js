@@ -87,6 +87,8 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
       SendPrivateMessage = require("./Packets/SendPrivateMessage.js"),
       Multiplayer = require("./Multiplayer.js"),
       ChannelPart = require("./Packets/ChannelPart.js"),
+      AddFriend = require("./Packets/AddFriend.js"),
+      RemoveFriend = require("./Packets/RemoveFriend.js"),
       UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
       UserPresence = require("./Packets/UserPresence.js"),
       UserStatsRequest = require("./Packets/UserStatsRequest.js"),
@@ -244,6 +246,14 @@ module.exports = function(req, res) {
 
                         case packetIDs.client_channelPart:
                             ChannelPart(userClass, CurrentPacket.data);
+                        break;
+
+                        case packetIDs.client_friendAdd:
+                            AddFriend(userClass, CurrentPacket.data);
+                        break;
+
+                        case packetIDs.client_friendRemove:
+                            RemoveFriend(userClass, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_userStatsRequest:

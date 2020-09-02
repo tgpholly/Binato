@@ -86,8 +86,14 @@ module.exports = function(req, res, loginInfo) {
         osuPacketWriter.ProtocolNegotiation(19);
         // Permission level 4 is osu!supporter
         osuPacketWriter.LoginPermissions(4);
+        // Construct user's friends list
+        const userFriends = DatabaseHelper.getListFromDB(`SELECT friendsWith FROM friends WHERE user = ${userClass.id}`);
+        let friendsArray = [];
+        for (let i = 0; i < userFriends.length; i++) {
+            friendsArray.push(userFriends[i].friendsWith);
+        }
         // Send user's friends list
-        // TODO: friends? Haha, you have no friends!
+        osuPacketWriter.FriendsList(friendsArray);
         // Set title screen image
         osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
 
