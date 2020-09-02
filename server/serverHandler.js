@@ -13,6 +13,8 @@ global.users = [
 ];
 
 // Start a loop that gets new data for users from the database for use on the user panel
+// TODO: Some way of informing bancho that a user has set a score so details can be pulled down quickly
+//       Possible solution, TCP socket between the score submit server and bancho? redis? (score submit is on a different server, redis probably wouldn't work)
 setInterval(() => {
     for (let i = 0; i < global.users.length; i++) {
         const User = global.users[i];
