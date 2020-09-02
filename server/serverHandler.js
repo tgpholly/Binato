@@ -84,6 +84,7 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
       SendPublicMessage = require("./Packets/SendPublicMessage.js"),
       Logout = require("./Packets/Logout.js"),
       Spectator = require("./Spectator.js"),
+      SendPrivateMessage = require("./Packets/SendPrivateMessage.js"),
       Multiplayer = require("./Multiplayer.js"),
       ChannelPart = require("./Packets/ChannelPart.js"),
       UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
@@ -158,6 +159,10 @@ module.exports = function(req, res) {
 
                         case packetIDs.client_stopSpectating:
                             Spectator.stopSpectatingUser(userClass);
+                        break;
+
+                        case packetIDs.client_sendPrivateMessage:
+                            SendPrivateMessage(CurrentPacket, userClass);
                         break;
 
                         case packetIDs.client_joinLobby:
