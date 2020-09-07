@@ -3,7 +3,6 @@ const osu = require("osu-packet"),
       { v4: uuid } = require('uuid'),
       request = require("sync-request"),
       
-      DatabaseHelper = require("./DatabaseHelper.js"),
       getUserByUsername = require("./util/getUserByUsername.js"),
       getUserByToken = require("./util/getUserByToken.js"),
       countryHelper = require("./countryHelper.js"),
@@ -38,7 +37,7 @@ module.exports = function(req, res, loginInfo) {
     }
 
     // Get information about the user from the database
-    const userDB = DatabaseHelper.getFromDB(`SELECT id FROM users_info WHERE username = "${loginInfo.username}" LIMIT 1`);
+    const userDB = global.DatabaseHelper.getFromDB(`SELECT id FROM users_info WHERE username = "${loginInfo.username}" LIMIT 1`);
 
     // Create a token for the client
     const newClientToken = uuid();
@@ -88,7 +87,7 @@ module.exports = function(req, res, loginInfo) {
         // Permission level 4 is osu!supporter
         osuPacketWriter.LoginPermissions(4);
         // Construct user's friends list
-        const userFriends = DatabaseHelper.getListFromDB(`SELECT friendsWith FROM friends WHERE user = ${userClass.id}`);
+        const userFriends = global.DatabaseHelper.getFromDB(`SELECT friendsWith FROM friends WHERE user = ${userClass.id}`);
         let friendsArray = [];
         for (let i = 0; i < userFriends.length; i++) {
             friendsArray.push(userFriends[i].friendsWith);

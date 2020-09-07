@@ -1,5 +1,3 @@
-const DatabaseHelper = require("./DatabaseHelper.js");
-
 module.exports = class {
     constructor(id, username, uuid, connectTime) {
         this.id = id;
@@ -52,8 +50,8 @@ module.exports = class {
 
     // Gets the user's score information from the database and caches it
     getNewUserInformationFromDatabase() {
-        const userScoreDB = DatabaseHelper.getFromDB(`SELECT * FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode} LIMIT 1`);
-        const userRankDB = DatabaseHelper.getFromDB(`SELECT user_id, pp_raw, FIND_IN_SET( pp_raw, ( SELECT GROUP_CONCAT( pp_raw ORDER BY pp_raw DESC ) FROM users_modes_info WHERE mode_id = ${this.playMode} ) ) AS rank FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode}`);
+        const userScoreDB = global.DatabaseHelper.getFromDB(`SELECT * FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode} LIMIT 1`);
+        const userRankDB = global.DatabaseHelper.getFromDB(`SELECT user_id, pp_raw, FIND_IN_SET( pp_raw, ( SELECT GROUP_CONCAT( pp_raw ORDER BY pp_raw DESC ) FROM users_modes_info WHERE mode_id = ${this.playMode} ) ) AS rank FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode}`);
 
         if (userScoreDB == null || userRankDB == null) throw "fuck";
 

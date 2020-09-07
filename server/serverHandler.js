@@ -6,11 +6,21 @@ const osu = require("osu-packet"),
       User = require("./User.js"),
       getUserFromToken = require("./util/getUserByToken.js"),
       bakedResponses = require("./bakedResponses.js"),
-      Streams = require("./Streams.js");
+      Streams = require("./Streams.js"),
+      DatabaseHelperClass = require("./DatabaseHelper.js"),
+      config = require("../config.json");
 
 global.users = [
     new User(3, "SillyBot", "SillyBot", new Date().getTime())
 ];
+
+// Set the bot's position on the map
+// First user will always be the bot
+global.users[0].location[0] = 50;
+global.users[0].location[1] = -32;
+
+global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.databasePort, config.databaseKey);
+
 
 // Start a loop that gets new data for users from the database for use on the user panel
 // TODO: Some way of informing bancho that a user has set a score so details can be pulled down quickly
@@ -24,10 +34,6 @@ setInterval(() => {
         User.getNewUserInformationFromDatabase();
     }
 }, 10000);
-
-// Set the bot's position on the map
-global.users[0].location[0] = 50;
-global.users[0].location[1] = -32;
 
 // An array containing all currently active multiplayer matches
 global.matches = [];

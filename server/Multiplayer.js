@@ -1,6 +1,5 @@
 const osu = require("osu-packet"),
       getUserById = require("./util/getUserById.js"),
-      DatabaseHelper = require("./DatabaseHelper.js"),
       StatusUpdate = require("./Packets/StatusUpdate.js");
 
 module.exports = {
@@ -32,7 +31,7 @@ module.exports = {
                 const User = getUserById(slot.playerId);
 
                 // Get user score info from the database
-                const userScoreDB = DatabaseHelper.getFromDB(`SELECT * FROM users_modes_info WHERE user_id = ${User.id} AND mode_id = ${User.playMode} LIMIT 1`);
+                const userScoreDB = global.DatabaseHelper.getFromDB(`SELECT * FROM users_modes_info WHERE user_id = ${User.id} AND mode_id = ${User.playMode} LIMIT 1`);
 
                 let UserStatusObject = {
                     userId: User.id,
@@ -88,7 +87,7 @@ module.exports = {
                 const User = getUserById(slot.playerId);
 
                 // Get user score info from the database
-                const userScoreDB = DatabaseHelper.getFromDB(`SELECT * FROM users_modes_info WHERE user_id = ${User.id} AND mode_id = ${User.playMode} LIMIT 1`);
+                const userScoreDB = global.DatabaseHelper.getFromDB(`SELECT * FROM users_modes_info WHERE user_id = ${User.id} AND mode_id = ${User.playMode} LIMIT 1`);
 
                 let UserStatusObject = {
                     userId: User.id,

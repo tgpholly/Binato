@@ -3,7 +3,8 @@ console.clear();
 const app = require("express")(),
       fs  = require("fs"),
       busboy = require("connect-busboy"),
-      osu = require("osu-packet");
+      osu = require("osu-packet"),
+      config = require("./config.json");
 
 const debugMode = true;
 
