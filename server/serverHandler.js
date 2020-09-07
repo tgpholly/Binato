@@ -3,8 +3,8 @@ const osu = require("osu-packet"),
       packetIDs = require("./packetIDs.json"),
       loginHandler = require("./loginHandler.js"),
       parseUserData = require("./util/parseUserData.js"),
-      userManager = require("./userManager.js"),
       User = require("./User.js"),
+      getUserFromToken = require("./util/getUserByToken.js"),
       bakedResponses = require("./bakedResponses.js"),
       Streams = require("./Streams.js");
 
@@ -116,7 +116,7 @@ module.exports = function(req, res) {
         // Client has a token, let's see what they want.
         try {
             // Get the current user
-            const userClass = userManager.getUserFromToken(requestTokenString);
+            const userClass = getUserFromToken(requestTokenString);
 
             // Make sure the client's token isn't invalid
             if (userClass != null) {

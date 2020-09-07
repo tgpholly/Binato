@@ -1,5 +1,4 @@
-const osu = require("osu-packet"),
-      userManager = require("../userManager.js");
+const osu = require("osu-packet");
 
 module.exports = function(currentUser) {
     const osuPacketWriter = new osu.Bancho.Writer;

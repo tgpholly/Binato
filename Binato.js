@@ -9,8 +9,7 @@ const debugMode = true;
 
 global.consoleHelper = require("./consoleHelper.js");
 
-const serverHandler = require("./server/serverHandler.js"),
-      userManager = require("./server/userManager.js");
+const serverHandler = require("./server/serverHandler.js");
 
 app.use(busboy());
 

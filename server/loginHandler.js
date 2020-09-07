@@ -3,8 +3,9 @@ const osu = require("osu-packet"),
       { v4: uuid } = require('uuid'),
       request = require("sync-request"),
       
-      userManager = require("./userManager.js"),
       DatabaseHelper = require("./DatabaseHelper.js"),
+      getUserByUsername = require("./util/getUserByUsername.js"),
+      getUserByToken = require("./util/getUserByToken.js"),
       countryHelper = require("./countryHelper.js"),
       loginHelper = require("./loginHelper.js");
 
@@ -43,7 +44,7 @@ module.exports = function(req, res, loginInfo) {
     const newClientToken = uuid();
 
     // Make sure user is not already connected, kick off if so.
-    const checkForPreexistingUser = userManager.getUserFromUsername(loginInfo.username);
+    const checkForPreexistingUser = getUserByUsername(loginInfo.username);
     if (checkForPreexistingUser != null) {
         if (checkForPreexistingUser.uuid != newClientToken) {
             let userCurrentIndex;
@@ -63,7 +64,7 @@ module.exports = function(req, res, loginInfo) {
     global.users.push(new User(userDB.id, loginInfo.username, newClientToken, new Date().getTime()));
 
     // Retreive the newly created user
-    const userClass = userManager.getUserFromToken(newClientToken);
+    const userClass = getUserByToken(newClientToken);
 
     // Get user's data from the database
     userClass.getNewUserInformationFromDatabase();
