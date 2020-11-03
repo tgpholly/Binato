@@ -142,9 +142,13 @@ module.exports = function(req, res, loginInfo) {
             global.StreamsHandler.addUserToStream("#userlog", userClass.id);
 
         // List all channels out to the client
-        //for (let i = 0; i < global.channels.length; i++) {
-        //    osuPacketWriter.ChannelAvailable(global.channels[i]);
-        //}
+        for (let i = 0; i < global.channels.length; i++) {
+            osuPacketWriter.ChannelAvailable({
+                channelName: global.channels[i].channelName,
+                channelTopic: global.channels[i].channelTopic,
+                channelUserCount: global.channels[i].channelUserCount
+            });
+        }
 
         osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
 
