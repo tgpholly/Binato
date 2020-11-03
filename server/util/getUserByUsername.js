@@ -1,10 +1,6 @@
 module.exports = function(username) {
-    let user = null;
     for (let i = 0; i < global.users.length; i++) {
-        if (global.users[i].username == username) {
-            user = global.users[i];
-            break;
-        }
+        if (global.users[i].username == username)
+            return global.users[i];
     }
-    return user;
 }

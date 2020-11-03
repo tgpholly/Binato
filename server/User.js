@@ -1,3 +1,5 @@
+const StatusUpdate = require("./Packets/StatusUpdate.js");
+
 module.exports = class {
     constructor(id, username, uuid, connectTime) {
         this.id = id;
@@ -51,16 +53,26 @@ module.exports = class {
     // Gets the user's score information from the database and caches it
     getNewUserInformationFromDatabase() {
         const userScoreDB = global.DatabaseHelper.getFromDB(`SELECT * FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode} LIMIT 1`);
-        const userRankDB = global.DatabaseHelper.getFromDB(`SELECT user_id, pp_raw, FIND_IN_SET( pp_raw, ( SELECT GROUP_CONCAT( pp_raw ORDER BY pp_raw DESC ) FROM users_modes_info WHERE mode_id = ${this.playMode} ) ) AS rank FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode}`);
+        const userRankDB = global.DatabaseHelper.getFromDB(`SELECT user_id, pp_raw, ROW_NUMBER() OVER(ORDER BY pp_raw DESC) AS rank FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY pp_raw DESC`);
 
         if (userScoreDB == null || userRankDB == null) throw "fuck";
+
+        let userScoreUpdate = false;
+        if (this.pp != userScoreDB.pp_raw) {
+            userScoreUpdate = true;
+        }
 
         this.rankedScore = userScoreDB.ranked_score;
         this.totalScore = userScoreDB.total_score;
         this.accuracy = userScoreDB.avg_accuracy;
         this.playCount = userScoreDB.playcount;
-        this.rank = userRankDB.rank;
+        for (let userRank of userRankDB)
+            if (userRank["user_id"] == this.id) this.rank = userRank.rank;
         this.pp = userScoreDB.pp_raw;
+
+        if (userScoreUpdate) {
+            StatusUpdate(this, this.id);
+        }
     }
 
     // Clears out the user's queue

@@ -1,7 +1,7 @@
 const osu = require("osu-packet"),
       getUserById = require("../util/getUserById.js");
 
-module.exports = function(currentUser, id) {
+module.exports = function(currentUser, id, sendImmidiate = true) {
     if (id == 3) return; // Ignore Bot
 
     // Create new osu packet writer
@@ -31,5 +31,6 @@ module.exports = function(currentUser, id) {
     osuPacketWriter.HandleOsuUpdate(UserStatusObject);
 
     // Send data to user's queue
-    currentUser.addActionToQueue(osuPacketWriter.toBuffer);
+    if (sendImmidiate) currentUser.addActionToQueue(osuPacketWriter.toBuffer);
+    else return osuPacketWriter.toBuffer;
 }

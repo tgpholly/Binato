@@ -45,11 +45,11 @@ global.StreamsHandler = new Streams();
 // An array containing all chat channels
 // TODO: Send user chat channels and not have osu! crash
 global.channels = [
-    { channelName:"#osu", channelTopic:"The main channel", channelUserCount: 0 },
-    { channelName:"#userlog", channelTopic:"Log about stuff doing go on yes very", channelUserCount: 0 },
-    { channelName:"#lobby", channelTopic:"Talk about multiplayer stuff", channelUserCount: 0 },
-    { channelName:"#english", channelTopic:"Talk in exclusively English", channelUserCount: 0 },
-    { channelName:"#japanese", channelTopic:"Talk in exclusively Japanese", channelUserCount: 0 },
+    { channelName:"#osu", channelTopic:"The main channel", channelUserCount: 0, locked: false },
+    { channelName:"#userlog", channelTopic:"Log about stuff doing go on yes very", channelUserCount: 0, locked: false },
+    { channelName:"#lobby", channelTopic:"Talk about multiplayer stuff", channelUserCount: 0, locked: false },
+    { channelName:"#english", channelTopic:"Talk in exclusively English", channelUserCount: 0, locked: false },
+    { channelName:"#japanese", channelTopic:"Talk in exclusively Japanese", channelUserCount: 0, locked: false },
 ];
 
 // Create a stream for each chat channel
@@ -134,9 +134,6 @@ module.exports = function(req, res) {
                 for (let i = 0; i < PacketData.length; i++) {
                     // Get current packet
                     let CurrentPacket = PacketData[i];
-                    
-                    // Create a new bancho packet writer per packet
-                    const osuPacketWriter = new osu.Bancho.Writer;
 
                     switch (CurrentPacket.id) {
                         case packetIDs.client_changeAction:
@@ -155,7 +152,8 @@ module.exports = function(req, res) {
                             UserPresenceBundle(userClass);
                         break;
 
-                        case packetIDs.client_pong:
+                        case packetIDs.client_pong: // Pretty sure this is just a client ping
+                                                    // so we probably don't do anything here
                         break;
 
                         case packetIDs.client_startSpectating:
@@ -176,6 +174,10 @@ module.exports = function(req, res) {
 
                         case packetIDs.client_joinLobby:
                             Multiplayer.userEnterLobby(userClass);
+                        break;
+
+                        case packetIDs.client_partLobby:
+                            Multiplayer.userLeaveLobby(userClass);
                         break;
 
                         case packetIDs.client_createMatch:
@@ -214,6 +216,10 @@ module.exports = function(req, res) {
                             Multiplayer.missingBeatmap(userClass, true);
                         break;
 
+                        case packetIDs.client_matchSkipRequest:
+                            Multiplayer.matchSkip(userClass);
+                        break;
+                        
                         case packetIDs.client_matchHasBeatmap:
                             Multiplayer.missingBeatmap(userClass, false);
                         break;
