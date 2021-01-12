@@ -53,6 +53,3 @@ The subdomains you have to deal with are:
  ## Things not included in this repo:
  ### Profile Pictures:
  Profile pictures can be handled by any standard HTTP server, there is also one I made for the task here: [Binato-ProfilePicture](https://github.com/tgpethan/Binato-ProfilePicture)
- ### DatabaseHelper.js:
- Because the DatabaseHelper in this server was so horrible and also very specific to my server I didn't include it.<br>
- I'll make a better one and include it eventually. For now if you feel like using this server you can make your own by handing the function getFromDB in a file called DatabaseHelper.js in the server folder
