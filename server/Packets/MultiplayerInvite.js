@@ -8,7 +8,7 @@ module.exports = function(CurrentUser, InvitedUser) {
 
     osuPacketWriter.SendMessage({
         sendingClient: CurrentUser.username,
-        message: `Come join my multiplayer match: [osump://${CurrentUser.currentMatch}/ ${global.matches[CurrentUser.currentMatch][1].gameName}]`,
+        message: `Come join my multiplayer match: [osump://${CurrentUser.currentMatch.matchId}/ ${CurrentUser.currentMatch.gameName}]`,
         target: CurrentUser.username,
         senderId: CurrentUser.id
     });

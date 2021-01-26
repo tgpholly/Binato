@@ -3,22 +3,25 @@ const getUserById = require("./util/getUserById.js");
 module.exports = class {
     constructor() {
         this.avaliableStreams = {};
+        this.avaliableStreamKeys = [];
     }
 
-    addStream(streamName, removeIfEmpty, spectatorHostId = null) {
-        const streamNames = Object.keys(this.avaliableStreams);
-        if (streamNames.includes(streamName)) return global.consoleHelper.printBancho(`Did not add stream [${streamName}] A stream with the same name already exists`);
+    addStream(streamName = "", removeIfEmpty = false, spectatorHostId = null) {
+        // Make sure a stream with the same name doesn't exist already
+        if (this.avaliableStreamKeys.includes(streamName))
+            return global.consoleHelper.printBancho(`Did not add stream [${streamName}] A stream with the same name already exists`);
         // Add new stream to the list of streams
         this.avaliableStreams[streamName] = {
             streamUsers: [], // An array containing a list of user IDs of the users in a given stream
             streamSpectatorHost: spectatorHostId, // null unless stream is for spectating
             removeIfEmpty: removeIfEmpty
         }
+        this.avaliableStreamKeys = Object.keys(this.avaliableStreams);
         global.consoleHelper.printBancho(`Added stream [${streamName}]`);
     }
 
     // Checks if a stream has no users in it
-    streamChecker(interval) {
+    streamChecker(interval = 5000) {
         setInterval(() => {
             // Get the names of all currently avaliable streams
             const streams = global.StreamsHandler.getStreams();
@@ -62,14 +65,35 @@ module.exports = class {
     }
 
     addUserToStream(streamName, userId) {
+        // Make sure the stream we are attempting to add this user to even exists
+        if (!this.doesStreamExist(streamName))
+            return global.consoleHelper.printBancho(`Did not add user to stream [${streamName}] because it does not exist!`);
+
+        // Make sure the user isn't already in the stream
+        if (this.avaliableStreams[streamName].streamUsers.includes(userId))
+            return global.consoleHelper.printBancho(`Did not add user to stream [${streamName}] because they are already in it!`);
+
+        // Make sure this isn't an invalid user (userId can't be lower than 1)
+        if (userId <= 0 || userId == null)
+            return global.consoleHelper.printBancho(`Did not add user to stream [${streamName}] because their userId is invalid!`);
+
         // Add user's id to the stream's user list
         this.avaliableStreams[streamName].streamUsers.push(userId);
         global.consoleHelper.printBancho(`Added user [${userId}] to stream ${streamName}`);
     }
 
     removeUserFromStream(streamName, userId) {
-        // Make sure this isn't an invalid user
-        if (userId == -1 || userId == null) return;
+        // Make sure the stream we are attempting to add this user to even exists
+        if (!this.doesStreamExist(streamName))
+            return global.consoleHelper.printBancho(`Did not remove user from stream [${streamName}] because it does not exist!`);
+
+        // Make sure the user isn't already in the stream
+        if (!this.avaliableStreams[streamName].streamUsers.includes(userId))
+            return global.consoleHelper.printBancho(`Did not remove user from stream [${streamName}] because they are not in it!`);
+
+        // Make sure this isn't an invalid user (userId can't be lower than 1)
+        if (userId <= 0 || userId == null)
+            return global.consoleHelper.printBancho(`Did not remove user from stream [${streamName}] because their userId is invalid!`);
         try {
             // Find index of user to remove
             let userCurrentIndex;
@@ -87,21 +111,12 @@ module.exports = class {
     }
 
     doesStreamExist(streamName) {
-        let exist = false;
-        const streamList = Object.keys(this.avaliableStreams);
-        for (let i = 0; i < streamList.length; i++) {
-            if (streamList[i] == streamName) {
-                exist = true;
-                break;
-            }
-        }
-
-        return exist;
+        return this.avaliableStreamKeys.includes(streamName);
     }
 
     getStreams() {
         // Return the names of all avaliable streams
-        return Object.keys(this.avaliableStreams);
+        return this.avaliableStreamKeys;
     }
 
     isUserInStream(streamName, userId) {
@@ -112,6 +127,7 @@ module.exports = class {
     removeStream(streamName) {
         try {
             delete this.avaliableStreams[streamName];
+            this.avaliableStreamKeys = Object.keys(this.avaliableStreams);
         } catch (e) { global.consoleHelper.printError(`Was not able to remove stream [${streamName}]`) }
     }
 }

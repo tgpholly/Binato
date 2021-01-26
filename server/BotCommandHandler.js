@@ -1,6 +1,7 @@
 const osu = require("osu-packet"),
       maths = require("./util/Maths.js"),
-      Multiplayer = require("./Multiplayer.js");
+      OsuBattleRoyale = require("./MultiplayerExtras/OsuBattleRoyale.js");
+      //Multiplayer = require("./Multiplayer.js");
 
 module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false) {
     if (Message[0] != "!") return;
@@ -9,7 +10,7 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
 
     let responseMessage = "";
 
-    let gay = null;
+    let commandBanchoPacketWriter = null;
 
     switch (command) {
         case "!help":
@@ -26,7 +27,8 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
                     case "mp":
                         responseMessage = "Multiplayer Commands:" +
                                           "\n!mp start - Starts a multiplayer match with a delay" +
-                                          "\n!mp abort - Aborts the currently running multiplayer match";
+                                          "\n!mp abort - Aborts the currently running multiplayer match" +
+                                          "\n!mp obr   - Enables Battle Royale mode";
                     break;
 
                     case "admin":
@@ -69,29 +71,30 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
         break;
 
         case "!msg":
-            gay = new osu.Bancho.Writer;
+            commandBanchoPacketWriter = new osu.Bancho.Writer;
 
-            gay.RTX(args[1]);
+            commandBanchoPacketWriter.RTX(args[1]);
 
-            //User.addActionToQueue(gay.toBuffer());
-            global.StreamsHandler.sendToStream(Stream, gay.toBuffer, null);
+            global.StreamsHandler.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
         break;
 
         case "!fuckoff":
-            gay = new osu.Bancho.Writer;
+            commandBanchoPacketWriter = new osu.Bancho.Writer;
 
-            gay.Ping(0);
+            commandBanchoPacketWriter.Ping(0);
 
-            User.addActionToQueue(gay.toBuffer);
+            User.addActionToQueue(commandBanchoPacketWriter.toBuffer);
         break;
 
         case "!mp":
             if (!IsCalledFromMultiplayer) return;
+            if (User.currentMatch.matchStartCountdownActive) return;
             if (args.length == 1) return;
             switch (args[1]) {
                 case "start":
                     if (args.length > 3) return;
                     if (`${parseInt(args[2])}` != "NaN") {
+                        User.currentMatch.matchStartCountdownActive = true;
                         let countdown = parseInt(args[2]);
                         let intervalRef = setInterval(() => {
                             let local_osuPacketWriter = new osu.Bancho.Writer;
@@ -112,19 +115,38 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
                                     senderId: global.users[0].id
                                 });
                                 global.StreamsHandler.sendToStream(Stream, local_osuPacketWriter.toBuffer, null);
-                                setTimeout(() => Multiplayer.startMatch(User), 1000);
+                                User.currentMatch.matchStartCountdownActive = false;
+                                setTimeout(() => User.currentMatch.startMatch(), 1000);
                                 clearInterval(intervalRef);
                             }
                         }, 1000);
                     } else {
                         responseMessage = "Good luck, have fun!";
-                        setTimeout(() => Multiplayer.startMatch(User), 1000); 
+                        setTimeout(() => User.currentMatch.startMatch(), 1000); 
                     }
                 break;
 
                 case "abort":
-                    if (args.length > 2) return;
-                    Multiplayer.finishMatch(User);
+                    //if (args.length > 2) return;
+                    User.currentMatch.finishMatch();
+                break;
+
+                case "obr":
+                    if (User.currentMatch.multiplayerExtras != null) {
+                        if (User.currentMatch.multiplayerExtras.name == "osu! Battle Royale") {
+                            commandBanchoPacketWriter = new osu.Bancho.Writer;
+                            commandBanchoPacketWriter.SendMessage({
+                                sendingClient: global.users[0].username,
+                                message: "osu! Battle Royale has been disabled!",
+                                target: "#multiplayer",
+                                senderId: global.users[0].id
+                            });
+                            User.currentMatch.multiplayerExtras = null;
+                            global.StreamsHandler.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
+                        }
+                        else enableOBR(User, Stream, commandBanchoPacketWriter);
+                    }
+                    else enableOBR(User, Stream, commandBanchoPacketWriter);
                 break;
 
                 default:
@@ -152,4 +174,22 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
         }
     }
     global.StreamsHandler.sendToStream(Stream, osuPacketWriter.toBuffer, null);
+}
+
+function enableOBR(User, Stream, commandBanchoPacketWriter) {
+    User.currentMatch.multiplayerExtras = new OsuBattleRoyale(User.currentMatch);
+    commandBanchoPacketWriter = new osu.Bancho.Writer;
+    commandBanchoPacketWriter.SendMessage({
+        sendingClient: global.users[0].username,
+        message: "osu! Battle Royale has been enabled!",
+        target: "#multiplayer",
+        senderId: global.users[0].id
+    });
+    commandBanchoPacketWriter.SendMessage({
+        sendingClient: global.users[0].username,
+        message: "New Multiplayer Rules Added:\n - Players that are in a failed state by the end of the map get eliminated\n - The player(s) with the lowest score get eliminated",
+        target: "#multiplayer",
+        senderId: global.users[0].id
+    });
+    global.StreamsHandler.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
 }
