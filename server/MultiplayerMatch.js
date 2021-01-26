@@ -277,16 +277,8 @@ module.exports = class {
     missingBeatmap(MatchUser) {
         const osuPacketWriter = new osu.Bancho.Writer;
 
-        // Loop through all slots in the match
-        for (let i = 0; i < this.slots.length; i++) {
-            const slot = this.slots[i];
-            // Make sure the user in the slot is the user we want to update
-            if (slot.playerId != MatchUser.id) continue;
-
-            // User is missing the beatmap set the status to reflect it
-            slot.status = 16;
-            break;
-        }
+        // User is missing the beatmap set the status to reflect it
+        this.slots[MatchUser.matchSlotId].status = 16;
 
         osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
 
@@ -297,16 +289,8 @@ module.exports = class {
     notMissingBeatmap(MatchUser) {
         const osuPacketWriter = new osu.Bancho.Writer;
 
-        // Loop through all slots in the match
-        for (let i = 0; i < this.slots.length; i++) {
-            const slot = this.slots[i];
-            // Make sure the user in the slot is the user we want to update
-            if (slot.playerId != MatchUser.id) continue;
-
-            // The user is not missing the beatmap, set the status to normal
-            else slot.status = 4;
-            break;
-        }
+        // The user is not missing the beatmap, set the status to normal
+        this.slots[MatchUser.matchSlotId].status = 4;
 
         osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
 
@@ -363,11 +347,11 @@ module.exports = class {
         }
     }
 
-    transferHost(MatchUserToTransferHostTo) {
+    transferHost(SlotIDToTransferTo) {
         const osuPacketWriter = new osu.Bancho.Writer;
 
         // Set the lobby's host to the new user
-        this.host = this.slots[MatchUserToTransferHostTo].playerId;
+        this.host = this.slots[SlotIDToTransferTo].playerId;
 
         osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
 
@@ -380,13 +364,7 @@ module.exports = class {
         // Check if freemod is enabled
         if (this.specialModes === 1) {
             const osuPacketWriter = new osu.Bancho.Writer;
-            for (let i = 0; i < this.slots.length; i++) {
-                const slot = this.slots[i];
-                if (slot.playerId === MatchUser.id) {
-                    slot.mods = MatchMods;
-                    break;
-                }
-            }
+            this.slots[MatchUser.matchSlotId].mods = MatchMods;
 
             osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
 

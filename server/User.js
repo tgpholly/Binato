@@ -14,8 +14,6 @@ module.exports = class {
         this.spectating = 0;
         this.location = [0,0];
         this.joinedChannels = [];
-        this.currentMatch = null;
-        this.matchSlotId = -1;
 
         // Presence data
         this.actionID = 0;
@@ -32,6 +30,10 @@ module.exports = class {
         this.totalScore = 0;
         this.rank = 0;
         this.pp = 0;
+
+        // Multiplayer data
+        this.currentMatch = null;
+        this.matchSlotId = -1;
     }
 
     // Adds new actions to the user's queue
