@@ -16,13 +16,29 @@ app.use((req, res) => {
     req.on("end", () => {
         switch (req.method) {
             case "GET":
-                fs.readFile("serverPage.html", (err, data) => {
-                    if (err) throw err;
-                    
-                    if (debugMode) data = data.toString().replace("|isdebug?|", '<b style="color:red;">DEBUG</b>');
-                    else data = data.toString().replace("|isdebug?|", '');
-                    res.send(data);
-                });
+                if (req.url == "/" || req.url == "/index.html" || req.url == "/index.html") {
+                    fs.readFile("./web/serverPage.html", (err, data) => {
+                        if (err) throw err;
+                        
+                        if (debugMode) data = data.toString().replace("|isdebug?|", '<b style="color:red;">DEBUG</b>');
+                        else data = data.toString().replace("|isdebug?|", '');
+                        res.send(data);
+                    });
+                } else if (req.url == "/chat") {
+                    fs.readFile("./web/chatPageTemplate.html", (err, data) => {
+                        if (err) throw err;
+
+                        let lines = "", flip = false;
+                        const limit = global.chatHistory.length < 10 ? 10 : global.chatHistory.length;
+                        for (let i = global.chatHistory.length - 10; i < limit; i++) {
+                            if (i < 0) i = 0;
+                            lines += `<div class="line line${flip ? 1 : 0}">${global.chatHistory[i] == null ? "<hidden>blank</hidden>" : global.chatHistory[i]}</div>`
+                            flip = !flip;
+                        }
+                        
+                        res.send(data.toString().replace("|content|", lines));
+                    });
+                }
             break;
 
             case "POST":
