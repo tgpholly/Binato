@@ -70,22 +70,6 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
             }
         break;
 
-        case "!msg":
-            commandBanchoPacketWriter = new osu.Bancho.Writer;
-
-            commandBanchoPacketWriter.RTX(args[1]);
-
-            global.StreamsHandler.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
-        break;
-
-        case "!fuckoff":
-            commandBanchoPacketWriter = new osu.Bancho.Writer;
-
-            commandBanchoPacketWriter.Ping(0);
-
-            User.addActionToQueue(commandBanchoPacketWriter.toBuffer);
-        break;
-
         case "!mp":
             if (!IsCalledFromMultiplayer) return;
             if (User.currentMatch.matchStartCountdownActive) return;
