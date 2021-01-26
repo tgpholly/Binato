@@ -254,9 +254,9 @@ const countryCodes = {
 module.exports.countryCodes = countryCodes;
 
 module.exports = {
-    getCountryID:function(code) {
+    getCountryID:function(code = "") {
         // Get id of a country from a 2 char code
-        const s = `${code}`.toUpperCase();
+        const s = code.toUpperCase();
         if (countryCodes[s] != null) return countryCodes[s];
         else return 0;
     },

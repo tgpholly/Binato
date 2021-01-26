@@ -2,7 +2,7 @@ const osu = require("osu-packet"),
       getUserById = require("./util/getUserById.js");
 
 module.exports = {
-    startSpectatingUser:function(spectatedId, currentUser) {
+    startSpectatingUser:function(currentUser, spectatedId) {
         // Get the user this user is trying to spectate
         const User = getUserById(spectatedId);
         if (global.StreamsHandler.doesStreamExist(`sp_${User.username}`)) {

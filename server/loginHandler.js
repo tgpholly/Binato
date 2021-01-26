@@ -6,7 +6,10 @@ const osu = require("osu-packet"),
       getUserByUsername = require("./util/getUserByUsername.js"),
       getUserByToken = require("./util/getUserByToken.js"),
       countryHelper = require("./countryHelper.js"),
-      loginHelper = require("./loginHelper.js");
+      loginHelper = require("./loginHelper.js"),
+      UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
+      UserPresence = require("./Packets/UserPresence.js"),
+      StatusUpdate = require("./Packets/StatusUpdate.js");
 
 module.exports = function(req, res, loginInfo) {
     // Get time at the start of login
@@ -63,83 +66,59 @@ module.exports = function(req, res, loginInfo) {
     global.users.push(new User(userDB.id, loginInfo.username, newClientToken, new Date().getTime()));
 
     // Retreive the newly created user
-    const userClass = getUserByToken(newClientToken);
+    const NewUser = getUserByToken(newClientToken);
 
     // Get user's data from the database
-    userClass.getNewUserInformationFromDatabase();
+    NewUser.getNewUserInformationFromDatabase();
 
     try {
         // Save the user's location to their class for later use
-        userClass.location[0] = parseFloat(userLocation[0]);
-        userClass.location[1] = parseFloat(userLocation[1]);
+        NewUser.location[0] = parseFloat(userLocation[0]);
+        NewUser.location[1] = parseFloat(userLocation[1]);
 
         // Save the country id for the same reason as above
-        userClass.countryID = countryHelper.getCountryID(userLocationData.country);
+        NewUser.countryID = countryHelper.getCountryID(userLocationData.country);
 
         // We're ready to start putting together a login packet
         // Create an osu! Packet writer
         let osuPacketWriter = new osu.Bancho.Writer;
 
         // The reply id is the user's id in any other case than an error in which case negative numbers are used
-        osuPacketWriter.LoginReply(userClass.id);
+        osuPacketWriter.LoginReply(NewUser.id);
         // Current bancho protocol version is 19
         osuPacketWriter.ProtocolNegotiation(19);
         // Permission level 4 is osu!supporter
         osuPacketWriter.LoginPermissions(4);
+
         // Construct user's friends list
-        const userFriends = global.DatabaseHelper.getFromDB(`SELECT friendsWith FROM friends WHERE user = ${userClass.id}`);
+        const userFriends = global.DatabaseHelper.getFromDB(`SELECT friendsWith FROM friends WHERE user = ${NewUser.id}`);
         let friendsArray = [];
         for (let i = 0; i < userFriends.length; i++) {
             friendsArray.push(userFriends[i].friendsWith);
         }
         // Send user's friends list
         osuPacketWriter.FriendsList(friendsArray);
+        // After sending the user their friends list send them the online users
+        UserPresenceBundle(NewUser);
+
         // Set title screen image
-        osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
-
-        // Construct user panel data
-        const presenceObject = {
-            userId: userClass.id,
-            username: userClass.username,
-            timezone: 0,
-            countryId: userClass.countryID,
-            permissions: 4,
-            longitude: userClass.location[1],
-            latitude: userClass.location[0],
-            rank: userClass.rank
-        };
-
-        const statusObject = {
-            userId: userClass.id,
-            status: userClass.actionID,
-            statusText: userClass.actionText,
-            beatmapChecksum: userClass.beatmapChecksum,
-            currentMods: userClass.currentMods,
-            playMode: userClass.playMode,
-            beatmapId: userClass.beatmapID,
-            rankedScore: userClass.rankedScore,
-            accuracy: userClass.accuracy / 100, // Scale of 0 to 1
-            playCount: userClass.playCount,
-            totalScore: userClass.totalScore,
-            rank: userClass.rank, 
-            performance: userClass.pp
-        };
+        //osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
 
         // Add user panel data packets
-        osuPacketWriter.UserPresence(presenceObject);
-        osuPacketWriter.HandleOsuUpdate(statusObject);
+        UserPresence(NewUser, NewUser.id);
+        StatusUpdate(NewUser, NewUser.id);
 
         // peppy pls, why
         osuPacketWriter.ChannelListingComplete();
 
         // Add user to chat channels
         osuPacketWriter.ChannelJoinSuccess("#osu");
-        if (!global.StreamsHandler.isUserInStream("#osu", userClass.id))
-            global.StreamsHandler.addUserToStream("#osu", userClass.id);
+        if (!global.StreamsHandler.isUserInStream("#osu", NewUser.id))
+            global.StreamsHandler.addUserToStream("#osu", NewUser.id);
 
         osuPacketWriter.ChannelJoinSuccess("#userlog");
-        if (!global.StreamsHandler.isUserInStream("#userlog", userClass.id))
-            global.StreamsHandler.addUserToStream("#userlog", userClass.id);
+        if (!global.StreamsHandler.isUserInStream("#userlog", NewUser.id))
+            global.StreamsHandler.addUserToStream("#userlog", NewUser.id);
 
         // List all channels out to the client
         for (let i = 0; i < global.channels.length; i++) {
@@ -154,7 +133,7 @@ module.exports = function(req, res, loginInfo) {
 
         // Complete login
         res.writeHead(200, {
-            "cho-token": userClass.uuid,
+            "cho-token": NewUser.uuid,
             "cho-protocol": 19,
             "Connection": "keep-alive",
             "Keep-Alive": "timeout=5, max=100",

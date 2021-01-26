@@ -1,7 +1,7 @@
 const osu = require("osu-packet"),
       botCommandHandler = require("../BotCommandHandler.js");
 
-module.exports = function(CurrentPacket, CurrentUser) {
+module.exports = function(CurrentUser, CurrentPacket) {
     let isSendingChannelLocked = false;
     for (let i = 0; i < global.channels.length; i++) {
         if (!CurrentPacket.data.target.includes("#")) break;
@@ -36,8 +36,8 @@ module.exports = function(CurrentPacket, CurrentUser) {
     });
 
     if (CurrentPacket.data.target == "#multiplayer") {
-        global.StreamsHandler.sendToStream(global.matches[CurrentUser.currentMatch][0], osuPacketWriter.toBuffer, CurrentUser.id);
-        botCommandHandler(CurrentUser, CurrentPacket.data.message, global.matches[CurrentUser.currentMatch][0], true);
+        global.StreamsHandler.sendToStream(CurrentUser.currentMatch.matchStreamName, osuPacketWriter.toBuffer, CurrentUser.id);
+        botCommandHandler(CurrentUser, CurrentPacket.data.message, CurrentUser.currentMatch.matchStreamName, true);
         return;
     }
 
@@ -46,6 +46,8 @@ module.exports = function(CurrentPacket, CurrentUser) {
 
     // Write chat message to stream asociated with chat channel
     global.StreamsHandler.sendToStream(CurrentPacket.data.target, osuPacketWriter.toBuffer, CurrentUser.id);
+    if (CurrentPacket.data.target == "#osu")
+        global.addChatMessage(`${CurrentUser.username}: ${CurrentPacket.data.message}`);
     botCommandHandler(CurrentUser, CurrentPacket.data.message, CurrentPacket.data.target);
     return;
 }

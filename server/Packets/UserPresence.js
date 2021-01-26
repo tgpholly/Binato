@@ -1,14 +1,14 @@
 const osu = require("osu-packet"),
       getUserById = require("../util/getUserById.js");
 
-module.exports = function(currentUser, id) {
+module.exports = function(currentUser, id = 0, sendImmidiate = true) {
     const osuPacketWriter = new osu.Bancho.Writer;
 
     const User = getUserById(id);
 
     if (User == null) return;
 
-    let UserPresenceObject = {
+    osuPacketWriter.UserPresence({
         userId: id,
         username: User.username,
         timezone: 0,
@@ -17,9 +17,8 @@ module.exports = function(currentUser, id) {
         longitude: User.location[1],
         latitude: User.location[0],
         rank: User.rank
-    };
+    });
 
-    osuPacketWriter.UserPresence(UserPresenceObject);
-
-    currentUser.addActionToQueue(osuPacketWriter.toBuffer);
+    if (sendImmidiate) currentUser.addActionToQueue(osuPacketWriter.toBuffer);
+    else return osuPacketWriter.toBuffer;
 }

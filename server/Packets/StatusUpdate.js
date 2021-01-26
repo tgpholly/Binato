@@ -1,7 +1,7 @@
 const osu = require("osu-packet"),
       getUserById = require("../util/getUserById.js");
 
-module.exports = function(currentUser, id, sendImmidiate = true) {
+module.exports = function(currentUser, id = 0, sendImmidiate = true) {
     if (id == 3) return; // Ignore Bot
 
     // Create new osu packet writer

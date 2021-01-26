@@ -10,13 +10,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aes256": "^1.0.4",
     "chalk": "^4.0.0",
-    "connect-busboy": "0.0.2",
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "osu-packet": "^4.1.2",
     "request": "^2.88.2",
     "sync-request": "^6.1.0",
+    "tcp-netx": "^1.2.11",
     "uuid": "^7.0.3"
   }
 }

@@ -35,11 +35,18 @@ setInterval(() => {
     }
 }, 10000);
 
-// An array containing all currently active multiplayer matches
-global.matches = [];
 // An array containing the last 15 messages in chat
 // TODO: Bother making this
 global.chatHistory = [];
+global.addChatMessage = function(msg) {
+    if (global.chatHistory.length == 15) {
+        global.chatHistory.splice(0, 1);
+        global.chatHistory.push(msg);
+    } else {
+        global.chatHistory.push(msg);
+    }
+}
+
 global.StreamsHandler = new Streams();
 
 // An array containing all chat channels
@@ -72,7 +79,7 @@ const logInterval = 10; // Secs
 
 setInterval(() => {
     global.usersOnline = (global.users.length - 1);
-    global.multiplayerMatches = [global.matches.length, 0]; // TODO: Respect private matches
+    global.multiplayerMatches = [global.MultiplayerManager.matches.length, 0]; // TODO: Respect private matches
 
     fs.appendFile(
         "server-stats.log",
@@ -80,10 +87,16 @@ setInterval(() => {
         () => { }
     );
 
-    global.usersOnline = 0;
-    global.multiplayerMatches = [0, 0];
     global.httpRequestsPerLogInterval = 0;
 }, logInterval * 1000);
+
+if (!fs.existsSync("tHMM.ds")) fs.writeFileSync("tHMM.ds", "0");
+global.totalHistoricalMultiplayerMatches = parseInt(fs.readFileSync("tHMM.ds").toString());
+global.getAndAddToHistoricalMultiplayerMatches = function() {
+    global.totalHistoricalMultiplayerMatches++;
+    fs.writeFile("tHMM.ds", global.totalHistoricalMultiplayerMatches, (e) => {});
+    return global.totalHistoricalMultiplayerMatches;
+}
 
 // Include packets
 const ChangeAction = require("./Packets/ChangeAction.js"),
@@ -91,7 +104,8 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
       Logout = require("./Packets/Logout.js"),
       Spectator = require("./Spectator.js"),
       SendPrivateMessage = require("./Packets/SendPrivateMessage.js"),
-      Multiplayer = require("./Multiplayer.js"),
+      MultiplayerManager = require("./MultiplayerManager.js"),
+      ChannelJoin = require("./Packets/ChannelJoin.js"),
       ChannelPart = require("./Packets/ChannelPart.js"),
       AddFriend = require("./Packets/AddFriend.js"),
       RemoveFriend = require("./Packets/RemoveFriend.js"),
@@ -99,6 +113,9 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
       UserPresence = require("./Packets/UserPresence.js"),
       UserStatsRequest = require("./Packets/UserStatsRequest.js"),
       MultiplayerInvite = require("./Packets/MultiplayerInvite.js");
+
+// A class for managing everything multiplayer
+global.MultiplayerManager = new MultiplayerManager();
 
 module.exports = function(req, res) {
     // Add to requests for logging
@@ -122,10 +139,10 @@ module.exports = function(req, res) {
         // Client has a token, let's see what they want.
         try {
             // Get the current user
-            const userClass = getUserFromToken(requestTokenString);
+            const PacketUser = getUserFromToken(requestTokenString);
 
             // Make sure the client's token isn't invalid
-            if (userClass != null) {
+            if (PacketUser != null) {
                 // Create a new osu! packet reader
                 const osuPacketReader = new osu.Client.Reader(requestData);
                 // Parse current bancho packet
@@ -134,150 +151,153 @@ module.exports = function(req, res) {
                 for (let i = 0; i < PacketData.length; i++) {
                     // Get current packet
                     let CurrentPacket = PacketData[i];
-
+                    
+                    // This is getting a little big, swap this out for mapped functions?
+                    // Would require some standardisation
                     switch (CurrentPacket.id) {
                         case packetIDs.client_changeAction:
-                            ChangeAction(userClass, CurrentPacket.data);
+                            ChangeAction(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_sendPublicMessage:
-                            SendPublicMessage(CurrentPacket, userClass);
+                            SendPublicMessage(PacketUser, CurrentPacket);
                         break;
 
                         case packetIDs.client_logout:
-                            Logout(userClass);
+                            Logout(PacketUser);
                         break;
 
                         case packetIDs.client_requestStatusUpdate:
-                            UserPresenceBundle(userClass);
+                            UserPresenceBundle(PacketUser);
                         break;
 
                         case packetIDs.client_pong: // Pretty sure this is just a client ping
                                                     // so we probably don't do anything here
-                        break;
+                        break;                      // It's probably just the client wanting to pull data down.
 
                         case packetIDs.client_startSpectating:
-                            Spectator.startSpectatingUser(CurrentPacket.data, userClass);
+                            Spectator.startSpectatingUser(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_spectateFrames:
-                            Spectator.sendSpectatorFrames(userClass, CurrentPacket.data);
+                            Spectator.sendSpectatorFrames(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_stopSpectating:
-                            Spectator.stopSpectatingUser(userClass);
+                            Spectator.stopSpectatingUser(PacketUser);
                         break;
 
                         case packetIDs.client_sendPrivateMessage:
-                            SendPrivateMessage(CurrentPacket, userClass);
+                            SendPrivateMessage(PacketUser, CurrentPacket);
                         break;
 
                         case packetIDs.client_joinLobby:
-                            Multiplayer.userEnterLobby(userClass);
+                            global.MultiplayerManager.userEnterLobby(PacketUser);
                         break;
 
                         case packetIDs.client_partLobby:
-                            Multiplayer.userLeaveLobby(userClass);
+                            global.MultiplayerManager.userLeaveLobby(PacketUser);
                         break;
 
                         case packetIDs.client_createMatch:
-                            Multiplayer.createMultiplayerMatch(userClass, CurrentPacket.data);
+                            global.MultiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_joinMatch:
-                            Multiplayer.joinMultiplayerMatch(userClass, CurrentPacket.data);
+                            global.MultiplayerManager.joinMultiplayerMatch(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_matchChangeSlot:
-                            Multiplayer.moveToSlot(userClass, CurrentPacket.data);
+                            PacketUser.currentMatch.moveToSlot(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_matchReady:
-                            Multiplayer.setReadyState(userClass, true);
+                            PacketUser.currentMatch.setReadyState(PacketUser, true);
                         break;
 
                         case packetIDs.client_matchChangeSettings:
-                            Multiplayer.updateMatch(userClass, CurrentPacket.data);
+                            PacketUser.currentMatch.updateMatch(CurrentPacket.data);
                         break;
 
                         case packetIDs.client_matchNotReady:
-                            Multiplayer.setReadyState(userClass, false);
+                            PacketUser.currentMatch.setReadyState(PacketUser, false);
                         break;
 
                         case packetIDs.client_partMatch:
-                            Multiplayer.leaveMatch(userClass);
+                            global.MultiplayerManager.leaveMultiplayerMatch(PacketUser);
                         break;
 
-                        case packetIDs.client_matchLock: // Also handles user kick
-                            Multiplayer.kickPlayer(userClass, CurrentPacket.data);
+                        // Also handles user kick if the slot has a user
+                        case packetIDs.client_matchLock:
+                            PacketUser.currentMatch.lockMatchSlot(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_matchNoBeatmap:
-                            Multiplayer.missingBeatmap(userClass, true);
+                            PacketUser.currentMatch.missingBeatmap(PacketUser);
                         break;
 
                         case packetIDs.client_matchSkipRequest:
-                            Multiplayer.matchSkip(userClass);
+                            PacketUser.currentMatch.matchSkip(PacketUser);
                         break;
                         
                         case packetIDs.client_matchHasBeatmap:
-                            Multiplayer.missingBeatmap(userClass, false);
+                            PacketUser.currentMatch.notMissingBeatmap(PacketUser);
                         break;
 
                         case packetIDs.client_matchTransferHost:
-                            Multiplayer.transferHost(userClass, CurrentPacket.data);
+                            PacketUser.currentMatch.transferHost(CurrentPacket.data);
                         break;
 
                         case packetIDs.client_matchChangeMods:
-                            Multiplayer.updateMods(userClass, CurrentPacket.data);
+                            PacketUser.currentMatch.updateMods(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_matchStart:
-                            Multiplayer.startMatch(userClass);
+                            PacketUser.currentMatch.startMatch();
                         break;
 
                         case packetIDs.client_matchLoadComplete:
-                            Multiplayer.setPlayerLoaded(userClass);
+                            PacketUser.currentMatch.matchPlayerLoaded(PacketUser);
                         break;
 
                         case packetIDs.client_matchComplete:
-                            Multiplayer.onPlayerFinishMatch(userClass);
+                            PacketUser.currentMatch.onPlayerFinishMatch(PacketUser);
                         break;
 
                         case packetIDs.client_matchScoreUpdate:
-                            Multiplayer.updatePlayerScore(userClass, CurrentPacket.data);
+                            PacketUser.currentMatch.updatePlayerScore(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_matchFailed:
+                            PacketUser.currentMatch.matchFailed(PacketUser);
                         break;
 
                         case packetIDs.client_channelJoin:
-                            // TODO: Implement user channel joining
-                            //       Auto channel joining is already complete
+                            ChannelJoin(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_channelPart:
-                            ChannelPart(userClass, CurrentPacket.data);
+                            ChannelPart(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_friendAdd:
-                            AddFriend(userClass, CurrentPacket.data);
+                            AddFriend(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_friendRemove:
-                            RemoveFriend(userClass, CurrentPacket.data);
+                            RemoveFriend(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_userStatsRequest:
-                            UserStatsRequest(userClass, CurrentPacket.data);
+                            UserStatsRequest(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_invite:
-                            MultiplayerInvite(userClass, CurrentPacket.data);
+                            MultiplayerInvite(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_userPresenceRequest:
-                            UserPresence(userClass, userClass.id);
+                            UserPresence(PacketUser, PacketUser.id);
                         break;
 
                         default:
@@ -288,9 +308,9 @@ module.exports = function(req, res) {
                         break;
                     }
 
-                    // Put current user queue into response data
-                    responseData = Buffer.concat([responseData, userClass.queue], responseData.length + userClass.queue.length);
-                    userClass.clearQueue();
+                    // Concat current user queue into response data
+                    responseData = Buffer.concat([responseData, PacketUser.queue], responseData.length + PacketUser.queue.length);
+                    PacketUser.clearQueue();
                 }
             } else {
                 // User's token is invlid, force a reconnect

@@ -1,6 +1,6 @@
 const osu = require("osu-packet");
 
-module.exports = function(currentUser) {
+module.exports = function(currentUser, sendImmidiate = true) {
     const osuPacketWriter = new osu.Bancho.Writer;
 
     let userIds = [];
@@ -11,5 +11,6 @@ module.exports = function(currentUser) {
 
     osuPacketWriter.UserPresenceBundle(userIds);
 
-    currentUser.addActionToQueue(osuPacketWriter.toBuffer);
+    if (sendImmidiate) currentUser.addActionToQueue(osuPacketWriter.toBuffer);
+    else return osuPacketWriter.toBuffer;
 }

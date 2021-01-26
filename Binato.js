@@ -2,8 +2,6 @@ console.clear();
 
 const app = require("express")(),
       fs  = require("fs"),
-      busboy = require("connect-busboy"),
-      osu = require("osu-packet"),
       config = require("./config.json");
 
 const debugMode = true;
@@ -11,8 +9,6 @@ const debugMode = true;
 global.consoleHelper = require("./consoleHelper.js");
 
 const serverHandler = require("./server/serverHandler.js");
-
-app.use(busboy());
 
 app.use((req, res) => {
     req.packet = new Buffer.alloc(0);
@@ -35,6 +31,8 @@ app.use((req, res) => {
                 // Just looking for the first character being "c" *should* be enough
                 if (req.headers["host"].split(".")[0][0] == "c")
                     serverHandler(req, res);
+                else
+                    res.status(400).send("400 | Bad Request!<br>Binato only accepts post request on bancho subdomains.<hr>Binato");
             break;
 
             default:
@@ -44,6 +42,4 @@ app.use((req, res) => {
     });
 });
 
-// TODO: Not have a predefined port,
-//       doesn't matter for me so not top priority
-app.listen(5001, () => global.consoleHelper.printBancho("Binato is up! Listening at port 5001"));
+app.listen(config.port, () => global.consoleHelper.printBancho("Binato is up! Listening at port 5001"));

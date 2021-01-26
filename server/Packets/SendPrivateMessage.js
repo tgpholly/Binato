@@ -1,7 +1,7 @@
 const osu = require("osu-packet"),
       getUserByUsername = require("../util/getUserByUsername.js");
 
-module.exports = function(CurrentPacket, CurrentUser) {
+module.exports = function(CurrentUser, CurrentPacket) {
     const osuPacketWriter = new osu.Bancho.Writer;
 
     osuPacketWriter.SendMessage({
