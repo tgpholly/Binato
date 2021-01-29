@@ -12,8 +12,7 @@ An implementation of osu!bancho in Javascript
  - Minimum Viable Product of a bot
    - For a command list check [BotCommandHandler](https://github.com/tgpethan/Binato/blob/master/server/BotCommandHandler.js) or use !help on a live server
  
-## Bugs:
- - If a client clicks the plus button in the chat window to join another channel the client will "crash", the game will keep running but the user will be unable to do anything
+### [List of bugs](https://github.com/tgpethan/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
  
 ## How to connect:
 
