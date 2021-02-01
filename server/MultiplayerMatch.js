@@ -47,6 +47,9 @@ module.exports = class {
 
         this.multiplayerExtras = null;
 
+        this.isTourneyMatch = false;
+        this.tourneyClientUsers = [];
+
         const osuPacketWriter = new osu.Bancho.Writer;
 
         // Update the status of the current user
@@ -118,7 +121,7 @@ module.exports = class {
             osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
     
             // Remove the leaving user from the match's stream
-            global.StreamsHandler.removeUserFromStream(this.matchStreamName, MatchUser.id);
+            global.StreamsHandler.removeUserFromStream(this.matchStreamName, MatchUser.uuid);
 
             // Inform all users in the match that the leaving user has left
             global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
@@ -212,6 +215,22 @@ module.exports = class {
         global.MultiplayerManager.updateMatchListing();
     }
 
+    changeTeam(MatchUser) {
+        const slot = this.slots[MatchUser.matchSlotId];
+        if (slot.team == 0) {
+            slot.team = 1;
+        } else {
+            slot.team = 0;
+        }
+
+        const osuPacketWriter = new osu.Bancho.Writer;
+
+        osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
+
+        // Send this change to all users in the match
+        global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+    }
+
     setReadyState(MatchUser, ReadyState) {
         // Get the match the user is in
         const osuPacketWriter = new osu.Bancho.Writer;
@@ -245,7 +264,7 @@ module.exports = class {
 
         // Get the data of the slot at the index sent by the client
         const slot = this.slots[MatchUserToKick];
-        let cachedPlayerId = slot.playerId;
+        let cachedPlayerToken = getUserById(slot.playerId).uuid;
 
         // If the slot is empty lock instead of kicking
         if (slot.playerId === -1) { // Slot is empty, lock it
@@ -268,9 +287,9 @@ module.exports = class {
         // Update the match listing in the lobby listing to reflect this change
         global.MultiplayerManager.updateMatchListing();
 
-        if (cachedPlayerId !== null && cachedPlayerId !== -1) {
+        if (cachedPlayerToken !== null && cachedPlayerToken !== "") {
             // Remove the kicked user from the match stream
-            global.StreamsHandler.removeUserFromStream(this.matchStreamName, cachedPlayerId);
+            global.StreamsHandler.removeUserFromStream(this.matchStreamName, cachedPlayerToken);
         }
     }
 

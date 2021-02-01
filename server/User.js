@@ -1,7 +1,7 @@
 const StatusUpdate = require("./Packets/StatusUpdate.js");
 
 module.exports = class {
-    constructor(id, username, uuid, connectTime) {
+    constructor(id, username, uuid, connectTime, isTourneyUser = false) {
         this.id = id;
         this.username = username;
         this.uuid = uuid;
@@ -34,6 +34,8 @@ module.exports = class {
         // Multiplayer data
         this.currentMatch = null;
         this.matchSlotId = -1;
+
+        this.isTourneyUser = isTourneyUser;
     }
 
     // Adds new actions to the user's queue

@@ -6,8 +6,8 @@ module.exports = function(CurrentUser) {
     const streamList = global.StreamsHandler.getStreams();
 
     for (let i = 0; i < streamList.length; i++) {
-        if (global.StreamsHandler.isUserInStream(streamList[i], CurrentUser.id)) {
-            global.StreamsHandler.removeUserFromStream(streamList[i], CurrentUser.id);
+        if (global.StreamsHandler.isUserInStream(streamList[i], CurrentUser.uuid)) {
+            global.StreamsHandler.removeUserFromStream(streamList[i], CurrentUser.uuid);
         }
     }
 

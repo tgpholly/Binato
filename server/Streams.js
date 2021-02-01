@@ -1,4 +1,4 @@
-const getUserById = require("./util/getUserById.js");
+const getUserByToken = require("./util/getUserByToken.js");
 
 module.exports = class {
     constructor() {
@@ -12,7 +12,7 @@ module.exports = class {
             return global.consoleHelper.printBancho(`Did not add stream [${streamName}] A stream with the same name already exists`);
         // Add new stream to the list of streams
         this.avaliableStreams[streamName] = {
-            streamUsers: [], // An array containing a list of user IDs of the users in a given stream
+            streamUsers: [], // An array containing a list of user tokens of the users in a given stream
             streamSpectatorHost: spectatorHostId, // null unless stream is for spectating
             removeIfEmpty: removeIfEmpty
         }
@@ -47,14 +47,14 @@ module.exports = class {
         try {
             // Loop through the users in this stream
             for (let i = 0; i < currentStream.streamUsers.length; i++) {
-                // Get the user id of the user in the queue
-                const currentUserId = currentStream.streamUsers[i];
+                // Get the user token of the user in the queue
+                const currentUserToken = currentStream.streamUsers[i];
                 // Make sure we don't send this data back to the user requesting this data to be sent
-                if (initUser != null && currentUserId == initUser && (streamName[0] == "#" || streamName.includes("mp_"))) continue;
-                if (currentUserId == 3) continue; // Skip if user is bot
+                if (initUser != null && currentUserToken == initUser && (streamName[0] == "#" || streamName.includes("mp_"))) continue;
+                if (currentUserToken == 3) continue; // Skip if user is bot
 
                 // Get user object
-                const currentUser = getUserById(currentUserId);
+                const currentUser = getUserByToken(currentUserToken);
                 // Skip if user is nonexistant
                 if (currentUser == null) continue;
 
@@ -64,41 +64,41 @@ module.exports = class {
         } catch (e) {}
     }
 
-    addUserToStream(streamName, userId) {
+    addUserToStream(streamName, userToken) {
         // Make sure the stream we are attempting to add this user to even exists
         if (!this.doesStreamExist(streamName))
             return global.consoleHelper.printBancho(`Did not add user to stream [${streamName}] because it does not exist!`);
 
         // Make sure the user isn't already in the stream
-        if (this.avaliableStreams[streamName].streamUsers.includes(userId))
+        if (this.avaliableStreams[streamName].streamUsers.includes(userToken))
             return global.consoleHelper.printBancho(`Did not add user to stream [${streamName}] because they are already in it!`);
 
         // Make sure this isn't an invalid user (userId can't be lower than 1)
-        if (userId <= 0 || userId == null)
-            return global.consoleHelper.printBancho(`Did not add user to stream [${streamName}] because their userId is invalid!`);
+        if (userToken == "" || userToken == null)
+            return global.consoleHelper.printBancho(`Did not add user to stream [${streamName}] because their token is invalid!`);
 
-        // Add user's id to the stream's user list
-        this.avaliableStreams[streamName].streamUsers.push(userId);
-        global.consoleHelper.printBancho(`Added user [${userId}] to stream ${streamName}`);
+        // Add user's token to the stream's user list
+        this.avaliableStreams[streamName].streamUsers.push(userToken);
+        global.consoleHelper.printBancho(`Added user [${userToken}] to stream ${streamName}`);
     }
 
-    removeUserFromStream(streamName, userId) {
+    removeUserFromStream(streamName, userToken) {
         // Make sure the stream we are attempting to add this user to even exists
         if (!this.doesStreamExist(streamName))
             return global.consoleHelper.printBancho(`Did not remove user from stream [${streamName}] because it does not exist!`);
 
         // Make sure the user isn't already in the stream
-        if (!this.avaliableStreams[streamName].streamUsers.includes(userId))
+        if (!this.avaliableStreams[streamName].streamUsers.includes(userToken))
             return global.consoleHelper.printBancho(`Did not remove user from stream [${streamName}] because they are not in it!`);
 
         // Make sure this isn't an invalid user (userId can't be lower than 1)
-        if (userId <= 0 || userId == null)
+        if (userToken == "" || userToken == null)
             return global.consoleHelper.printBancho(`Did not remove user from stream [${streamName}] because their userId is invalid!`);
         try {
             // Find index of user to remove
             let userCurrentIndex;
             for (let i = 0; i < this.avaliableStreams[streamName].streamUsers.length; i++) {
-                if (userId == this.avaliableStreams[streamName].streamUsers[i]) {
+                if (userToken == this.avaliableStreams[streamName].streamUsers[i]) {
                     userCurrentIndex = i;
                     break;
                 }
@@ -106,8 +106,8 @@ module.exports = class {
 
             // Remove user from stream's user list
             this.avaliableStreams[streamName].streamUsers.splice(userCurrentIndex, 1);
-            global.consoleHelper.printBancho(`Removed user [${userId}] from stream ${streamName}`);
-        } catch (e) { global.consoleHelper.printBancho(`Can't Remove user [${userId}] from stream ${streamName}`); }
+            global.consoleHelper.printBancho(`Removed user [${userToken}] from stream ${streamName}`);
+        } catch (e) { global.consoleHelper.printBancho(`Can't Remove user [${userToken}] from stream ${streamName}`); }
     }
 
     doesStreamExist(streamName) {
@@ -119,8 +119,8 @@ module.exports = class {
         return this.avaliableStreamKeys;
     }
 
-    isUserInStream(streamName, userId) {
-        if (this.avaliableStreams[streamName].streamUsers.includes(userId)) return true;
+    isUserInStream(streamName, userToken) {
+        if (this.avaliableStreams[streamName].streamUsers.includes(userToken)) return true;
         else return false;
     }
 

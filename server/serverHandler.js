@@ -112,7 +112,9 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
       UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
       UserPresence = require("./Packets/UserPresence.js"),
       UserStatsRequest = require("./Packets/UserStatsRequest.js"),
-      MultiplayerInvite = require("./Packets/MultiplayerInvite.js");
+      MultiplayerInvite = require("./Packets/MultiplayerInvite.js"),
+      TourneyMatchSpecialInfo = require("./Packets/TourneyMatchSpecialInfo.js"),
+      TourneyMatchJoinChannel = require("./Packets/TourneyMatchSpecialInfo.js");
 
 // A class for managing everything multiplayer
 global.MultiplayerManager = new MultiplayerManager();
@@ -272,6 +274,10 @@ module.exports = function(req, res) {
                             PacketUser.currentMatch.matchFailed(PacketUser);
                         break;
 
+                        case packetIDs.client_matchChangeTeam:
+                            PacketUser.currentMatch.changeTeam(PacketUser);
+                        break;
+
                         case packetIDs.client_channelJoin:
                             ChannelJoin(PacketUser, CurrentPacket.data);
                         break;
@@ -290,6 +296,14 @@ module.exports = function(req, res) {
 
                         case packetIDs.client_userStatsRequest:
                             UserStatsRequest(PacketUser, CurrentPacket.data);
+                        break;
+
+                        case packetIDs.client_specialMatchInfoRequest:
+                            TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
+                        break;
+
+                        case packetIDs.client_specialJoinMatchChannel:
+                            TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_invite:

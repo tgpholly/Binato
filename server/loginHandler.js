@@ -47,23 +47,24 @@ module.exports = function(req, res, loginInfo) {
 
     // Make sure user is not already connected, kick off if so.
     const checkForPreexistingUser = getUserByUsername(loginInfo.username);
-    if (checkForPreexistingUser != null) {
+    if (checkForPreexistingUser != null && !loginInfo.osuversion.includes("tourney")) {
         if (checkForPreexistingUser.uuid != newClientToken) {
-            let userCurrentIndex;
+            let userCurrentIndex, isTourneyUser = false;
             // Find the index that the user's class is at
             for (let i = 0; i < global.users.length; i++) {
-                if (checkForPreexistingUser.uuid == global.users[i].uuid) {
+                if (checkForPreexistingUser.uuid == global.users[i].uuid && !global.users[i].isTourneyUser) {
                     userCurrentIndex = i;
+                    isTourneyUser = global.users[i].isTourneyUser;
                     break;
                 }
             }
 
-            global.users.splice(userCurrentIndex, 1);
+            if (!isTourneyUser) global.users.splice(userCurrentIndex, 1);
         }
     }
 
     // Create user object
-    global.users.push(new User(userDB.id, loginInfo.username, newClientToken, new Date().getTime()));
+    global.users.push(new User(userDB.id, loginInfo.username, newClientToken, new Date().getTime(), loginInfo.osuversion.includes("tourney")));
 
     // Retreive the newly created user
     const NewUser = getUserByToken(newClientToken);
@@ -113,12 +114,12 @@ module.exports = function(req, res, loginInfo) {
 
         // Add user to chat channels
         osuPacketWriter.ChannelJoinSuccess("#osu");
-        if (!global.StreamsHandler.isUserInStream("#osu", NewUser.id))
-            global.StreamsHandler.addUserToStream("#osu", NewUser.id);
+        if (!global.StreamsHandler.isUserInStream("#osu", NewUser.uuid))
+            global.StreamsHandler.addUserToStream("#osu", NewUser.uuid);
 
         osuPacketWriter.ChannelJoinSuccess("#userlog");
-        if (!global.StreamsHandler.isUserInStream("#userlog", NewUser.id))
-            global.StreamsHandler.addUserToStream("#userlog", NewUser.id);
+        if (!global.StreamsHandler.isUserInStream("#userlog", NewUser.uuid))
+            global.StreamsHandler.addUserToStream("#userlog", NewUser.uuid);
 
         // List all channels out to the client
         for (let i = 0; i < global.channels.length; i++) {

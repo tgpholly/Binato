@@ -7,11 +7,11 @@ module.exports = {
         const User = getUserById(spectatedId);
         if (global.StreamsHandler.doesStreamExist(`sp_${User.username}`)) {
             // Just add user to stream since it already exists
-            global.StreamsHandler.addUserToStream(`sp_${User.username}`, currentUser.id);
+            global.StreamsHandler.addUserToStream(`sp_${User.username}`, currentUser.uuid);
         } else {
             // Stream doesn't exist, create it and add the spectator
             global.StreamsHandler.addStream(`sp_${User.username}`, true, spectatedId);
-            global.StreamsHandler.addUserToStream(`sp_${User.username}`, currentUser.id);
+            global.StreamsHandler.addUserToStream(`sp_${User.username}`, currentUser.uuid);
         }
 
         // We want to do this stuff regardless
@@ -61,7 +61,7 @@ module.exports = {
         spectatedUser.addActionToQueue(osuPacketWriter.toBuffer);
 
         // Remove this user from the spectator stream
-        global.StreamsHandler.removeUserFromStream(`sp_${spectatedUser.username}`, currentUser.id);
+        global.StreamsHandler.removeUserFromStream(`sp_${spectatedUser.username}`, currentUser.uuid);
 
         // Make a new clear osu packet writer
         osuPacketWriter = new osu.Bancho.Writer;

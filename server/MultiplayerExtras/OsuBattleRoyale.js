@@ -38,7 +38,7 @@ module.exports = class {
                 slot.playerId = -1;
                 slot.status = 2;
                 // Remove the kicked player from the match's stream
-                global.StreamsHandler.removeUserFromStream(this.MultiplayerMatch.matchStreamName, kickedPlayer.id);
+                global.StreamsHandler.removeUserFromStream(this.MultiplayerMatch.matchStreamName, kickedPlayer.uuid);
                 // Remove the kicked player's referance this this match
                 kickedPlayer.currentMatch = null;
 

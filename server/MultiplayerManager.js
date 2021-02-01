@@ -16,7 +16,7 @@ module.exports = class {
             currentUser.currentMatch.leaveMatch(currentUser);
 
         // Add user to the stream for the lobby
-        global.StreamsHandler.addUserToStream("multiplayer_lobby", currentUser.id);
+        global.StreamsHandler.addUserToStream("multiplayer_lobby", currentUser.uuid);
 
         // Send user ids of all online users to all users in the lobby
         global.StreamsHandler.sendToStream("multiplayer_lobby", UserPresenceBundle(currentUser, false), null);
@@ -43,8 +43,8 @@ module.exports = class {
         const osuPacketWriter = new osu.Bancho.Writer;
 
         // Add the user to the #lobby channel
-        if (!global.StreamsHandler.isUserInStream("#lobby", currentUser.id)) {
-            global.StreamsHandler.addUserToStream("#lobby", currentUser.id);
+        if (!global.StreamsHandler.isUserInStream("#lobby", currentUser.uuid)) {
+            global.StreamsHandler.addUserToStream("#lobby", currentUser.uuid);
             osuPacketWriter.ChannelJoinSuccess("#lobby");
         }
         
@@ -53,8 +53,8 @@ module.exports = class {
 
     userLeaveLobby(currentUser) {
         // Remove user from the stream for the multiplayer lobby if they are a part of it
-        if (global.StreamsHandler.isUserInStream("multiplayer_lobby", currentUser.id))
-            global.StreamsHandler.removeUserFromStream("multiplayer_lobby", currentUser.id);
+        if (global.StreamsHandler.isUserInStream("multiplayer_lobby", currentUser.uuid))
+            global.StreamsHandler.removeUserFromStream("multiplayer_lobby", currentUser.uuid);
     }
     
     updateMatchListing() {
@@ -141,7 +141,7 @@ module.exports = class {
             JoiningUser.currentMatch = match;
 
             // Add user to the stream for the match
-            global.StreamsHandler.addUserToStream(streamName, JoiningUser.id);
+            global.StreamsHandler.addUserToStream(streamName, JoiningUser.uuid);
 
             // Inform all users in the match that a new user has joined
             global.StreamsHandler.sendToStream(streamName, osuPacketWriter1.toBuffer, null);
@@ -211,5 +211,27 @@ module.exports = class {
         setTimeout(() => {
             this.updateMatchListing();
         }, 1000);
+    }
+
+    getMatchInfoForTourneyClient(MatchID) {
+        let match = null;
+        for (let amatch in this.matches) {
+            if (amatch.matchId == MatchID) {
+                match = amatch;
+            }
+        }
+        if (match == null) return null;
+        else return match.createOsuMatchJSON();
+    }
+
+    getMatch(MatchID) {
+        let match = null;
+        for (let amatch in this.matches) {
+            if (amatch.matchId == MatchID) {
+                match = amatch;
+            }
+        }
+        if (match == null) return null;
+        else return match;
     }
 }

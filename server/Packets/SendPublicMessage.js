@@ -36,7 +36,7 @@ module.exports = function(CurrentUser, CurrentPacket) {
     });
 
     if (CurrentPacket.data.target == "#multiplayer") {
-        global.StreamsHandler.sendToStream(CurrentUser.currentMatch.matchStreamName, osuPacketWriter.toBuffer, CurrentUser.id);
+        global.StreamsHandler.sendToStream(CurrentUser.currentMatch.matchStreamName, osuPacketWriter.toBuffer, CurrentUser.uuid);
         botCommandHandler(CurrentUser, CurrentPacket.data.message, CurrentUser.currentMatch.matchStreamName, true);
         return;
     }
@@ -45,7 +45,7 @@ module.exports = function(CurrentUser, CurrentPacket) {
     if (!global.StreamsHandler.doesStreamExist(CurrentPacket.data.target)) return;
 
     // Write chat message to stream asociated with chat channel
-    global.StreamsHandler.sendToStream(CurrentPacket.data.target, osuPacketWriter.toBuffer, CurrentUser.id);
+    global.StreamsHandler.sendToStream(CurrentPacket.data.target, osuPacketWriter.toBuffer, CurrentUser.uuid);
     if (CurrentPacket.data.target == "#osu")
         global.addChatMessage(`${CurrentUser.username}: ${CurrentPacket.data.message}`);
     botCommandHandler(CurrentUser, CurrentPacket.data.message, CurrentPacket.data.target);
