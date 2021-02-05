@@ -91,14 +91,6 @@ module.exports = function(req, res, loginInfo) {
         // Permission level 4 is osu!supporter
         osuPacketWriter.LoginPermissions(4);
 
-        // Construct user's friends list
-        const userFriends = global.DatabaseHelper.getFromDB(`SELECT friendsWith FROM friends WHERE user = ${NewUser.id}`);
-        let friendsArray = [];
-        for (let i = 0; i < userFriends.length; i++) {
-            friendsArray.push(userFriends[i].friendsWith);
-        }
-        // Send user's friends list
-        osuPacketWriter.FriendsList(friendsArray);
         // After sending the user their friends list send them the online users
         UserPresenceBundle(NewUser);
 
@@ -129,6 +121,15 @@ module.exports = function(req, res, loginInfo) {
                 channelUserCount: global.channels[i].channelUserCount
             });
         }
+
+        // Construct user's friends list
+        const userFriends = global.DatabaseHelper.getFromDB(`SELECT friendsWith FROM friends WHERE user = ${NewUser.id}`);
+        let friendsArray = [];
+        for (let i = 0; i < userFriends.length; i++) {
+            friendsArray.push(userFriends[i].friendsWith);
+        }
+        // Send user's friends list
+        osuPacketWriter.FriendsList(friendsArray);
 
         osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
 
