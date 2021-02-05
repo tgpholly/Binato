@@ -24,17 +24,22 @@ module.exports = function(req, res, loginInfo) {
 
     // Get users IP for getting location
     let requestIP = req.get('X-Real-IP');
-    if (requestIP == null) {
+    if (requestIP == null)
         requestIP = req.remote_addr;
-    }
+
+    // Make sure requestIP is never null
+    if (requestIP == null)
+        requestIP = "";
+
     
     let userLocationData = [], userLocation;
-    // Check if it is a local IP
-    if (`${requestIP}`.includes("192.168.")) {
-        userLocationData.country = "GB"; // My country
-        userLocation = [53, -2]; // My rough location lol
+    // Check if it is a local or null IP
+    if (requestIP.includes("192.168.") || requestIP.includes("127.0.") || requestIP == "") {
+        // Set location to null island
+        userLocationData.country = "XX";
+        userLocation = [0, 0];
     } else {
-        // Get user's location from zxq
+        // Get user's location using zxq
         userLocationData = JSON.parse(request("GET", `http://ip.zxq.co/${requestIP}`).getBody());
         userLocation = userLocationData.loc.split(",");
     }
