@@ -6,6 +6,8 @@ const app = require("express")(),
 
 const debugMode = true;
 
+global.protocolVersion = 19;
+
 global.consoleHelper = require("./consoleHelper.js");
 
 const serverHandler = require("./server/serverHandler.js");

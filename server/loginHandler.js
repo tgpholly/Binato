@@ -86,8 +86,8 @@ module.exports = function(req, res, loginInfo) {
 
         // The reply id is the user's id in any other case than an error in which case negative numbers are used
         osuPacketWriter.LoginReply(NewUser.id);
-        // Current bancho protocol version is 19
-        osuPacketWriter.ProtocolNegotiation(19);
+        // Current bancho protocol version. Defined in Binato.js
+        osuPacketWriter.ProtocolNegotiation(global.protocolVersion);
         // Permission level 4 is osu!supporter
         osuPacketWriter.LoginPermissions(4);
 
