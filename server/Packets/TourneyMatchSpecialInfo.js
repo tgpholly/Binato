@@ -4,12 +4,12 @@ const osu = require("osu-packet"),
       ActionBuffer = require("../ActionBuffer.js");
 
 module.exports = function(CurrentUser, MatchID) {
-    const matchData = global.MultiplayerManager.getMatchInfoForTourneyClient(MatchID);
+    const matchData = global.MultiplayerManager.getMatch(MatchID);
 
     if (matchData != null) {
         const osuPacketWriter = new osu.Bancho.Writer();
 
-        osuPacketWriter.MatchUpdate(matchData);
+        osuPacketWriter.MatchUpdate(matchData.createOsuMatchJSON());
 
         let actions = new ActionBuffer(osuPacketWriter.toBuffer);
 
