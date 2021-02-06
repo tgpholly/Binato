@@ -8,14 +8,14 @@ module.exports = function(CurrentUser, MatchID) {
         match.isTourneyMatch = false;
         match.tourneyClientUsers = [];
 
-        if (global.StreamsHandler.isUserInStream(match.matchStreamName, CurrentUser.uuid))
-            return global.consoleHelper.printBancho(`Did not add user to channel ${match.matchStreamName} because they are already in it`);
+        if (global.StreamsHandler.isUserInStream(match.matchChatStreamName, CurrentUser.uuid))
+            return global.consoleHelper.printBancho(`Did not add user to channel ${match.matchChatStreamName} because they are already in it`);
 
         const osuPacketWriter = new osu.Bancho.Writer;
 
         osuPacketWriter.ChannelRevoked("#multiplayer");
-        if (!global.StreamsHandler.isUserInStream(match.matchStreamName, CurrentUser.uuid))
-            global.StreamsHandler.removeUserFromStream(match.matchStreamName, CurrentUser.uuid);
+        if (!global.StreamsHandler.isUserInStream(match.matchChatStreamName, CurrentUser.uuid))
+            global.StreamsHandler.removeUserFromStream(match.matchChatStreamName, CurrentUser.uuid);
 
         CurrentUser.addActionToQueue(osuPacketWriter.toBuffer);
     } else {
