@@ -130,11 +130,7 @@ module.exports = class {
             osuPacketWriter.MatchJoinSuccess(matchJSON);
 
             if (full) {
-                // Inform the client that they can't join the match
-                osuPacketWriter = new osu.Bancho.Writer;
-                osuPacketWriter.MatchJoinFail();
-
-                return JoiningUser.addActionToQueue(osuPacketWriter.toBuffer);
+                throw "MatchFullException";
             }
 
             // Set the user's current match to this match
@@ -155,6 +151,7 @@ module.exports = class {
             // A user has joined a match
             this.updateMatchListing();
         } catch (e) {
+            // Inform the client that there was an issue joining the match
             const osuPacketWriter = new osu.Bancho.Writer;
 
             osuPacketWriter.MatchJoinFail();
@@ -213,25 +210,10 @@ module.exports = class {
         }, 1000);
     }
 
-    getMatchInfoForTourneyClient(MatchID) {
-        let match = null;
-        for (let amatch in this.matches) {
-            if (amatch.matchId == MatchID) {
-                match = amatch;
-            }
-        }
-        if (match == null) return null;
-        else return match.createOsuMatchJSON();
-    }
-
     getMatch(MatchID) {
-        let match = null;
-        for (let amatch in this.matches) {
-            if (amatch.matchId == MatchID) {
-                match = amatch;
-            }
+        for (let match in this.matches) {
+            if (match.matchId == MatchID) return match;
         }
-        if (match == null) return null;
-        else return match;
+        return null;
     }
 }
