@@ -108,6 +108,7 @@ module.exports = class {
             }
 
             const streamName = this.matches[matchIndex].matchStreamName;
+            const chatStreamName = this.matches[matchIndex].matchChatStreamName;
             const match = this.matches[matchIndex];
 
             let full = true;
@@ -138,6 +139,7 @@ module.exports = class {
 
             // Add user to the stream for the match
             global.StreamsHandler.addUserToStream(streamName, JoiningUser.uuid);
+            global.StreamsHandler.addUserToStream(chatStreamName, JoiningUser.uuid);
 
             // Inform all users in the match that a new user has joined
             global.StreamsHandler.sendToStream(streamName, osuPacketWriter1.toBuffer, null);

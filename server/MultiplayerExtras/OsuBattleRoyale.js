@@ -39,6 +39,7 @@ module.exports = class {
                 slot.status = 2;
                 // Remove the kicked player from the match's stream
                 global.StreamsHandler.removeUserFromStream(this.MultiplayerMatch.matchStreamName, kickedPlayer.uuid);
+                global.StreamsHandler.removeUserFromStream(this.MultiplayerMatch.matchChatStreamName, kickedPlayer.uuid);
                 // Remove the kicked player's referance this this match
                 kickedPlayer.currentMatch = null;
 
@@ -62,7 +63,7 @@ module.exports = class {
                     senderId: global.users[0].id
                 });
 
-                global.StreamsHandler.sendToStream(this.MultiplayerMatch.matchStreamName, osuPacketWriter.toBuffer, null);
+                global.StreamsHandler.sendToStream(this.MultiplayerMatch.matchChatStreamName, osuPacketWriter.toBuffer, null);
             }
         }
 

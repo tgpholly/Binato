@@ -39,6 +39,7 @@ module.exports = class {
         this.seed = MatchData.seed;
 
         this.matchStreamName = `mp_${this.matchId}`;
+        this.matchChatStreamName = `mp_chat_${this.matchId}`;
 
         this.matchLoadSlots = null;
         this.matchSkippedSlots = null;
@@ -60,6 +61,7 @@ module.exports = class {
         MatchHost.addActionToQueue(osuPacketWriter.toBuffer);
 
         global.StreamsHandler.addStream(this.matchStreamName, true, this.matchId);
+        global.StreamsHandler.addStream(this.matchChatStreamName, true, this.matchId);
 
         // Update the match listing for users in the multiplayer lobby
         global.MultiplayerManager.updateMatchListing();
@@ -122,6 +124,7 @@ module.exports = class {
     
             // Remove the leaving user from the match's stream
             global.StreamsHandler.removeUserFromStream(this.matchStreamName, MatchUser.uuid);
+            global.StreamsHandler.removeUserFromStream(this.matchChatStreamName, MatchUser.uuid);
 
             // Inform all users in the match that the leaving user has left
             global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);

@@ -36,8 +36,8 @@ module.exports = function(CurrentUser, CurrentPacket) {
     });
 
     if (CurrentPacket.data.target == "#multiplayer") {
-        global.StreamsHandler.sendToStream(CurrentUser.currentMatch.matchStreamName, osuPacketWriter.toBuffer, CurrentUser.uuid);
-        botCommandHandler(CurrentUser, CurrentPacket.data.message, CurrentUser.currentMatch.matchStreamName, true);
+        global.StreamsHandler.sendToStream(CurrentUser.currentMatch.matchChatStreamName, osuPacketWriter.toBuffer, CurrentUser.uuid);
+        botCommandHandler(CurrentUser, CurrentPacket.data.message, CurrentUser.currentMatch.matchChatStreamName, true);
         return;
     }
 
