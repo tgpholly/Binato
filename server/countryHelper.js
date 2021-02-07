@@ -257,7 +257,7 @@ module.exports = {
     getCountryID:function(code = "") {
         // Get id of a country from a 2 char code
         code = code.toUpperCase();
-        if (countryCodes[s] != null) return countryCodes[s];
+        if (countryCodes[code] != null) return countryCodes[code];
         else return 0;
     },
 
