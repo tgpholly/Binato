@@ -251,12 +251,12 @@ const countryCodes = {
     "AI": 7
 }
 
-module.exports.countryCodes = countryCodes;
+const countryCodeKeys = Object.keys(countryCodes);
 
 module.exports = {
     getCountryID:function(code = "") {
         // Get id of a country from a 2 char code
-        const s = code.toUpperCase();
+        code = code.toUpperCase();
         if (countryCodes[s] != null) return countryCodes[s];
         else return 0;
     },
@@ -264,8 +264,11 @@ module.exports = {
     getCountryLetters:function(code) {
         // Get country char code from id
         for (var i = 0; i < countryCodes.length; i++) {
-            if (countryCodes[i] === code) return countryCodes[i];
+            const countryId = countryCodes[countryCodeKeys[i]];
+            if (countryId === code) return countryId;
         }
         return "XX";
     }
 }
+
+module.exports.countryCodes = countryCodes;
