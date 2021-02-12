@@ -187,27 +187,16 @@ module.exports = class {
 
     moveToSlot(MatchUser, SlotToMoveTo) {
         const osuPacketWriter = new osu.Bancho.Writer;
-
-        let currentUserData, slotIndex;
-        // Loop through all slots in the match
-        for (let i = 0; i < this.slots.length; i++) {
-            const slot = this.slots[i];
-            // Make sure the user in this slot is the user we want
-            if (slot.playerId != MatchUser.id) continue;
-
-            currentUserData = slot;
-            slotIndex = i;
-            break;
-        }
+        const oldSlot = this.slots[MatchUser.matchSlotId];
 
         // Set the new slot's data to the user's old slot data
-        this.slots[SlotToMoveTo].playerId = currentUserData.playerId;
+        this.slots[SlotToMoveTo].playerId = MatchUser.id;
         MatchUser.matchSlotId = SlotToMoveTo;
-        this.slots[SlotToMoveTo].status = currentUserData.status;
+        this.slots[SlotToMoveTo].status = 4;
 
         // Set the old slot's data to open
-        this.slots[slotIndex].playerId = -1;
-        this.slots[slotIndex].status = 1;
+        oldSlot.playerId = -1;
+        oldSlot.status = 1;
 
         osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
 
@@ -220,11 +209,7 @@ module.exports = class {
 
     changeTeam(MatchUser) {
         const slot = this.slots[MatchUser.matchSlotId];
-        if (slot.team == 0) {
-            slot.team = 1;
-        } else {
-            slot.team = 0;
-        }
+        slot.team = slot.team == 0 ? 1 : 0;
 
         const osuPacketWriter = new osu.Bancho.Writer;
 
@@ -267,19 +252,20 @@ module.exports = class {
 
         // Get the data of the slot at the index sent by the client
         const slot = this.slots[MatchUserToKick];
-        let cachedPlayerToken = getUserById(slot.playerId).uuid;
 
-        // If the slot is empty lock instead of kicking
-        if (slot.playerId === -1) { // Slot is empty, lock it
-            if (slot.status === 1) slot.status = 2;
-            else slot.status = 1;
-        }
-        // The slot isn't empty, prepare to kick the player
+        let isSlotEmpty = true;
+
+        // If the slot is empty lock/unlock instead of kicking
+        if (slot.playerId === -1)
+            slot.status = slot.status === 1 ? 2 : 1;
+            
+        // The slot isn't empty, kick the player
         else {
             const kickedPlayer = getUserById(slot.playerId);
             kickedPlayer.matchSlotId = -1;
             slot.playerId = -1;
             slot.status = 1;
+            isSlotEmpty = false;
         }
 
         osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
@@ -290,9 +276,13 @@ module.exports = class {
         // Update the match listing in the lobby listing to reflect this change
         global.MultiplayerManager.updateMatchListing();
 
-        if (cachedPlayerToken !== null && cachedPlayerToken !== "") {
-            // Remove the kicked user from the match stream
-            global.StreamsHandler.removeUserFromStream(this.matchStreamName, cachedPlayerToken);
+        if (!isSlotEmpty) {
+            let cachedPlayerToken = getUserById(slot.playerId).uuid;
+
+            if (cachedPlayerToken !== null && cachedPlayerToken !== "") {
+                // Remove the kicked user from the match stream
+                global.StreamsHandler.removeUserFromStream(this.matchStreamName, cachedPlayerToken);
+            }
         }
     }
 
@@ -356,13 +346,16 @@ module.exports = class {
         // All players have finished playing, finish the match
         if (allSkipped) {
             const osuPacketWriter = new osu.Bancho.Writer;
+
             osuPacketWriter.MatchPlayerSkipped(MatchUser.id);
             osuPacketWriter.MatchSkip();
+
             global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
 
             this.matchSkippedSlots = null;
         } else {
             const osuPacketWriter = new osu.Bancho.Writer;
+            
             osuPacketWriter.MatchPlayerSkipped(MatchUser.id);
 
             global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
