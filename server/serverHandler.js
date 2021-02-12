@@ -84,7 +84,7 @@ setInterval(() => {
     fs.appendFile(
         "server-stats.log",
         `${global.usersOnline}|${global.multiplayerMatches[0]},${global.multiplayerMatches[1]}|${global.httpRequestsPerLogInterval}|${new Date().getTime()}@`,
-        () => { }
+        () => {}
     );
 
     global.httpRequestsPerLogInterval = 0;
@@ -94,7 +94,7 @@ if (!fs.existsSync("tHMM.ds")) fs.writeFileSync("tHMM.ds", "0");
 global.totalHistoricalMultiplayerMatches = parseInt(fs.readFileSync("tHMM.ds").toString());
 global.getAndAddToHistoricalMultiplayerMatches = function() {
     global.totalHistoricalMultiplayerMatches++;
-    fs.writeFile("tHMM.ds", global.totalHistoricalMultiplayerMatches, (e) => {});
+    fs.writeFile("tHMM.ds", global.totalHistoricalMultiplayerMatches, () => {});
     return global.totalHistoricalMultiplayerMatches;
 }
 
@@ -129,8 +129,7 @@ module.exports = function(req, res) {
           requestData = req.packet;
     
     // Server's response & new client token
-    let responseTokenString = "",
-        responseData = new Buffer.alloc(0);
+    let responseData = new Buffer.alloc(0);
 
     // Check if the user is logged in
     if (requestTokenString == null) {
@@ -341,7 +340,7 @@ module.exports = function(req, res) {
         } finally {
             // Send the prepared packet to the client
             res.writeHead(200, {
-                "cho-protocol": 19,
+                "cho-protocol": global.protocolVersion,
                 "Connection": "keep-alive",
                 "Keep-Alive": "timeout=5, max=100",
                 "Content-Type": "text/html; charset=UTF-8"

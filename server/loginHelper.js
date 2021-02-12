@@ -27,7 +27,7 @@ function incorrectLoginResponse() {
         osuPacketWriter.toBuffer,
         {
             'cho-token': 'No',
-            'cho-protocol': 19,
+            'cho-protocol': global.protocolVersion,
             'Connection': 'keep-alive',
             'Keep-Alive': 'timeout=5, max=100',
             'Content-Type': 'text/html; charset=UTF-8'

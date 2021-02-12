@@ -141,7 +141,7 @@ module.exports = function(req, res, loginInfo) {
         // Complete login
         res.writeHead(200, {
             "cho-token": NewUser.uuid,
-            "cho-protocol": 19,
+            "cho-protocol": global.protocolVersion,
             "Connection": "keep-alive",
             "Keep-Alive": "timeout=5, max=100",
             "Content-Type": "text/html; charset=UTF-8"

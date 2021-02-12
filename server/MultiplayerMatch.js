@@ -137,7 +137,9 @@ module.exports = class {
             MatchUser.addActionToQueue(osuPacketWriter.toBuffer);
             
             return this;
-        } catch (e) { }
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     updateMatch(MatchData) {

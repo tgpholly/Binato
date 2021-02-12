@@ -1,5 +1,4 @@
 const osu = require("osu-packet"),
-      getUserById = require("./util/getUserById.js"),
       UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
       UserPresence = require("./Packets/UserPresence.js"),
       StatusUpdate = require("./Packets/StatusUpdate.js"),

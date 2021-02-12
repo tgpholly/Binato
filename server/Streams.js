@@ -41,27 +41,29 @@ module.exports = class {
     }
 
     sendToStream(streamName, streamData, initUser = null) {
+        // Make sure the stream we are attempting to send to even exists
+        if (!this.doesStreamExist(streamName))
+            return global.consoleHelper.printBancho(`Did not send to stream [${streamName}] because it does not exist!`);
+
         // Get the stream to send the data to
         const currentStream = this.avaliableStreams[streamName];
 
-        try {
-            // Loop through the users in this stream
-            for (let i = 0; i < currentStream.streamUsers.length; i++) {
-                // Get the user token of the user in the queue
-                const currentUserToken = currentStream.streamUsers[i];
-                // Make sure we don't send this data back to the user requesting this data to be sent
-                if (initUser != null && currentUserToken == initUser && (streamName[0] == "#" || streamName.includes("mp_"))) continue;
-                if (currentUserToken == 3) continue; // Skip if user is bot
+        // Loop through the users in this stream
+        for (let i = 0; i < currentStream.streamUsers.length; i++) {
+            // Get the user token of the user in the queue
+            const currentUserToken = currentStream.streamUsers[i];
+            // Make sure we don't send this data back to the user requesting this data to be sent
+            if (initUser != null && currentUserToken == initUser && (streamName[0] == "#" || streamName.includes("mp_"))) continue;
+            if (currentUserToken == 3) continue; // Skip if user is bot
 
-                // Get user object
-                const currentUser = getUserByToken(currentUserToken);
-                // Skip if user is nonexistant
-                if (currentUser == null) continue;
+            // Get user object
+            const currentUser = getUserByToken(currentUserToken);
+            // Skip if user is nonexistant
+            if (currentUser == null) continue;
 
-                // Send stream data to user's own queue
-                currentUser.addActionToQueue(streamData);
-            }
-        } catch (e) {}
+            // Send stream data to user's own queue
+            currentUser.addActionToQueue(streamData);
+        }
     }
 
     addUserToStream(streamName, userToken) {
