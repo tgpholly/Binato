@@ -1,7 +1,6 @@
-# Binato
+# Binato [![CodeFactor](https://www.codefactor.io/repository/github/tgpethan/binato/badge/master)](https://www.codefactor.io/repository/github/tgpethan/binato/overview/master)
 An implementation of osu!bancho in Javascript
 
-[![CodeFactor](https://www.codefactor.io/repository/github/tgpethan/binato/badge/master)](https://www.codefactor.io/repository/github/tgpethan/binato/overview/master)
 <hr>
 
 ### Features:
