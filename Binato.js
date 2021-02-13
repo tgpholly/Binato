@@ -60,4 +60,4 @@ app.use((req, res) => {
     });
 });
 
-app.listen(config.port, () => global.consoleHelper.printBancho("Binato is up! Listening at port 5001"));
+app.listen(config.port, () => global.consoleHelper.printBancho(`Binato is up! Listening at port ${config.port}`));
