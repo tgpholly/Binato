@@ -1,7 +1,7 @@
 const osu = require("osu-packet"),
       User = require("./User.js"),
       { v4: uuid } = require('uuid'),
-      request = require("sync-request"),
+      ahttp = require("./util/AsyncHttpRequest.js"),
       
       getUserByUsername = require("./util/getUserByUsername.js"),
       getUserByToken = require("./util/getUserByToken.js"),
@@ -13,7 +13,8 @@ const osu = require("osu-packet"),
 
 module.exports = async function(req, res, loginInfo) {
     // Get time at the start of login
-    const loginStartTime = new Date().getTime();
+    const loginStartTime = new Date().getTime(),
+          isTourneyClient = loginInfo.osuversion.includes("tourney");
 
     // Check login
     const loginCheck = await loginHelper.checkLogin(loginInfo);
@@ -40,7 +41,7 @@ module.exports = async function(req, res, loginInfo) {
         userLocation = [0, 0];
     } else {
         // Get user's location using zxq
-        userLocationData = JSON.parse(request("GET", `http://ip.zxq.co/${requestIP}`).getBody());
+        userLocationData = JSON.parse(await ahttp(`http://ip.zxq.co/${requestIP}`));
         userLocation = userLocationData.loc.split(",");
     }
 
@@ -52,24 +53,18 @@ module.exports = async function(req, res, loginInfo) {
 
     // Make sure user is not already connected, kick off if so.
     const checkForPreexistingUser = getUserByUsername(loginInfo.username);
-    if (checkForPreexistingUser != null && !loginInfo.osuversion.includes("tourney")) {
-        if (checkForPreexistingUser.uuid != newClientToken) {
-            let userCurrentIndex, isTourneyUser = false;
-            // Find the index that the user's class is at
-            for (let i = 0; i < global.users.length; i++) {
-                if (checkForPreexistingUser.uuid == global.users[i].uuid && !global.users[i].isTourneyUser) {
-                    userCurrentIndex = i;
-                    isTourneyUser = global.users[i].isTourneyUser;
-                    break;
-                }
+    if (checkForPreexistingUser != null && !isTourneyClient) {
+        for (let i = 0; i < global.users.length; i++) {
+            const user = global.users[i];
+            // Make sure they are not a tourney user
+            if (!user.isTourneyUser && user.uuid != newClientToken) {
+                global.users.splice(i, 1);
             }
-
-            if (!isTourneyUser) global.users.splice(userCurrentIndex, 1);
         }
     }
 
     // Create user object
-    global.users.push(new User(userDB.id, loginInfo.username, newClientToken, new Date().getTime(), loginInfo.osuversion.includes("tourney")));
+    global.users.push(new User(userDB.id, loginInfo.username, newClientToken, new Date().getTime(), isTourneyClient));
 
     // Retreive the newly created user
     const NewUser = getUserByToken(newClientToken);
