@@ -55,9 +55,9 @@ module.exports = class {
     }
 
     // Gets the user's score information from the database and caches it
-    getNewUserInformationFromDatabase() {
-        const userScoreDB = global.DatabaseHelper.getFromDB(`SELECT * FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode} LIMIT 1`);
-        const userRankDB = global.DatabaseHelper.getFromDB(`SELECT user_id, pp_raw FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY pp_raw DESC`);
+    async getNewUserInformationFromDatabase() {
+        const userScoreDB = await global.DatabaseHelper.query(`SELECT * FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode} LIMIT 1`);
+        const userRankDB = await global.DatabaseHelper.query(`SELECT user_id, pp_raw FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY pp_raw DESC`);
 
         if (userScoreDB == null || userRankDB == null) throw "fuck";
 

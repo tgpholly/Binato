@@ -19,7 +19,7 @@ global.users = [
 global.users[0].location[0] = 50;
 global.users[0].location[1] = -32;
 
-global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.databasePort, config.databaseKey);
+global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.databasePort, config.databaseUsername, config.databasePassword, config.databaseName);
 
 
 // Start a loop that gets new data for users from the database for use on the user panel
@@ -136,7 +136,7 @@ module.exports = async function(req, res) {
         // Client doesn't have a token yet, let's auth them!
         const userData = parseUserData(requestData);
         global.consoleHelper.printBancho(`New client connection. [User: ${userData.username}]`);
-        loginHandler(req, res, userData);
+        await loginHandler(req, res, userData);
     } else {
         // Client has a token, let's see what they want.
         try {

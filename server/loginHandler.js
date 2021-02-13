@@ -11,12 +11,12 @@ const osu = require("osu-packet"),
       UserPresence = require("./Packets/UserPresence.js"),
       StatusUpdate = require("./Packets/StatusUpdate.js");
 
-module.exports = function(req, res, loginInfo) {
+module.exports = async function(req, res, loginInfo) {
     // Get time at the start of login
     const loginStartTime = new Date().getTime();
 
     // Check login
-    const loginCheck = loginHelper.checkLogin(loginInfo);
+    const loginCheck = await loginHelper.checkLogin(loginInfo);
     if (loginCheck != null) {
         res.writeHead(200, loginCheck[1]);
         return res.end(loginCheck[0]);
@@ -45,7 +45,7 @@ module.exports = function(req, res, loginInfo) {
     }
 
     // Get information about the user from the database
-    const userDB = global.DatabaseHelper.getFromDB(`SELECT id FROM users_info WHERE username = "${loginInfo.username}" LIMIT 1`);
+    const userDB = await global.DatabaseHelper.query(`SELECT id FROM users_info WHERE username = "${loginInfo.username}" LIMIT 1`);
 
     // Create a token for the client
     const newClientToken = uuid();
@@ -128,7 +128,7 @@ module.exports = function(req, res, loginInfo) {
         }
 
         // Construct user's friends list
-        const userFriends = global.DatabaseHelper.getFromDB(`SELECT friendsWith FROM friends WHERE user = ${NewUser.id}`);
+        const userFriends = await global.DatabaseHelper.query(`SELECT friendsWith FROM friends WHERE user = ${NewUser.id}`);
         let friendsArray = [];
         for (let i = 0; i < userFriends.length; i++) {
             friendsArray.push(userFriends[i].friendsWith);

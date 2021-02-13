@@ -1,31 +1,36 @@
-const tcpx = require('tcp-netx'),
-      aes256 = require('aes256');
+const mysql = require("mysql");
 
 module.exports = class {
-    constructor(databaseAddress, databasePort, databaseKey) {
-        this.databaseKey = databaseKey;
-
-        // Create a new instance of tcp-netx and connect to the database
-        this.databaseServer = new tcpx.server(databaseAddress, databasePort);
-        this.databaseServer.connect();
-
-
-        // First response will always be broken
-        this.databaseServer.write({data: aes256.encrypt(this.databaseKey, `p|`)});
-        this.databaseServer.read();
+    constructor(databaseAddress, databasePort = 3306, databaseUsername, databasePassword, databaseName) {
+        this.connectionPool = mysql.createPool({
+            connectionLimit: 128,
+            host: databaseAddress,
+            port: databasePort,
+            user: databaseUsername,
+            password: databasePassword,
+            database: databaseName
+        });
     }
 
-    executeInDB(query) {
-        const result = this.databaseServer.write({data: aes256.encrypt(this.databaseKey, `r|${query}`)});
-
-        if (result.ok == 1) return this.databaseServer.read();
-        else throw "Database error"
-    }
-
-    getFromDB(query) {
-        const result = this.databaseServer.write({data: aes256.encrypt(this.databaseKey, `g|${query}`)});
-
-        if (result.ok == 1) return JSON.parse(aes256.decrypt(this.databaseKey, this.databaseServer.read()["data"]));
-        else throw "Database error";
+    async query(sqlQuery) {
+        return new Promise((resolve, reject) => {
+            this.connectionPool.getConnection((err, connection) => {
+                if (err) {
+                    reject(err);
+                    connection.release();
+                } else {
+                    connection.query(sqlQuery, (err, data) => {
+                        if (err) {
+                            reject(err);
+                            connection.release();
+                        } else {
+                            if (sqlQuery.includes("LIMIT 1")) resolve(data[0]);
+                            else resolve(data);
+                            connection.release();
+                        }
+                    });
+                }
+            });
+        });
     }
 }
