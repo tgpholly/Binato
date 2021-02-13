@@ -57,7 +57,7 @@ module.exports = class {
     // Gets the user's score information from the database and caches it
     getNewUserInformationFromDatabase() {
         const userScoreDB = global.DatabaseHelper.getFromDB(`SELECT * FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode} LIMIT 1`);
-        const userRankDB = global.DatabaseHelper.getFromDB(`SELECT user_id, pp_raw, ROW_NUMBER() OVER(ORDER BY pp_raw DESC) AS rank FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY pp_raw DESC`);
+        const userRankDB = global.DatabaseHelper.getFromDB(`SELECT user_id, pp_raw FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY pp_raw DESC`);
 
         if (userScoreDB == null || userRankDB == null) throw "fuck";
 
@@ -70,8 +70,9 @@ module.exports = class {
         this.totalScore = userScoreDB.total_score;
         this.accuracy = userScoreDB.avg_accuracy;
         this.playCount = userScoreDB.playcount;
-        for (let userRank of userRankDB)
-            if (userRank["user_id"] == this.id) this.rank = userRank.rank;
+        for (let i = 0; i < userRankDB.length; i++) {
+            if (userRankDB[i]["user_id"] == this.id) this.rank = i + 1;
+        }
         this.pp = userScoreDB.pp_raw;
 
         if (userScoreUpdate) {

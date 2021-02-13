@@ -120,7 +120,7 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
 // A class for managing everything multiplayer
 global.MultiplayerManager = new MultiplayerManager();
 
-module.exports = function(req, res) {
+module.exports = async function(req, res) {
     // Add to requests for logging
     global.httpRequestsPerLogInterval++;
 
