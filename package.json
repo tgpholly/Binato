@@ -1,5 +1,5 @@
 {
-  "name": "Binato",
+  "name": "binato",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,15 +10,11 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "aes256": "^1.0.4",
-    "chalk": "^4.0.0",
+    "chalk": "^4.1.0",
     "express": "^4.17.1",
-    "fs": "0.0.1-security",
+    "mysql": "^2.18.1",
     "osu-packet": "^4.1.2",
-    "python-struct": "^1.1.3",
     "request": "^2.88.2",
-    "sync-request": "^6.1.0",
-    "tcp-netx": "^1.2.11",
-    "uuid": "^7.0.3"
+    "uuid": "^8.3.2"
   }
 }
