@@ -32,7 +32,7 @@ Where <server_ip> is the IP Address of the server hosting the bancho server
 
 ### 2016 - Early 2021:
 Versions of osu! past Stable Fallback use HTTPS and as such you'll have to create a self signed certificate and make the server identify as ppy.sh<br>
-There were also new subdomains added, which are: 
+In 2018 there were also new subdomains added which are: 
  - c2.ppy.sh
  - c3.ppy.sh
  - c4.ppy.sh
