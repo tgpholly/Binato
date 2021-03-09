@@ -40,7 +40,7 @@ There were also new subdomains added, which are:
  - c6.ppy.sh
  - ce.ppy.sh
 
-### Now
+### Now:
 Recently on cuttingedge peppy has added the -devserver flag which can be passed to the client to connect to a specific server.
  
  ## Things not included in this repo:
