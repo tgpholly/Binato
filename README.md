@@ -30,24 +30,18 @@ Add an entry in the hosts file that looks like the following:
 ```
 Where <server_ip> is the IP Address of the server hosting the bancho server
 
-### 2016 - Now:
+### 2016 - Early 2021:
 Versions of osu! past Stable Fallback use HTTPS and as such you'll have to create a self signed certificate and make the server identify as ppy.sh<br>
-My personal choice for this task is OpenSSL + nginx
-
-The subdomains you have to deal with are:
- - osu.ppy.sh
- - c.ppy.sh
- - c1.ppy.sh
+There were also new subdomains added, which are: 
  - c2.ppy.sh
  - c3.ppy.sh
  - c4.ppy.sh
  - c5.ppy.sh
  - c6.ppy.sh
  - ce.ppy.sh
- 
- Using this with the hosts file should allow the server to be connected to by a modern osu! client
- 
- Subdomains past c1.ppy.sh were added around 2018
+
+### Now
+Recently on cuttingedge peppy has added the -devserver flag which can be passed to the client to connect to a specific server.
  
  ## Things not included in this repo:
  ### Profile Pictures:
