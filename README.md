@@ -41,7 +41,7 @@ In 2018 there were also new subdomains added which are:
  - ce.ppy.sh
 
 ### Now:
-Recently on cuttingedge peppy has added the -devserver flag which can be passed to the client to connect to a specific server.
+Recently on cuttingedge the -devserver flag has been added which can be passed to the client to connect to a specific server.
  
  ## Things not included in this repo:
  ### Profile Pictures:
