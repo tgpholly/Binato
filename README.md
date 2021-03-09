@@ -6,6 +6,7 @@ An implementation of osu!bancho in Javascript
 ### Features:
  - Multiplayer + Invites
  - Spectator
+ - Tourney Client
  - User Panel
  - Friends List
  - Chat & Channels
