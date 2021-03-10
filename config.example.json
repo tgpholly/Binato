@@ -1,0 +1,8 @@
+{
+    "port": 5001,
+    "databaseAddress": "127.0.0.1",
+    "databasePort": 3306,
+    "databaseUsername": "username",
+    "databasePassword": "password",
+    "databaseName": "osu!"
+}
