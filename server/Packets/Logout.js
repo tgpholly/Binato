@@ -11,21 +11,15 @@ module.exports = function(CurrentUser) {
         }
     }
 
-    // Find the index that the user's class is at and remove the object
-    for (let i = 0; i < global.users.length; i++) {
-        if (CurrentUser.uuid == global.users[i].uuid) {
-            // Remove that user from the list of users
-            global.users.splice(i, 1);
-            break;
-        }
-    }
+    // Remove user from user list
+    global.removeUser(CurrentUser);
 
     const osuPacketWriter = new osu.Bancho.Writer;
     osuPacketWriter.SendMessage({
-        sendingClient: global.users[0].username,
+        sendingClient: global.users["bot"].username,
         message: `User ${CurrentUser.username} has logged out.`,
         target: "#userlog",
-        senderId: 3
+        senderId: global.users["bot"].id
     });
     global.StreamsHandler.sendToStream("#userlog", osuPacketWriter.toBuffer);
 

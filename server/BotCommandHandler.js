@@ -1,7 +1,6 @@
 const osu = require("osu-packet"),
       maths = require("./util/Maths.js"),
       OsuBattleRoyale = require("./MultiplayerExtras/OsuBattleRoyale.js");
-      //Multiplayer = require("./Multiplayer.js");
 
 module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false) {
     if (Message[0] != "!") return;
@@ -85,18 +84,18 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
                             if (countdown != 0 && countdown > 0) countdown--;
                             if (countdown <= 10 && countdown > 0) {
                                 local_osuPacketWriter.SendMessage({
-                                    sendingClient: global.users[0].username,
+                                    sendingClient: global.users["bot"].username,
                                     message: "Starting in " + countdown,
                                     target: "#multiplayer",
-                                    senderId: global.users[0].id
+                                    senderId: global.users["bot"].id
                                 });
                                 global.StreamsHandler.sendToStream(Stream, local_osuPacketWriter.toBuffer, null);
                             } else if (countdown == 0) {
                                 local_osuPacketWriter.SendMessage({
-                                    sendingClient: global.users[0].username,
+                                    sendingClient: global.users["bot"].username,
                                     message: "Good luck, have fun!",
                                     target: "#multiplayer",
-                                    senderId: global.users[0].id
+                                    senderId: global.users["bot"].id
                                 });
                                 global.StreamsHandler.sendToStream(Stream, local_osuPacketWriter.toBuffer, null);
                                 User.currentMatch.matchStartCountdownActive = false;
@@ -120,10 +119,10 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
                         if (User.currentMatch.multiplayerExtras.name == "osu! Battle Royale") {
                             commandBanchoPacketWriter = new osu.Bancho.Writer;
                             commandBanchoPacketWriter.SendMessage({
-                                sendingClient: global.users[0].username,
+                                sendingClient: global.users["bot"].username,
                                 message: "osu! Battle Royale has been disabled!",
                                 target: "#multiplayer",
-                                senderId: global.users[0].id
+                                senderId: global.users["bot"].id
                             });
                             User.currentMatch.multiplayerExtras = null;
                             global.StreamsHandler.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
@@ -143,17 +142,17 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
     if (responseMessage != "") {
         if (Stream.includes("#")) {
             osuPacketWriter.SendMessage({
-                sendingClient: global.users[0].username,
+                sendingClient: global.users["bot"].username,
                 message: responseMessage,
                 target: Stream,
-                senderId: global.users[0].id
+                senderId: global.users["bot"].id
             });
         } else {
             osuPacketWriter.SendMessage({
-                sendingClient: global.users[0].username,
+                sendingClient: global.users["bot"].username,
                 message: responseMessage,
                 target: "#multiplayer",
-                senderId: global.users[0].id
+                senderId: global.users["bot"].id
             });
         }
     }
@@ -164,16 +163,16 @@ function enableOBR(User, Stream, commandBanchoPacketWriter) {
     User.currentMatch.multiplayerExtras = new OsuBattleRoyale(User.currentMatch);
     commandBanchoPacketWriter = new osu.Bancho.Writer;
     commandBanchoPacketWriter.SendMessage({
-        sendingClient: global.users[0].username,
+        sendingClient: global.users["bot"].username,
         message: "osu! Battle Royale has been enabled!",
         target: "#multiplayer",
-        senderId: global.users[0].id
+        senderId: global.users["bot"].id
     });
     commandBanchoPacketWriter.SendMessage({
-        sendingClient: global.users[0].username,
+        sendingClient: global.users["bot"].username,
         message: "New Multiplayer Rules Added:\n - Players that are in a failed state by the end of the map get eliminated\n - The player(s) with the lowest score get eliminated",
         target: "#multiplayer",
-        senderId: global.users[0].id
+        senderId: global.users["bot"].id
     });
     global.StreamsHandler.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
 }

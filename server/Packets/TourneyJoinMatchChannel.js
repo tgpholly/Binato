@@ -6,9 +6,9 @@ module.exports = function(CurrentUser, MatchID) {
     if (match != null) {
 
         match.isTourneyMatch = true;
-        for (let i = 0; i < global.users.length; i++) {
-            if (global.users[i].id == CurrentUser.id) {
-                match.tourneyClientUsers.push(global.users[i]);
+        for (let i = 0; i < global.userKeys.length; i++) {
+            if (global.users[global.userKeys[i]].id == CurrentUser.id) {
+                match.tourneyClientUsers.push(global.users[global.userKeys[i]]);
             }
         }
 

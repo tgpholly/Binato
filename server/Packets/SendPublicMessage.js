@@ -17,10 +17,10 @@ module.exports = function(CurrentUser, CurrentPacket) {
         } else {
             const osuPacketWriter = new osu.Bancho.Writer;
             osuPacketWriter.SendMessage({
-                sendingClient: global.users[0].username,
+                sendingClient: global.users["bot"].username,
                 message: "The channel you are currently trying to send to is locked, please check back later!",
                 target: CurrentPacket.data.target,
-                senderId: global.users[0].id
+                senderId: global.users["bot"].id
             });
             CurrentUser.addActionToQueue(osuPacketWriter.toBuffer);
         }

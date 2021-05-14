@@ -1,6 +1,3 @@
-### This repo has been moved to a personal Gitea instance and can be found here: [Binato](https://git.eusv.ml/holly/Binato)
-This repo will stay up as a irregularly updated mirror
-
 # Binato [![CodeFactor](https://www.codefactor.io/repository/github/tgpethan/binato/badge/master)](https://www.codefactor.io/repository/github/tgpethan/binato/overview/master)
 An implementation of osu!bancho in Javascript
 

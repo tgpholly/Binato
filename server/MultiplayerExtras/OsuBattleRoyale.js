@@ -46,10 +46,10 @@ module.exports = class {
                 // Inform the kicked user's client that they were kicked
                 osuPacketWriter.MatchUpdate(this.MultiplayerMatch.createOsuMatchJSON());
                 osuPacketWriter.SendMessage({
-                    sendingClient: global.users[0].username,
+                    sendingClient: global.users["bot"].username,
                     message: "You were eliminated from the match!",
-                    target: global.users[0].username,
-                    senderId: global.users[0].id
+                    target: global.users["bot"].username,
+                    senderId: global.users["bot"].id
                 });
 
                 kickedPlayer.addActionToQueue(osuPacketWriter.toBuffer);
@@ -57,10 +57,10 @@ module.exports = class {
                 osuPacketWriter = new osu.Bancho.Writer;
                 
                 osuPacketWriter.SendMessage({
-                    sendingClient: global.users[0].username,
+                    sendingClient: global.users["bot"].username,
                     message: `${kickedPlayer.username} was eliminated from the match!`,
                     target: "#multiplayer",
-                    senderId: global.users[0].id
+                    senderId: global.users["bot"].id
                 });
 
                 global.StreamsHandler.sendToStream(this.MultiplayerMatch.matchChatStreamName, osuPacketWriter.toBuffer, null);
@@ -94,10 +94,10 @@ module.exports = class {
             case 0:
                 remainingWriterContainer = new osu.Bancho.Writer;
                 remainingWriterContainer.SendMessage({
-                    sendingClient: global.users[0].username,
+                    sendingClient: global.users["bot"].username,
                     message: "Everyone was eliminated from the match! Nobody wins.",
-                    target: global.users[0].username,
-                    senderId: global.users[0].id
+                    target: global.users["bot"].username,
+                    senderId: global.users["bot"].id
                 });
                 for (i = 0; i < playerScores.length; i++) {
                     playerClassContainer = getUserById(playerScores[i].playerId);
@@ -108,10 +108,10 @@ module.exports = class {
             case 1:
                 remainingWriterContainer = new osu.Bancho.Writer;
                 remainingWriterContainer.SendMessage({
-                    sendingClient: global.users[0].username,
+                    sendingClient: global.users["bot"].username,
                     message: "You are the last one remaining, you win!",
-                    target: global.users[0].username,
-                    senderId: global.users[0].id
+                    target: global.users["bot"].username,
+                    senderId: global.users["bot"].id
                 });
                 playerClassContainer.addActionToQueue(remainingWriterContainer.toBuffer);
             break;

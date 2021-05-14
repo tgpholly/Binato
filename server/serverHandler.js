@@ -10,14 +10,28 @@ const osu = require("osu-packet"),
       DatabaseHelperClass = require("./DatabaseHelper.js"),
       config = require("../config.json");
 
-global.users = [
-    new User(3, "SillyBot", "SillyBot", new Date().getTime())
-];
+global.users = {};
+global.userKeys = Object.keys(global.users);
 
+global.addUser = function(uuid, userToAdd) {
+    global.users[uuid] = userToAdd;
+    global.refreshUserKeys();
+}
+
+global.removeUser = function(userToRemove) {
+    delete userToRemove;
+    global.refreshUserKeys();
+}
+
+global.refreshUserKeys = function() {
+    global.userKeys = Object.keys(global.users);
+}
+
+// Add the bot user
+global.addUser("bot", new User(3, "SillyBot", "bot", new Date().getTime()));
 // Set the bot's position on the map
-// First user will always be the bot
-global.users[0].location[0] = 50;
-global.users[0].location[1] = -32;
+global.users["bot"].location[0] = 50;
+global.users["bot"].location[1] = -32;
 
 global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.databasePort, config.databaseUsername, config.databasePassword, config.databaseName);
 
@@ -26,8 +40,8 @@ global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.d
 // TODO: Some way of informing bancho that a user has set a score so details can be pulled down quickly
 //       Possible solution, TCP socket between the score submit server and bancho? redis? (score submit is on a different server, redis probably wouldn't work)
 setInterval(() => {
-    for (let i = 0; i < global.users.length; i++) {
-        const User = global.users[i];
+    for (let i = 0; i < global.userKeys.length; i++) {
+        const User = global.users[global.userKeys[i]];
         if (User.id == 3) continue; // Ignore the bot
                                     // Bot: :(
 
@@ -78,7 +92,7 @@ global.httpRequestsPerLogInterval = 0;
 const logInterval = 10; // Secs
 
 setInterval(() => {
-    global.usersOnline = (global.users.length - 1);
+    global.usersOnline = (global.userKeys.length - 1);
     global.multiplayerMatches = [global.MultiplayerManager.matches.length, 0]; // TODO: Respect private matches
 
     fs.appendFile(
@@ -94,7 +108,7 @@ if (!fs.existsSync("tHMM.ds")) fs.writeFileSync("tHMM.ds", "0");
 global.totalHistoricalMultiplayerMatches = parseInt(fs.readFileSync("tHMM.ds").toString());
 global.getAndAddToHistoricalMultiplayerMatches = function() {
     global.totalHistoricalMultiplayerMatches++;
-    fs.writeFile("tHMM.ds", global.totalHistoricalMultiplayerMatches, () => {});
+    fs.writeFile("tHMM.ds", `${global.totalHistoricalMultiplayerMatches}`, () => {});
     return global.totalHistoricalMultiplayerMatches;
 }
 
