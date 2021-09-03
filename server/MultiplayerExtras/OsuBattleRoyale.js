@@ -17,7 +17,10 @@ module.exports = class {
 
         let everyoneHasTheSameScore = true;
         for (let i = 0; i < playerScores.length; i++) {
-            if (playerScores[i].score != lowestScore) everyoneHasTheSameScore = false;
+            if (playerScores[i].score != lowestScore) {
+                everyoneHasTheSameScore = false;
+                break;
+            }
         }
 
         // Everyone has the same score, we don't need to kick anyone
