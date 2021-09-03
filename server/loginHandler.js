@@ -1,6 +1,6 @@
 const osu = require("osu-packet"),
       User = require("./User.js"),
-      { v4: uuid } = require('uuid'),
+      uuid = require("./util/shortUUID.js"),
       ahttp = require("./util/AsyncHttpRequest.js"),
       RequestType = require("./util/RequestType.json"),
       
