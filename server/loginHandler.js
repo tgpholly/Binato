@@ -2,6 +2,7 @@ const osu = require("osu-packet"),
       User = require("./User.js"),
       { v4: uuid } = require('uuid'),
       ahttp = require("./util/AsyncHttpRequest.js"),
+      RequestType = require("./util/RequestType.json"),
       
       getUserByUsername = require("./util/getUserByUsername.js"),
       getUserByToken = require("./util/getUserByToken.js"),
@@ -41,7 +42,7 @@ module.exports = async function(req, res, loginInfo) {
         userLocation = [0, 0];
     } else {
         // Get user's location using zxq
-        userLocationData = JSON.parse(await ahttp(`http://ip.zxq.co/${requestIP}`));
+        userLocationData = await ahttp(`http://ip.zxq.co/${requestIP}`, RequestType.JSON);
         userLocation = userLocationData.loc.split(",");
     }
 
