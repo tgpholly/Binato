@@ -3,6 +3,9 @@ const osu = require("osu-packet"),
 
 module.exports = function(CurrentUser, CurrentPacket) {
     const osuPacketWriter = new osu.Bancho.Writer;
+    const userSentTo = getUserByUsername(CurrentPacket.data.target);
+
+    if (userSentTo == null) return;
 
     osuPacketWriter.SendMessage({
         sendingClient: CurrentUser.username,
@@ -10,8 +13,6 @@ module.exports = function(CurrentUser, CurrentPacket) {
         target: CurrentUser.username,
         senderId: CurrentUser.id
     });
-
-    const userSentTo = getUserByUsername(CurrentPacket.data.target);
 
     // Write chat message to stream asociated with chat channel
     return userSentTo.addActionToQueue(osuPacketWriter.toBuffer);
