@@ -25,7 +25,14 @@ module.exports = async function(req, res, loginInfo) {
     }
 
     // Get users IP for getting location
-    let requestIP = req.get('X-Real-IP');
+    // Get cloudflare requestee IP first
+    let requestIP = req.get("cf-connecting-ip");
+
+    // Get IP of requestee since we are probably behind a reverse proxy
+    if (requestIP == null)
+        requestIP = req.get("X-Real-IP");
+
+    // Just get the requestee IP (we are not behind a reverse proxy)
     if (requestIP == null)
         requestIP = req.remote_addr;
 
