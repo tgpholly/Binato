@@ -15,19 +15,26 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
         case "!help":
             // This is terrible
             if (args.length == 1) {
-                responseMessage = "Commands:" +
+                responseMessage = "Commands with an * next to them have a sub help section" +
                                   "\n!help - Shows this message" +
                                   "\n!roll - Rolls a random number or a number between 0 and a given number" +
-                                  "\n  -  Submenus:" +
-                                  "\n      mp - Shows information about all multiplayer commands" + 
-                                  "\n      admin - Shows information about all admin commands";
+                                  "\n!ranking* - Sets your perfered ranking type" +
+                                  "\n!mp* - Shows information about all multiplayer commands" + 
+                                  "\n!admin* - Shows information about all admin commands";
             } else {
                 switch (args[1]) {
+                    case "ranking":
+                        responseMessage = "Ranking Commands:" +
+                                          "\n!ranking pp - Sets your ranking type to pp" +
+                                          "\n!ranking score - Sets your ranking type to score" +
+                                          "\n!ranking acc - Sets your ranking type to accuracy";
+                    break;
+
                     case "mp":
                         responseMessage = "Multiplayer Commands:" +
                                           "\n!mp start - Starts a multiplayer match with a delay" +
                                           "\n!mp abort - Aborts the currently running multiplayer match" +
-                                          "\n!mp obr   - Enables Battle Royale mode";
+                                          "\n!mp obr - Enables Battle Royale mode";
                     break;
 
                     case "admin":
@@ -37,6 +44,32 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
 
                     default:
                         break;
+                }
+            }
+        break;
+
+        case "!ranking":
+            if (args.length == 1) {
+                
+            } else {
+                switch (args[1]) {
+                    case "pp":
+                        responseMessage = "Set ranking mode to pp";
+                        User.rankingMode = 0;
+                        User.getNewUserInformationFromDatabase();
+                    break;
+
+                    case "score":
+                        responseMessage = "Set ranking mode to score";
+                        User.rankingMode = 1;
+                        User.getNewUserInformationFromDatabase();
+                    break;
+
+                    case "acc":
+                        responseMessage = "Set ranking mode to accuracy";
+                        User.rankingMode = 2;
+                        User.getNewUserInformationFromDatabase();
+                    break;
                 }
             }
         break;
