@@ -27,6 +27,8 @@ module.exports = function(CurrentUser, CurrentPacket) {
         return;
     }
 
+    global.consoleHelper.printChat(`${CurrentUser.username} in ${CurrentPacket.data.target} sent: ${CurrentPacket.data.message}`);
+
     const osuPacketWriter = new osu.Bancho.Writer;
     osuPacketWriter.SendMessage({
         sendingClient: CurrentUser.username,
