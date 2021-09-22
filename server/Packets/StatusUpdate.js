@@ -25,7 +25,7 @@ module.exports = function(currentUser, id = 0, sendImmidiate = true) {
         playCount: User.playCount,
         totalScore: User.totalScore,
         rank: User.rank, 
-        performance: (currentUser.rankingMode == 0 ? User.pp : 0)
+        performance: (User.rankingMode == 0 ? User.pp : 0)
     };
 
     osuPacketWriter.HandleOsuUpdate(UserStatusObject);
