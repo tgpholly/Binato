@@ -1,14 +1,16 @@
 console.clear();
 
+// Globals
+global.consoleHelper = require("./consoleHelper.js");
+global.protocolVersion = 19;
+
 const app = require("express")(),
       fs  = require("fs"),
       config = require("./config.json");
 
 const debugMode = true;
 
-global.protocolVersion = 19;
 
-global.consoleHelper = require("./consoleHelper.js");
 
 const serverHandler = require("./server/serverHandler.js");
 
