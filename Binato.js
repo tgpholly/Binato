@@ -6,13 +6,13 @@ global.protocolVersion = 19;
 
 const app = require("express")(),
       fs  = require("fs"),
+      serverHandler = require("./server/serverHandler.js"),
       config = require("./config.json");
 
 const debugMode = true;
 
 
 
-const serverHandler = require("./server/serverHandler.js");
 
 app.use((req, res) => {
     req.packet = new Buffer.alloc(0);
