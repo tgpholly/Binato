@@ -1,6 +1,7 @@
 # Binato [![CodeFactor](https://www.codefactor.io/repository/github/tgpethan/binato/badge/master)](https://www.codefactor.io/repository/github/tgpethan/binato/overview/master)
 An implementation of osu!bancho in Javascript
 
+i'm sorry peppy
 <hr>
 
 ### Features:
@@ -47,8 +48,6 @@ On cuttingedge there is a `-devserver` launch flag which can be passed to the cl
 osu!.exe -devserver eusv.ml
 ```
  
- ## Things not included in this repo:
- ### Profile Pictures:
- Profile pictures can be handled by any standard HTTP server, there is also one I made for the task here: [Binato-ProfilePicture](https://github.com/tgpethan/Binato-ProfilePicture)
-
-i'm sorry peppy
+## Things not included in this repo:
+### Profile Pictures:
+Profile pictures can be handled by any standard HTTP server, there is also one I made for the task here: [Binato-ProfilePicture](https://github.com/tgpethan/Binato-ProfilePicture)
