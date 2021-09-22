@@ -42,7 +42,10 @@ In 2018 there were also new subdomains added which are:
  - ce.ppy.sh
 
 ### Now:
-Recently on cuttingedge the -devserver flag has been added which can be passed to the client to connect to a specific server.
+On cuttingedge there is a `-devserver` launch flag which can be passed to the client to connect to a specific server. Example usage:
+```
+osu!.exe -devserver eusv.ml
+```
  
  ## Things not included in this repo:
  ### Profile Pictures:
