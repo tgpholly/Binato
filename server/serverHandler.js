@@ -131,6 +131,8 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
       TourneyMatchJoinChannel = require("./Packets/TourneyMatchSpecialInfo.js"),
       TourneyMatchLeaveChannel = require("./Packets/TourneyLeaveMatchChannel.js");
 
+const emptyBuffer = Buffer.alloc(0);
+      
 // A class for managing everything multiplayer
 global.MultiplayerManager = new MultiplayerManager();
 
@@ -143,7 +145,7 @@ module.exports = async function(req, res) {
           requestData = req.packet;
     
     // Server's response & new client token
-    let responseData = new Buffer.alloc(0);
+    let responseData = emptyBuffer;
 
     // Check if the user is logged in
     if (requestTokenString == null) {
