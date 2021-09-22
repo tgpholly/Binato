@@ -9,9 +9,11 @@
 	"license": "MIT",
 	"dependencies": {
 		"chalk": "^4.1.0",
+		"compression": "^1.7.4",
 		"express": "^4.17.1",
 		"mysql": "^2.18.1",
 		"osu-packet": "^4.1.2",
+		"prom-client": "^13.2.0",
 		"request": "^2.88.2",
 		"uuid": "^8.3.2"
 	}

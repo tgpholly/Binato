@@ -5,14 +5,35 @@ global.consoleHelper = require("./consoleHelper.js");
 global.protocolVersion = 19;
 
 const app = require("express")(),
+      prometheusApp = require("express")(),
+      compression = require("compression"),
       fs  = require("fs"),
+      prom = require("prom-client"),
       serverHandler = require("./server/serverHandler.js"),
       config = require("./config.json");
 
 const debugMode = true;
 
+if (config.prometheusEnabled) {
+    const register = new prom.Registry();
 
+    register.setDefaultLabels({ app: "nodejs_binato" });
+    
+    prom.collectDefaultMetrics({ register });
+    
+    prometheusApp.get("*", async (req, res) => {
+        if (req.url.split("?")[0] != "/metrics") return res.status(404).end("");
+    
+        res.end(await register.metrics());
+    });
+    
+    prometheusApp.listen(config.prometheusPort, () => global.consoleHelper.printBancho(`Prometheus metrics listening at port ${config.prometheusPort}`));
+} else global.consoleHelper.printWarn("Prometheus is disabled!");
 
+if (config.compression) {
+    app.use(compression());
+    global.consoleHelper.printBancho("Gzip Compression is enabled.");
+} else global.consoleHelper.printWarn("Gzip Compression is disabled!");
 
 app.use((req, res) => {
     req.packet = new Buffer.alloc(0);
