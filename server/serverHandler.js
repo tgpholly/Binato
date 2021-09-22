@@ -1,6 +1,6 @@
 const osu = require("osu-packet"),
       fs = require("fs"),
-      packetIDs = require("./packetIDs.json"),
+      packetIDs = require("./packetIDs.js"),
       loginHandler = require("./loginHandler.js"),
       parseUserData = require("./util/parseUserData.js"),
       User = require("./User.js"),
