@@ -51,3 +51,8 @@ osu!.exe -devserver eusv.ml
 ## Things not included in this repo:
 ### Profile Pictures:
 Profile pictures can be handled by any standard HTTP server, there is also one I made for the task here: [Binato-ProfilePicture](https://github.com/tgpethan/Binato-ProfilePicture)
+
+## Support:
+While I don't support setting this up yourself (although this is pretty flexible as it stands right now) I will try my best to support this in the time I have.
+
+Just open a discussion and I will get around to it eventually.
