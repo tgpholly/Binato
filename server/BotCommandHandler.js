@@ -50,7 +50,7 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
 
         case "!ranking":
             if (args.length == 1) {
-                
+                responseMessage = "You need to select a ranking mode! use \"!help ranking\" to see the options.";
             } else {
                 switch (args[1]) {
                     case "pp":
