@@ -14,7 +14,7 @@ module.exports = function(CurrentUser) {
     // Remove user from user list
     global.removeUser(CurrentUser);
 
-    const osuPacketWriter = new osu.Bancho.Writer;
+    const osuPacketWriter = new osu.Bancho.Writer();
     osuPacketWriter.SendMessage({
         sendingClient: global.users["bot"].username,
         message: `User ${CurrentUser.username} has logged out.`,

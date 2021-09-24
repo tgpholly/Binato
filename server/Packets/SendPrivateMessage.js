@@ -3,13 +3,13 @@ const osu = require("osu-packet"),
 
 module.exports = function(CurrentUser, CurrentPacket) {
     const osuPacketWriter = new osu.Bancho.Writer;
-    const userSentTo = getUserByUsername(CurrentPacket.data.target);
+    const userSentTo = getUserByUsername(CurrentPacket.target);
 
     if (userSentTo == null) return;
 
     osuPacketWriter.SendMessage({
         sendingClient: CurrentUser.username,
-        message: CurrentPacket.data.message,
+        message: CurrentPacket.message,
         target: CurrentUser.username,
         senderId: CurrentUser.id
     });

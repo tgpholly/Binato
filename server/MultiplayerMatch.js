@@ -142,7 +142,7 @@ module.exports = class {
         }
     }
 
-    updateMatch(MatchData) {
+    updateMatch(MatchUser, MatchData) {
         // Update match with new data
         this.inProgress = MatchData.inProgress;
 
@@ -221,7 +221,7 @@ module.exports = class {
         global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
     }
 
-    setReadyState(MatchUser, ReadyState) {
+    setStateReady(MatchUser) {
         // Get the match the user is in
         const osuPacketWriter = new osu.Bancho.Writer;
 
@@ -230,9 +230,29 @@ module.exports = class {
             const slot = this.slots[i];
             // Check if the player in this slot is this user
             if (slot.playerId == MatchUser.id) {
-                // Turn on or off the user's ready state
-                if (ReadyState) slot.status = 8; // Ready
-                else slot.status = 4; // Not Ready
+                // Turn on the user's ready state
+                slot.status = 8; // Ready
+                break;
+            }
+        }
+
+        osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
+
+        // Send this update to all users in the stream
+        global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+    }
+
+    setStateNotReady(MatchUser) {
+        // Get the match the user is in
+        const osuPacketWriter = new osu.Bancho.Writer;
+
+        // Loop though all slots in the match
+        for (let i = 0; i < this.slots.length; i++) {
+            const slot = this.slots[i];
+            // Check if the player in this slot is this user
+            if (slot.playerId == MatchUser.id) {
+                // Turn off the user's ready state
+                slot.status = 4; // Not Ready
                 break;
             }
         }
@@ -364,7 +384,7 @@ module.exports = class {
         }
     }
 
-    transferHost(SlotIDToTransferTo) {
+    transferHost(MatchUser, SlotIDToTransferTo) {
         const osuPacketWriter = new osu.Bancho.Writer;
 
         // Set the lobby's host to the new user

@@ -132,7 +132,7 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
       TourneyMatchLeaveChannel = require("./Packets/TourneyLeaveMatchChannel.js");
 
 const emptyBuffer = Buffer.alloc(0);
-      
+
 // A class for managing everything multiplayer
 global.MultiplayerManager = new MultiplayerManager();
 
@@ -169,7 +169,7 @@ module.exports = async function(req, res) {
                 for (let i = 0; i < PacketData.length; i++) {
                     // Get current packet
                     let CurrentPacket = PacketData[i];
-                    
+
                     // This is getting a little big, swap this out for mapped functions?
                     // Would require some standardisation
                     switch (CurrentPacket.id) {
@@ -178,7 +178,7 @@ module.exports = async function(req, res) {
                         break;
 
                         case packetIDs.client_sendPublicMessage:
-                            SendPublicMessage(PacketUser, CurrentPacket);
+                            SendPublicMessage(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_logout:
@@ -206,7 +206,7 @@ module.exports = async function(req, res) {
                         break;
 
                         case packetIDs.client_sendPrivateMessage:
-                            SendPrivateMessage(PacketUser, CurrentPacket);
+                            SendPrivateMessage(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_joinLobby:
@@ -230,15 +230,15 @@ module.exports = async function(req, res) {
                         break;
 
                         case packetIDs.client_matchReady:
-                            PacketUser.currentMatch.setReadyState(PacketUser, true);
+                            PacketUser.currentMatch.setStateReady(PacketUser);
                         break;
 
                         case packetIDs.client_matchChangeSettings:
-                            PacketUser.currentMatch.updateMatch(CurrentPacket.data);
+                            PacketUser.currentMatch.updateMatch(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_matchNotReady:
-                            PacketUser.currentMatch.setReadyState(PacketUser, false);
+                            PacketUser.currentMatch.setStateNotReady(PacketUser);
                         break;
 
                         case packetIDs.client_partMatch:
@@ -263,7 +263,7 @@ module.exports = async function(req, res) {
                         break;
 
                         case packetIDs.client_matchTransferHost:
-                            PacketUser.currentMatch.transferHost(CurrentPacket.data);
+                            PacketUser.currentMatch.transferHost(PacketUser, CurrentPacket.data);
                         break;
 
                         case packetIDs.client_matchChangeMods:
@@ -331,7 +331,7 @@ module.exports = async function(req, res) {
                         break;
 
                         case packetIDs.client_userPresenceRequest:
-                            UserPresence(PacketUser, PacketUser.id);
+                            UserPresence(PacketUser, PacketUser.id); // Can't really think of a way to generalize this?
                         break;
 
                         default:
