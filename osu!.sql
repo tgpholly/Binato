@@ -46,7 +46,8 @@ CREATE TABLE `users_info` (
   `supporter` tinyint(1) NOT NULL,
   `web_session` varchar(64) NOT NULL,
   `verification_needed` tinyint(1) NOT NULL DEFAULT '0',
-  `password_change_required` tinyint(1) NOT NULL
+  `password_change_required` tinyint(1) NOT NULL,
+  `has_old_password` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `users_modes_info` (
@@ -91,6 +92,7 @@ CREATE TABLE `web_titles` (
   `title` varchar(32) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+
 ALTER TABLE `scores`
   ADD PRIMARY KEY (`id`);
 
@@ -111,8 +113,12 @@ ALTER TABLE `web_titles`
   ADD PRIMARY KEY (`id`);
 
 
+ALTER TABLE `scores`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=0;
+
 ALTER TABLE `users_info`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
+
 ALTER TABLE `users_modes_info`
   MODIFY `n` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=0;
 

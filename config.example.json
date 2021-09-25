@@ -7,5 +7,6 @@
 	"databasePort": 3306,
 	"databaseUsername": "username",
 	"databasePassword": "password",
-	"databaseName": "osu!"
+	"databaseName": "osu!",
+	"databaseKey": "examplekey"
 }
