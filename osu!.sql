@@ -47,7 +47,8 @@ CREATE TABLE `users_info` (
   `web_session` varchar(64) NOT NULL,
   `verification_needed` tinyint(1) NOT NULL DEFAULT '0',
   `password_change_required` tinyint(1) NOT NULL,
-  `has_old_password` tinyint(1) NOT NULL DEFAULT '0'
+  `has_old_password` tinyint(1) NOT NULL DEFAULT '0',
+  `away_message` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `users_modes_info` (

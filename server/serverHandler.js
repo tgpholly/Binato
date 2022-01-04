@@ -120,6 +120,7 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
 	  Spectator = require("./Spectator.js"),
 	  SendPrivateMessage = require("./Packets/SendPrivateMessage.js"),
 	  MultiplayerManager = require("./MultiplayerManager.js"),
+	  SetAwayMessage = require("./Packets/SetAwayMessage.js"),
 	  ChannelJoin = require("./Packets/ChannelJoin.js"),
 	  ChannelPart = require("./Packets/ChannelPart.js"),
 	  AddFriend = require("./Packets/AddFriend.js"),
@@ -297,6 +298,10 @@ module.exports = async function(req, res) {
 
 						case packetIDs.client_channelPart:
 							ChannelPart(PacketUser, CurrentPacket.data);
+						break;
+
+						case packetIDs.client_setAwayMessage:
+							SetAwayMessage(PacketUser, CurrentPacket.data);
 						break;
 
 						case packetIDs.client_friendAdd:
