@@ -24,7 +24,8 @@ module.exports = {
 		}
 
 		return null;
-	}
+	},
+	incorrectLoginResponse: incorrectLoginResponse
 }
 
 function incorrectLoginResponse() {
