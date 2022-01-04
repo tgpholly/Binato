@@ -166,13 +166,9 @@ module.exports = async function(req, res) {
 				const osuPacketReader = new osu.Client.Reader(requestData);
 				// Parse current bancho packet
 				const PacketData = osuPacketReader.Parse();
-				// Loop through parsed packet data
-				for (let i = 0; i < PacketData.length; i++) {
-					// Get current packet
-					let CurrentPacket = PacketData[i];
 
-					// This is getting a little big, swap this out for mapped functions?
-					// Would require some standardisation
+				// Go through each packet sent by the client
+				PacketData.forEach(CurrentPacket => {
 					switch (CurrentPacket.id) {
 						case packetIDs.client_changeAction:
 							ChangeAction(PacketUser, CurrentPacket.data);
@@ -192,7 +188,7 @@ module.exports = async function(req, res) {
 
 						case packetIDs.client_pong: // Pretty sure this is just a client ping
 													// so we probably don't do anything here
-						break;                      // It's probably just the client wanting to pull data down.
+						break;                      // It's probably just the client wanting to pull data down. (That's exactly what it is)
 
 						case packetIDs.client_startSpectating:
 							Spectator.startSpectatingUser(PacketUser, CurrentPacket.data);
@@ -346,7 +342,7 @@ module.exports = async function(req, res) {
 					// Concat current user queue into response data
 					responseData = Buffer.concat([responseData, PacketUser.queue], responseData.length + PacketUser.queue.length);
 					PacketUser.clearQueue();
-				}
+				});
 			} else {
 				// User's token is invlid, force a reconnect
 				consoleHelper.printBancho(`Forced client re-login (Token is invalid)`);
