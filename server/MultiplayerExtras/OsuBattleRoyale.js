@@ -9,7 +9,7 @@ module.exports = class {
 	}
 
 	onMatchFinished(playerScores = [{playerId:0,slotId:0,score:0,isCurrentlyFailed:false}]) {
-		let lowestScore = 9999999999999999;
+		let lowestScore = 8589934588;
 		for (let i = 0; i < playerScores.length; i++) {
 			const playerScore = playerScores[i];
 			if (playerScore.score < lowestScore) lowestScore = playerScore.score;
