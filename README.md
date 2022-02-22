@@ -47,13 +47,19 @@ In 2018 there were also new subdomains added which are:
  - c6.ppy.sh
  - ce.ppy.sh
 
-### Now:
-On cuttingedge there is a `-devserver` launch flag which can be passed to the client to connect to a specific server. Example usage:
+### Now (2022):
 There is a `-devserver` launch flag in the game which can be passed to the client to connect to a specific server. Example usage:
 ```
 osu!.exe -devserver eusv.ml
 ```
- 
+You need to have your subdomains structured like osu!'s with the exception of `c*.ppy.sh` domains. There is only one that is polled for `-devserver` usage.
+
+An example setup would be:
+ - osu.example.com (Score submit & web stuff)
+ - c.example.com (Bancho)
+ - a.example.com (Profile pictures)
 ## Things not included in this repo:
+### Website
+Binato's website is handled by [Binato-Website](https://github.com/tgpethan/Binato-Website)
 ### Profile Pictures:
 Profile pictures can be handled by any standard HTTP server, there is also one I made for the task here: [Binato-ProfilePicture](https://github.com/tgpethan/Binato-ProfilePicture)
