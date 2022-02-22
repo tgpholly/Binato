@@ -17,10 +17,14 @@ i'm sorry peppy
  
 ### [List of bugs](https://github.com/tgpethan/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
+<hr>
+
 ## Support:
 While I don't support setting this up yourself (although this is pretty flexible as it stands right now) I will try my best to support this in the time I have. Just make sure you have general knowlage of databases (MySQL in this case) and Node.js .
 
 Just open a issue and I will get around to it eventually.
+
+<hr>
 
 ## How to connect:
 
@@ -58,6 +62,8 @@ An example setup would be:
  - osu.example.com (Score submit & web stuff)
  - c.example.com (Bancho)
  - a.example.com (Profile pictures)
+<hr>
+
 ## Things not included in this repo:
 ### Website
 Binato's website is handled by [Binato-Website](https://github.com/tgpethan/Binato-Website)
