@@ -41,30 +41,11 @@ module.exports = class {
 		consoleHelper.printBancho(`BinatoStream is running! Checks running at a ${interval}ms interval`);
 	}
 
-	sendToStream(streamName, streamData, initUser = null) {
-		// Make sure the stream we are attempting to send to even exists
-		if (!this.doesStreamExist(streamName))
-			return consoleHelper.printBancho(`Did not send to stream [${streamName}] because it does not exist!`);
-
-		// Get the stream to send the data to
-		const currentStream = this.avaliableStreams[streamName];
-
-		// Loop through the users in this stream
-		for (let i = 0; i < currentStream.streamUsers.length; i++) {
-			// Get the user token of the user in the queue
-			const currentUserToken = currentStream.streamUsers[i];
-			// Make sure we don't send this data back to the user requesting this data to be sent
-			if (initUser != null && currentUserToken == initUser && (streamName[0] == "#" || streamName.includes("mp_"))) continue;
-			if (currentUserToken == 3) continue; // Skip if user is bot
-
-			// Get user object
-			const currentUser = getUserByToken(currentUserToken);
-			// Skip if user is nonexistant
-			if (currentUser == null) continue;
-
-			// Send stream data to user's own queue
-			currentUser.addActionToQueue(streamData);
-		}
+	removeStream(streamName) {
+		try {
+			delete this.avaliableStreams[streamName];
+			this.avaliableStreamKeys = Object.keys(this.avaliableStreams);
+		} catch (e) { consoleHelper.printError(`Was not able to remove stream [${streamName}]`) }
 	}
 
 	addUserToStream(streamName, userToken) {
@@ -113,6 +94,32 @@ module.exports = class {
 		} catch (e) { consoleHelper.printBancho(`Can't Remove user [${userToken}] from stream ${streamName}`); }
 	}
 
+	sendToStream(streamName, streamData, initUser = null) {
+		// Make sure the stream we are attempting to send to even exists
+		if (!this.doesStreamExist(streamName))
+			return consoleHelper.printBancho(`Did not send to stream [${streamName}] because it does not exist!`);
+
+		// Get the stream to send the data to
+		const currentStream = this.avaliableStreams[streamName];
+
+		// Loop through the users in this stream
+		for (let i = 0; i < currentStream.streamUsers.length; i++) {
+			// Get the user token of the user in the queue
+			const currentUserToken = currentStream.streamUsers[i];
+			// Make sure we don't send this data back to the user requesting this data to be sent
+			if (initUser != null && currentUserToken == initUser && (streamName[0] == "#" || streamName.includes("mp_"))) continue;
+			if (currentUserToken == 3) continue; // Skip if user is bot
+
+			// Get user object
+			const currentUser = getUserByToken(currentUserToken);
+			// Skip if user is nonexistant
+			if (currentUser == null) continue;
+
+			// Send stream data to user's own queue
+			currentUser.addActionToQueue(streamData);
+		}
+	}
+
 	doesStreamExist(streamName) {
 		return this.avaliableStreamKeys.includes(streamName);
 	}
@@ -125,12 +132,5 @@ module.exports = class {
 	isUserInStream(streamName, userToken) {
 		if (this.avaliableStreams[streamName].streamUsers.includes(userToken)) return true;
 		else return false;
-	}
-
-	removeStream(streamName) {
-		try {
-			delete this.avaliableStreams[streamName];
-			this.avaliableStreamKeys = Object.keys(this.avaliableStreams);
-		} catch (e) { consoleHelper.printError(`Was not able to remove stream [${streamName}]`) }
 	}
 }
