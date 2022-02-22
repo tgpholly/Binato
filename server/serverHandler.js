@@ -80,26 +80,6 @@ for (let i = 0; i < global.channels.length; i++) {
 // Add a stream for the multiplayer lobby
 global.StreamsHandler.addStream("multiplayer_lobby", false);
 
-// Server stats
-global.usersOnline = 0;
-global.multiplayerMatches = [0, 0]
-global.httpRequestsPerLogInterval = 0;
-
-const logInterval = 10; // Secs
-
-setInterval(() => {
-	global.usersOnline = (global.userKeys.length - 1);
-	global.multiplayerMatches = [global.MultiplayerManager.matches.length, 0]; // TODO: Respect private matches
-
-	fs.appendFile(
-		"server-stats.log",
-		`${global.usersOnline}|${global.multiplayerMatches[0]},${global.multiplayerMatches[1]}|${global.httpRequestsPerLogInterval}|${Date.now()}@`,
-		() => {}
-	);
-
-	global.httpRequestsPerLogInterval = 0;
-}, logInterval * 1000);
-
 if (!fs.existsSync("tHMM.ds")) fs.writeFileSync("tHMM.ds", "0");
 global.totalHistoricalMultiplayerMatches = parseInt(fs.readFileSync("tHMM.ds").toString());
 global.getAndAddToHistoricalMultiplayerMatches = function() {
@@ -132,9 +112,6 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
 global.MultiplayerManager = new MultiplayerManager();
 
 module.exports = async function(req, res) {
-	// Add to requests for logging
-	global.httpRequestsPerLogInterval++;
-
 	// Get the client's token string and request data
 	const requestTokenString = req.header("osu-token"),
 		  requestData = req.packet;
