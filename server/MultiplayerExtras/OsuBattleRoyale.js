@@ -2,82 +2,96 @@ const osu = require("osu-packet"),
 	  MultiplayerMatch = require("../MultiplayerMatch.js"),
 	  getUserById = require("../util/getUserById.js");
 
+function sameScoreCheck(playerScores = [{playerId:0,slotId:0,score:0,isCurrentlyFailed:false}], lowestScore = 0) {
+	for (let playerScore of playerScores) {
+		// All players don't have the same score
+		if (playerScore.score != lowestScore || playerScore.isCurrentlyFailed)
+			return false;
+	}
+
+	return true;
+}
+
+function kickLowScorers(playerScores = [{playerId:0,slotId:0,score:0,isCurrentlyFailed:false}], MultiplayerMatch) {
+	for (let playerScore of playerScores) {
+		// Kick players if they have the lowest score or they are in a failed state
+		if (playerScore.score == lowestScore || playerScore.isCurrentlyFailed) {
+			let osuPacketWriter = new osu.Bancho.Writer;
+			// Get the slot this player is in
+			const slot = MultiplayerMatch.slots[playerScore.slotId];
+			// Get the kicked player's user class
+			const kickedPlayer = getUserById(slot.playerId);
+			// Remove the kicked player's referance to the slot they were in
+			kickedPlayer.matchSlotId = -1;
+			// Lock the slot the kicked player was in
+			slot.playerId = -1;
+			slot.status = 2;
+			// Remove the kicked player from the match's stream
+			global.StreamsHandler.removeUserFromStream(MultiplayerMatch.matchStreamName, kickedPlayer.uuid);
+			global.StreamsHandler.removeUserFromStream(MultiplayerMatch.matchChatStreamName, kickedPlayer.uuid);
+			// Remove the kicked player's referance this this match
+			kickedPlayer.currentMatch = null;
+
+			// Inform the kicked user's client that they were kicked
+			osuPacketWriter.MatchUpdate(MultiplayerMatch.createOsuMatchJSON());
+			osuPacketWriter.SendMessage({
+				sendingClient: global.users["bot"].username,
+				message: "You were eliminated from the match!",
+				target: global.users["bot"].username,
+				senderId: global.users["bot"].id
+			});
+
+			kickedPlayer.addActionToQueue(osuPacketWriter.toBuffer);
+
+			osuPacketWriter = new osu.Bancho.Writer;
+			
+			osuPacketWriter.SendMessage({
+				sendingClient: global.users["bot"].username,
+				message: `${kickedPlayer.username} was eliminated from the match!`,
+				target: "#multiplayer",
+				senderId: global.users["bot"].id
+			});
+
+			global.StreamsHandler.sendToStream(MultiplayerMatch.matchChatStreamName, osuPacketWriter.toBuffer, null);
+		}
+	}
+}
+
+function getRemainingPlayerCount(playerScores = [{playerId:0,slotId:0,score:0,isCurrentlyFailed:false}], MultiplayerMatch) {
+	let numberOfPlayersRemaining = 0;
+	for (let playerScore of playerScores) {
+		const slot = MultiplayerMatch.slots[playerScore.slotId];
+
+		if (slot.playerId !== -1 && slot.status !== 2) {
+			numberOfPlayersRemaining++;
+		}
+	}
+
+	return numberOfPlayersRemaining;
+}
+
 module.exports = class {
-	constructor(MultiplayerMatchClass = new MultiplayerMatch()) {
+	constructor(MultiplayerMatchClass = new MultiplayerMatch) {
 		this.name = "osu! Battle Royale";
 		this.MultiplayerMatch = MultiplayerMatchClass;
 	}
 
 	onMatchFinished(playerScores = [{playerId:0,slotId:0,score:0,isCurrentlyFailed:false}]) {
 		let lowestScore = 8589934588;
+		// Find the lowest score
 		for (let i = 0; i < playerScores.length; i++) {
 			const playerScore = playerScores[i];
 			if (playerScore.score < lowestScore) lowestScore = playerScore.score;
 		}
 
-		let everyoneHasTheSameScore = true;
-		for (let i = 0; i < playerScores.length; i++) {
-			if (playerScores[i].score != lowestScore) {
-				everyoneHasTheSameScore = false;
-				break;
-			}
-		}
-
-		// Everyone has the same score, we don't need to kick anyone
-		if (everyoneHasTheSameScore) return;
+		// Check if everyone has the same score, we don't need to kick anyone if they do.
+		if (sameScoreCheck(playerScores)) return;
 
 		// Kick everyone with the lowest score
-		for (let i = 0; i < playerScores.length; i++) {
-			// Kick players if they have the lowest score or they are in a failed state
-			if (playerScores[i].score == lowestScore || playerScores[i].isCurrentlyFailed) {
-				let osuPacketWriter = new osu.Bancho.Writer;
-				// Get the slot this player is in
-				const slot = this.MultiplayerMatch.slots[playerScores[i].slotId];
-				// Get the kicked player's user class
-				const kickedPlayer = getUserById(slot.playerId);
-				// Remove the kicked player's referance to the slot they were in
-				kickedPlayer.matchSlotId = -1;
-				// Lock the slot the kicked player was in
-				slot.playerId = -1;
-				slot.status = 2;
-				// Remove the kicked player from the match's stream
-				global.StreamsHandler.removeUserFromStream(this.MultiplayerMatch.matchStreamName, kickedPlayer.uuid);
-				global.StreamsHandler.removeUserFromStream(this.MultiplayerMatch.matchChatStreamName, kickedPlayer.uuid);
-				// Remove the kicked player's referance this this match
-				kickedPlayer.currentMatch = null;
+		kickLowScorers(playerScores, this.MultiplayerMatch);
 
-				// Inform the kicked user's client that they were kicked
-				osuPacketWriter.MatchUpdate(this.MultiplayerMatch.createOsuMatchJSON());
-				osuPacketWriter.SendMessage({
-					sendingClient: global.users["bot"].username,
-					message: "You were eliminated from the match!",
-					target: global.users["bot"].username,
-					senderId: global.users["bot"].id
-				});
-
-				kickedPlayer.addActionToQueue(osuPacketWriter.toBuffer);
-
-				osuPacketWriter = new osu.Bancho.Writer;
-				
-				osuPacketWriter.SendMessage({
-					sendingClient: global.users["bot"].username,
-					message: `${kickedPlayer.username} was eliminated from the match!`,
-					target: "#multiplayer",
-					senderId: global.users["bot"].id
-				});
-
-				global.StreamsHandler.sendToStream(this.MultiplayerMatch.matchChatStreamName, osuPacketWriter.toBuffer, null);
-			}
-		}
-
-		let numberOfPlayersRemaining = 0;
-		for (let i = 0; i < playerScores.length; i++) {
-			const slot = this.MultiplayerMatch.slots[playerScores[i].slotId];
-
-			if (slot.playerId !== -1 && slot.status !== 2) {
-				numberOfPlayersRemaining++;
-			}
-		}
+		// Get number of players remaining
+		let numberOfPlayersRemaining = numberOfPlayersRemaining(playerScores, this.MultiplayerMatch);
 
 		let playerClassContainer = null;
 		let remainingWriterContainer = null;
@@ -118,11 +132,9 @@ module.exports = class {
 				});
 				playerClassContainer.addActionToQueue(remainingWriterContainer.toBuffer);
 			break;
-
-			default:
-				break;
 		}
 
+		// Update match for players in the match
 		this.MultiplayerMatch.sendMatchUpdate();
 		// Update the match listing for users in the multiplayer lobby
 		global.MultiplayerManager.updateMatchListing();
