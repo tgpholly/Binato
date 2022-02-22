@@ -66,7 +66,7 @@ app.use((req, res) => {
 				if (req.headers["host"].split(".")[0][0] == "c")
 					serverHandler(req, res);
 				else
-					res.status(400).send("400 | Bad Request!<br>Binato only accepts post requests on bancho subdomains.<hr>Binato");
+					res.status(400).send("400 | Bad Request!<br>Binato only accepts post requests on Bancho subdomains.<hr>Binato");
 			break;
 
 			default:
