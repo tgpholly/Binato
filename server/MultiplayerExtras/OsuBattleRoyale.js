@@ -91,7 +91,7 @@ module.exports = class {
 		kickLowScorers(playerScores, this.MultiplayerMatch);
 
 		// Get number of players remaining
-		let numberOfPlayersRemaining = numberOfPlayersRemaining(playerScores, this.MultiplayerMatch);
+		let numberOfPlayersRemaining = getRemainingPlayerCount(playerScores, this.MultiplayerMatch);
 
 		let playerClassContainer = null;
 		let remainingWriterContainer = null;
