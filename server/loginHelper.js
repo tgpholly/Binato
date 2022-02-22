@@ -34,11 +34,9 @@ function incorrectLoginResponse() {
 	return [
 		osuPacketWriter.toBuffer,
 		{
-			'cho-token': 'No',
 			'cho-protocol': global.protocolVersion,
 			'Connection': 'keep-alive',
 			'Keep-Alive': 'timeout=5, max=100',
-			'Content-Type': 'text/html; charset=UTF-8'
 		}
 	];
 }
@@ -50,11 +48,9 @@ function requiredPWChangeResponse() {
 	return [
 		osuPacketWriter.toBuffer,
 		{
-			'cho-token': 'No',
 			'cho-protocol': global.protocolVersion,
 			'Connection': 'keep-alive',
 			'Keep-Alive': 'timeout=5, max=100',
-			'Content-Type': 'text/html; charset=UTF-8'
 		}
 	];
 }

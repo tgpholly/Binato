@@ -22,6 +22,8 @@ module.exports = async function(req, res, loginInfo) {
 	// Check login
 	const loginCheck = await loginHelper.checkLogin(loginInfo);
 	if (loginCheck != null) {
+		res.removeHeader('X-Powered-By');
+		res.removeHeader('Date');
 		res.writeHead(200, loginCheck[1]);
 		return res.end(loginCheck[0]);
 	}
@@ -143,13 +145,14 @@ module.exports = async function(req, res, loginInfo) {
 
 		osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
 
+		res.removeHeader('X-Powered-By');
+		res.removeHeader('Date');
 		// Complete login
 		res.writeHead(200, {
 			"cho-token": NewUser.uuid,
 			"cho-protocol": global.protocolVersion,
 			"Connection": "keep-alive",
 			"Keep-Alive": "timeout=5, max=100",
-			"Content-Type": "text/html; charset=UTF-8"
 		});
 		res.end(osuPacketWriter.toBuffer, () => {
 			consoleHelper.printBancho(`User login finished, took ${Date.now() - loginStartTime}ms. [User: ${loginInfo.username}]`);
