@@ -51,7 +51,6 @@ setInterval(() => {
 }, 10000);
 
 // An array containing the last 15 messages in chat
-// TODO: Bother making this
 global.chatHistory = [];
 global.addChatMessage = function(msg) {
 	if (global.chatHistory.length == 15) {
@@ -65,7 +64,6 @@ global.addChatMessage = function(msg) {
 global.StreamsHandler = new Streams();
 
 // An array containing all chat channels
-// TODO: Send user chat channels and not have osu! crash
 global.channels = [
 	{ channelName:"#osu", channelTopic:"The main channel", channelUserCount: 0, locked: false },
 	{ channelName:"#userlog", channelTopic:"Log about stuff doing go on yes very", channelUserCount: 0, locked: false },
