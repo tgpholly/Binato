@@ -345,6 +345,7 @@ module.exports = async function(req, res) {
 					}
 
 					// Concat current user queue into response data
+					// NOTE: NEVER EVER remove this buffer concat. For some reason the client freaks out if it's not there.
 					responseData = Buffer.concat([responseData, PacketUser.queue], responseData.length + PacketUser.queue.length);
 					PacketUser.clearQueue();
 				});
