@@ -18,9 +18,9 @@ i'm sorry peppy
 ### [List of bugs](https://github.com/tgpethan/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
 ## Support:
-While I don't support setting this up yourself (although this is pretty flexible as it stands right now) I will try my best to support this in the time I have. Just make sure you have general knowlage of databases (MySQL in this case) and javascript.
+While I don't support setting this up yourself (although this is pretty flexible as it stands right now) I will try my best to support this in the time I have. Just make sure you have general knowlage of databases (MySQL in this case) and Node.js .
 
-Just open a discussion and I will get around to it eventually.
+Just open a issue and I will get around to it eventually.
 
 ## How to connect:
 
