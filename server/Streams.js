@@ -45,7 +45,10 @@ module.exports = class {
 		try {
 			delete this.avaliableStreams[streamName];
 			this.avaliableStreamKeys = Object.keys(this.avaliableStreams);
-		} catch (e) { consoleHelper.printError(`Was not able to remove stream [${streamName}]`) }
+		} catch (e) {
+			consoleHelper.printError(`Was not able to remove stream [${streamName}]`);
+			console.error(e);
+		}
 	}
 
 	addUserToStream(streamName, userToken) {
@@ -91,7 +94,10 @@ module.exports = class {
 			// Remove user from stream's user list
 			this.avaliableStreams[streamName].streamUsers.splice(userCurrentIndex, 1);
 			consoleHelper.printBancho(`Removed user [${userToken}] from stream ${streamName}`);
-		} catch (e) { consoleHelper.printBancho(`Can't Remove user [${userToken}] from stream ${streamName}`); }
+		} catch (e) {
+			consoleHelper.printBancho(`Can't Remove user [${userToken}] from stream ${streamName}`);
+			console.error(e);
+		}
 	}
 
 	sendToStream(streamName, streamData, initUser = null) {
