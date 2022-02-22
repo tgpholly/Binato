@@ -49,6 +49,7 @@ In 2018 there were also new subdomains added which are:
 
 ### Now:
 On cuttingedge there is a `-devserver` launch flag which can be passed to the client to connect to a specific server. Example usage:
+There is a `-devserver` launch flag in the game which can be passed to the client to connect to a specific server. Example usage:
 ```
 osu!.exe -devserver eusv.ml
 ```
