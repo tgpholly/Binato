@@ -10,8 +10,6 @@ const app = require("express")(),
 	  serverHandler = require("./server/serverHandler.js"),
 	  config = require("./config.json");
 
-const debugMode = true;
-
 if (config.prometheusEnabled) {
 	// We only need to require this if prom metrics are on.
 	const prom = require("prom-client");
@@ -42,14 +40,8 @@ app.use((req, res) => {
 	req.on("end", () => {
 		switch (req.method) {
 			case "GET":
-				if (req.url == "/" || req.url == "/index.html" || req.url == "/index.html") {
-					fs.readFile("./web/serverPage.html", (err, data) => {
-						if (err) throw err;
-						
-						if (debugMode) data = data.toString().replace("|isdebug?|", '<b style="color:red;">DEBUG</b>');
-						else data = data.toString().replace("|isdebug?|", '');
-						res.send(data);
-					});
+				if (req.url == "/" || req.url == "/index.html" || req.url == "/index") {
+					res.sendFile(`${__dirname}/web/serverPage.html`);
 				} else if (req.url == "/chat") {
 					fs.readFile("./web/chatPageTemplate.html", (err, data) => {
 						if (err) throw err;
