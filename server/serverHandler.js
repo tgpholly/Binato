@@ -357,13 +357,16 @@ module.exports = async function(req, res) {
 		} catch (e) {
 			console.error(e);
 		} finally {
-			// Send the prepared packet to the client
+			// Only send the headers that we absolutely have to
+			res.removeHeader('X-Powered-By');
+			res.removeHeader('Date');
 			res.writeHead(200, {
 				"cho-protocol": global.protocolVersion,
+				// Nice to have
 				"Connection": "keep-alive",
 				"Keep-Alive": "timeout=5, max=100",
-				"Content-Type": "text/html; charset=UTF-8"
 			});
+			// Send the prepared packet(s) to the client
 			res.end(responseData);
 		}
 	}
