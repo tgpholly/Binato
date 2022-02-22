@@ -50,7 +50,7 @@ module.exports = function(CurrentUser, CurrentPacket) {
 	// Write chat message to stream asociated with chat channel
 	global.StreamsHandler.sendToStream(CurrentPacket.target, osuPacketWriter.toBuffer, CurrentUser.uuid);
 	if (CurrentPacket.target == "#osu")
-		global.addChatMessage(`${CurrentUser.username}: ${CurrentPacket.message}`);
+		global.addChatMessage(`${CurrentUser.username}: ${CurrentPacket.message.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}`);
 		
 	botCommandHandler(CurrentUser, CurrentPacket.message, CurrentPacket.target);
 	return;
