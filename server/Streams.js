@@ -21,26 +21,6 @@ module.exports = class {
 		consoleHelper.printBancho(`Added stream [${streamName}]`);
 	}
 
-	// Checks if a stream has no users in it
-	streamChecker(interval = 5000) {
-		setInterval(() => {
-			// Get the names of all currently avaliable streams
-			const streams = global.StreamsHandler.getStreams();
-			// Loop through all streams
-			for (let i = 0; i < streams.length; i++) {
-				// Get the current stream
-				const currentStream = global.StreamsHandler.avaliableStreams[streams[i]];
-				// Check if the stream should be removed if there are no users in it
-				// And if the stream has no users in it
-				if (currentStream.removeIfEmpty && currentStream.streamUsers.length == 0) {
-					global.StreamsHandler.removeStream(streams[i]);
-					consoleHelper.printBancho(`Removed stream [${streams[i]}] There were no users in stream`);
-				}
-			}
-		}, interval);
-		consoleHelper.printBancho(`BinatoStream is running! Checks running at a ${interval}ms interval`);
-	}
-
 	removeStream(streamName) {
 		try {
 			delete this.avaliableStreams[streamName];
@@ -74,8 +54,10 @@ module.exports = class {
 		if (!this.doesStreamExist(streamName))
 			return consoleHelper.printBancho(`Did not remove user from stream [${streamName}] because it does not exist!`);
 
+		const stream = this.avaliableStreams[streamName];
+
 		// Make sure the user isn't already in the stream
-		if (!this.avaliableStreams[streamName].streamUsers.includes(userToken))
+		if (!stream.streamUsers.includes(userToken))
 			return consoleHelper.printBancho(`Did not remove user from stream [${streamName}] because they are not in it!`);
 
 		// Make sure this isn't an invalid user (userId can't be lower than 1)
@@ -84,19 +66,24 @@ module.exports = class {
 		try {
 			// Find index of user to remove
 			let userCurrentIndex;
-			for (let i = 0; i < this.avaliableStreams[streamName].streamUsers.length; i++) {
-				if (userToken == this.avaliableStreams[streamName].streamUsers[i]) {
+			for (let i = 0; i < stream.streamUsers.length; i++) {
+				if (userToken == stream.streamUsers[i]) {
 					userCurrentIndex = i;
 					break;
 				}
 			}
 
 			// Remove user from stream's user list
-			this.avaliableStreams[streamName].streamUsers.splice(userCurrentIndex, 1);
+			stream.streamUsers.splice(userCurrentIndex, 1);
 			consoleHelper.printBancho(`Removed user [${userToken}] from stream ${streamName}`);
 		} catch (e) {
 			consoleHelper.printBancho(`Can't Remove user [${userToken}] from stream ${streamName}`);
 			console.error(e);
+		}
+
+		if (stream.removeIfEmpty && stream.streamUsers.length == 0) {
+			this.removeStream(stream);
+			consoleHelper.printBancho(`Removed stream [${streamName}] There were no users in stream`);
 		}
 	}
 

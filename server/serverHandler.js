@@ -82,9 +82,6 @@ for (let i = 0; i < global.channels.length; i++) {
 // Add a stream for the multiplayer lobby
 global.StreamsHandler.addStream("multiplayer_lobby", false);
 
-// Start stream checking interval
-global.StreamsHandler.streamChecker(5000);
-
 // Server stats
 global.usersOnline = 0;
 global.multiplayerMatches = [0, 0]
