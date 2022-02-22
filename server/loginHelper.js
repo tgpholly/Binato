@@ -43,7 +43,7 @@ function incorrectLoginResponse() {
 
 function requiredPWChangeResponse() {
 	const osuPacketWriter = new osu.Bancho.Writer;
-	osuPacketWriter.Announce("As part of migration to a new password system you are required to change your password. Please login on the website and change your password.");
+	osuPacketWriter.Announce("As part of migration to a new password system you are required to change your password. Please log in on the website and change your password.");
 	osuPacketWriter.LoginReply(-1);
 	return [
 		osuPacketWriter.toBuffer,
