@@ -130,8 +130,6 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
 	  TourneyMatchJoinChannel = require("./Packets/TourneyMatchSpecialInfo.js"),
 	  TourneyMatchLeaveChannel = require("./Packets/TourneyLeaveMatchChannel.js");
 
-const emptyBuffer = Buffer.alloc(0);
-
 // A class for managing everything multiplayer
 global.MultiplayerManager = new MultiplayerManager();
 
@@ -143,8 +141,8 @@ module.exports = async function(req, res) {
 	const requestTokenString = req.header("osu-token"),
 		  requestData = req.packet;
 	
-	// Server's response & new client token
-	let responseData = emptyBuffer;
+	// Server's response
+	let responseData;
 
 	// Check if the user is logged in
 	if (requestTokenString == null) {
@@ -340,12 +338,10 @@ module.exports = async function(req, res) {
 							console.dir(CurrentPacket);
 						break;
 					}
-
-					// Concat current user queue into response data
-					// NOTE: NEVER EVER remove this buffer concat. For some reason the client freaks out if it's not there.
-					responseData = Buffer.concat([responseData, PacketUser.queue], responseData.length + PacketUser.queue.length);
-					PacketUser.clearQueue();
 				});
+
+				responseData = PacketUser.queue
+				PacketUser.clearQueue();
 			} else {
 				// User's token is invlid, force a reconnect
 				consoleHelper.printBancho(`Forced client re-login (Token is invalid)`);
@@ -359,7 +355,7 @@ module.exports = async function(req, res) {
 			res.removeHeader('Date');
 			res.writeHead(200, {
 				"cho-protocol": global.protocolVersion,
-				// Nice to have
+				// Nice to have :)
 				"Connection": "keep-alive",
 				"Keep-Alive": "timeout=5, max=100",
 			});
