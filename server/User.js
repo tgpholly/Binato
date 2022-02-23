@@ -6,7 +6,7 @@ module.exports = class {
 		this.username = username;
 		this.uuid = uuid;
 		this.connectTime = connectTime;
-		this.queue = new Buffer.alloc(0);
+		this.queue = Buffer.alloc(0);
 
 		// Binato specific
 		this.rankingMode = 0;
@@ -130,6 +130,6 @@ module.exports = class {
 
 	// Clears out the user's queue
 	clearQueue() {
-		this.queue = new Buffer.alloc(0);
+		this.queue = Buffer.alloc(0);
 	}
 }

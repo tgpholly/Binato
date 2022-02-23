@@ -35,7 +35,7 @@ if (config.compression) {
 } else consoleHelper.printWarn("Gzip Compression is disabled!");
 
 app.use((req, res) => {
-	req.packet = new Buffer.alloc(0);
+	req.packet = Buffer.alloc(0);
 	req.on("data", (chunk) => req.packet = Buffer.concat([req.packet, chunk], req.packet.length + chunk.length));
 	req.on("end", () => {
 		switch (req.method) {
