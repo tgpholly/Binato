@@ -109,7 +109,7 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
 			switch (args[1]) {
 				case "start":
 					if (args.length > 3) return;
-					if (`${parseInt(args[2])}` != "NaN") {
+					if (!isNaN(args[2])) {
 						User.currentMatch.matchStartCountdownActive = true;
 						let countdown = parseInt(args[2]);
 						let intervalRef = setInterval(() => {
