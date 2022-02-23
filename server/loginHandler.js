@@ -4,7 +4,6 @@ const osu = require("osu-packet"),
 	  ahttp = require("./util/AsyncHttpRequest.js"),
 	  RequestType = require("./util/RequestType.json"),
 	  consoleHelper = require("../consoleHelper.js"),
-	  
 	  // Packets
 	  getUserByUsername = require("./util/getUserByUsername.js"),
 	  getUserByToken = require("./util/getUserByToken.js"),
@@ -76,10 +75,12 @@ module.exports = async function(req, res, loginInfo) {
 	}
 
 	// Create user object
-	global.addUser(newClientToken, new User(userDB.id, loginInfo.username, newClientToken, Date.now(), isTourneyClient));
+	global.addUser(newClientToken, new User(userDB.id, loginInfo.username, newClientToken));
 
 	// Retreive the newly created user
 	const NewUser = getUserByToken(newClientToken);
+	// Set tourney client flag
+	NewUser.isTourneyUser = isTourneyClient;
 
 	// Get user's data from the database
 	NewUser.getNewUserInformationFromDatabase();

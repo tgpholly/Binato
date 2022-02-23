@@ -1,11 +1,17 @@
 const StatusUpdate = require("./Packets/StatusUpdate.js");
 
+const rankingModes = [
+	"pp_raw",
+	"ranked_score",
+	"avg_accuracy"
+];
+
 module.exports = class {
-	constructor(id, username, uuid, connectTime, isTourneyUser = false) {
+	constructor(id, username, uuid) {
 		this.id = id;
 		this.username = username;
 		this.uuid = uuid;
-		this.connectTime = connectTime;
+		this.connectTime = Date.now();
 		this.queue = Buffer.alloc(0);
 
 		// Binato specific
@@ -38,7 +44,7 @@ module.exports = class {
 		this.currentMatch = null;
 		this.matchSlotId = -1;
 
-		this.isTourneyUser = isTourneyUser;
+		this.isTourneyUser = false;
 	}
 
 	// Adds new actions to the user's queue
@@ -60,70 +66,48 @@ module.exports = class {
 	// Gets the user's score information from the database and caches it
 	async getNewUserInformationFromDatabase(forceUpdate = false) {
 		const userScoreDB = await global.DatabaseHelper.query(`SELECT * FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode} LIMIT 1`);
-		let userRankDB = null;
-		switch (this.rankingMode) {
-			case 0:
-				userRankDB = await global.DatabaseHelper.query(`SELECT user_id, pp_raw FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY pp_raw DESC`);
-			break;
-
-			case 1:
-				userRankDB = await global.DatabaseHelper.query(`SELECT user_id, ranked_score FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY ranked_score DESC`);
-			break;
-
-			case 2:
-				userRankDB = await global.DatabaseHelper.query(`SELECT user_id, avg_accuracy FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY avg_accuracy DESC`);
-			break;
-		}
+		const mappedRankingMode = rankingModes[this.rankingMode];
+		const userRankDB = await global.DatabaseHelper.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY ${mappedRankingMode} DESC`);
 
 		if (userScoreDB == null || userRankDB == null) throw "fuck";
 
+		// Handle "if we should update" checks for each rankingMode
 		let userScoreUpdate = false;
-		if (forceUpdate) {
-			userScoreUpdate = true;
-		} else {
-			switch (this.rankingMode) {
-				case 0:
-					if (this.pp != userScoreDB.pp_raw) {
-						userScoreUpdate = true;
-					}
+		switch (this.rankingMode) {
+			case 0:
+				if (this.pp != userScoreDB.pp_raw)
+					userScoreUpdate = true;
 				break;
-	
-				case 1:
-					if (this.rankedScore != userScoreDB.ranked_score) {
-						userScoreUpdate = true;
-					}
+
+			case 1:
+				if (this.rankedScore != userScoreDB.ranked_score)
+					userScoreUpdate = true;
 				break;
-	
-				case 2:
-					if (this.accuracy != userScoreDB.avg_accuracy) {
-						userScoreUpdate = true;
-					}
+
+			case 2:
+				if (this.accuracy != userScoreDB.avg_accuracy)
+					userScoreUpdate = true;
 				break;
-			}
 		}
 
 		this.rankedScore = userScoreDB.ranked_score;
 		this.totalScore = userScoreDB.total_score;
 		this.accuracy = userScoreDB.avg_accuracy;
 		this.playCount = userScoreDB.playcount;
+
+		// Fetch rank
 		for (let i = 0; i < userRankDB.length; i++) {
-			if (userRankDB[i]["user_id"] == this.id) this.rank = i + 1;
-		}
-		switch (this.rankingMode) {
-			case 0:
-				this.pp = userScoreDB.pp_raw;
-			break;
-
-			case 1:
-				this.pp = 0;
-			break;
-
-			case 2:
-				this.pp = 0;
-			break;
+			if (userRankDB[i]["user_id"] == this.id) {
+				this.rank = i + 1;
+				break;
+			}
 		}
 
-		if (userScoreUpdate) {
+		// Set PP to none if ranking mode is not PP
+		if (this.rankingMode == 0) this.pp = userScoreDB.pp_raw;
+		else this.pp = 0;
+
+		if (userScoreUpdate || forceUpdate) {
 			StatusUpdate(this, this.id);
 		}
 	}

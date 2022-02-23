@@ -29,13 +29,12 @@ global.refreshUserKeys = function() {
 }
 
 // Add the bot user
-global.addUser("bot", new User(3, "SillyBot", "bot", Date.now()));
+global.addUser("bot", new User(3, "SillyBot", "bot"));
 // Set the bot's position on the map
 global.users["bot"].location[0] = 50;
 global.users["bot"].location[1] = -32;
 
 global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.databasePort, config.databaseUsername, config.databasePassword, config.databaseName);
-
 
 // Start a loop that gets new data for users from the database for use on the user panel
 // TODO: Some way of informing bancho that a user has set a score so details can be pulled down quickly
