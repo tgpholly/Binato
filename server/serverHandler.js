@@ -20,6 +20,11 @@ global.addUser = function(uuid, userToAdd) {
 }
 
 global.removeUser = function(userToRemove) {
+	// This should be safe to do since we should be in a try-catch at all times
+	// I just want a trace of how this is happening.
+	if (userToRemove.uuid == "bot")
+		throw "Tried to remove the bot user!";
+
 	delete userToRemove;
 	global.refreshUserKeys();
 }
