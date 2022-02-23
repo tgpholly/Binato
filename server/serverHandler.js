@@ -9,35 +9,17 @@ const osu = require("osu-packet"),
 	  bakedResponses = require("./bakedResponses.js"),
 	  Streams = require("./Streams.js"),
 	  DatabaseHelperClass = require("./DatabaseHelper.js"),
+	  funkyArray = require("./util/funkyArray.js"),
 	  config = require("../config.json");
 
-global.users = {};
-global.userKeys = Object.keys(global.users);
-
-global.addUser = function(uuid, userToAdd) {
-	global.users[uuid] = userToAdd;
-	global.refreshUserKeys();
-}
-
-global.removeUser = function(userToRemove) {
-	// This should be safe to do since we should be in a try-catch at all times
-	// I just want a trace of how this is happening.
-	if (userToRemove.uuid == "bot")
-		throw "Tried to remove the bot user!";
-
-	delete userToRemove;
-	global.refreshUserKeys();
-}
-
-global.refreshUserKeys = function() {
-	global.userKeys = Object.keys(global.users);
-}
+// Users funkyArray for session storage
+global.users = new funkyArray();
 
 // Add the bot user
-global.addUser("bot", new User(3, "SillyBot", "bot"));
+global.botUser = global.users.add("bot", new User(3, "SillyBot", "bot"));
 // Set the bot's position on the map
-global.users["bot"].location[0] = 50;
-global.users["bot"].location[1] = -32;
+global.botUser.location[0] = 50;
+global.botUser.location[1] = -32;
 
 global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.databasePort, config.databaseUsername, config.databasePassword, config.databaseName);
 
@@ -45,8 +27,7 @@ global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.d
 // TODO: Some way of informing bancho that a user has set a score so details can be pulled down quickly
 //       Possible solution, TCP socket between the score submit server and bancho? redis? (score submit is on a different server, redis probably wouldn't work)
 setInterval(() => {
-	for (let i = 0; i < global.userKeys.length; i++) {
-		const User = global.users[global.userKeys[i]];
+	for (let User of global.users.getIterableItems()) {
 		if (User.id == 3) continue; // Ignore the bot
 									// Bot: :(
 

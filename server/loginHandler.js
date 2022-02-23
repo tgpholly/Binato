@@ -9,6 +9,7 @@ const osu = require("osu-packet"),
 	  getUserByToken = require("./util/getUserByToken.js"),
 	  countryHelper = require("./countryHelper.js"),
 	  loginHelper = require("./loginHelper.js"),
+	  Logout = require("./Packets/Logout.js"),
 	  UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
 	  UserPresence = require("./Packets/UserPresence.js"),
 	  StatusUpdate = require("./Packets/StatusUpdate.js");
@@ -65,20 +66,15 @@ module.exports = async function(req, res, loginInfo) {
 	// Make sure user is not already connected, kick off if so.
 	const checkForPreexistingUser = getUserByUsername(loginInfo.username);
 	if (checkForPreexistingUser != null && !isTourneyClient) {
-		for (let i = 0; i < global.userKeys.length; i++) {
-			const user = global.users[global.userKeys[i]];
-			// Make sure they are not a tourney user
-			if (!user.isTourneyUser && user.uuid != newClientToken) {
-				global.removeUser(user);
-			}
+		for (let user of global.users.getIterableItems()) {
+			// Log them out if they are not a tourney user
+			if (!user.isTourneyUser && user.uuid != newClientToken)
+				Logout(user);
 		}
 	}
 
-	// Create user object
-	global.addUser(newClientToken, new User(userDB.id, loginInfo.username, newClientToken));
-
 	// Retreive the newly created user
-	const NewUser = getUserByToken(newClientToken);
+	const NewUser = global.users.add(newClientToken, new User(userDB.id, loginInfo.username, newClientToken));
 	// Set tourney client flag
 	NewUser.isTourneyUser = isTourneyClient;
 

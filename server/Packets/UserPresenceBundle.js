@@ -5,8 +5,8 @@ module.exports = function(currentUser, sendImmidiate = true) {
 
 	let userIds = [];
 
-	for (let i = 0; i < global.userKeys.length; i++) {
-		userIds.push(global.users[global.userKeys[i]].id);
+	for (let user of global.users.getIterableItems()) {
+		userIds.push(user.id);
 	}
 
 	osuPacketWriter.UserPresenceBundle(userIds);

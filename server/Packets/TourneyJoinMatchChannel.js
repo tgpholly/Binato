@@ -7,9 +7,9 @@ module.exports = function(CurrentUser, MatchID) {
 	if (match != null) {
 
 		match.isTourneyMatch = true;
-		for (let i = 0; i < global.userKeys.length; i++) {
-			if (global.users[global.userKeys[i]].id == CurrentUser.id) {
-				match.tourneyClientUsers.push(global.users[global.userKeys[i]]);
+		for (let user of global.users.getIterableItems()) {
+			if (user.id == CurrentUser.id) {
+				match.tourneyClientUsers.push(user);
 			}
 		}
 

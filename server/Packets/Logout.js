@@ -13,14 +13,14 @@ module.exports = function(CurrentUser) {
 	}
 
 	// Remove user from user list
-	global.removeUser(CurrentUser);
+	global.users.remove(CurrentUser.uuid);
 
 	const osuPacketWriter = new osu.Bancho.Writer();
 	osuPacketWriter.SendMessage({
-		sendingClient: global.users["bot"].username,
+		sendingClient: global.botUser.username,
 		message: `User ${CurrentUser.username} has logged out.`,
 		target: "#userlog",
-		senderId: global.users["bot"].id
+		senderId: global.botUser.id
 	});
 	global.StreamsHandler.sendToStream("#userlog", osuPacketWriter.toBuffer);
 

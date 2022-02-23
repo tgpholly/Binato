@@ -35,10 +35,10 @@ function kickLowScorers(playerScores = [{playerId:0,slotId:0,score:0,isCurrently
 			// Inform the kicked user's client that they were kicked
 			osuPacketWriter.MatchUpdate(MultiplayerMatch.createOsuMatchJSON());
 			osuPacketWriter.SendMessage({
-				sendingClient: global.users["bot"].username,
+				sendingClient: global.botUser.username,
 				message: "You were eliminated from the match!",
-				target: global.users["bot"].username,
-				senderId: global.users["bot"].id
+				target: global.botUser.username,
+				senderId: global.botUser.id
 			});
 
 			kickedPlayer.addActionToQueue(osuPacketWriter.toBuffer);
@@ -46,10 +46,10 @@ function kickLowScorers(playerScores = [{playerId:0,slotId:0,score:0,isCurrently
 			osuPacketWriter = new osu.Bancho.Writer;
 			
 			osuPacketWriter.SendMessage({
-				sendingClient: global.users["bot"].username,
+				sendingClient: global.botUser.username,
 				message: `${kickedPlayer.username} was eliminated from the match!`,
 				target: "#multiplayer",
-				senderId: global.users["bot"].id
+				senderId: global.botUser.id
 			});
 
 			global.StreamsHandler.sendToStream(MultiplayerMatch.matchChatStreamName, osuPacketWriter.toBuffer, null);
@@ -111,10 +111,10 @@ module.exports = class {
 			case 0:
 				remainingWriterContainer = new osu.Bancho.Writer;
 				remainingWriterContainer.SendMessage({
-					sendingClient: global.users["bot"].username,
+					sendingClient: global.botUser.username,
 					message: "Everyone was eliminated from the match! Nobody wins.",
-					target: global.users["bot"].username,
-					senderId: global.users["bot"].id
+					target: global.botUser.username,
+					senderId: global.botUser.id
 				});
 				for (i = 0; i < playerScores.length; i++) {
 					playerClassContainer = getUserById(playerScores[i].playerId);
@@ -125,10 +125,10 @@ module.exports = class {
 			case 1:
 				remainingWriterContainer = new osu.Bancho.Writer;
 				remainingWriterContainer.SendMessage({
-					sendingClient: global.users["bot"].username,
+					sendingClient: global.botUser.username,
 					message: "You are the last one remaining, you win!",
-					target: global.users["bot"].username,
-					senderId: global.users["bot"].id
+					target: global.botUser.username,
+					senderId: global.botUser.id
 				});
 				playerClassContainer.addActionToQueue(remainingWriterContainer.toBuffer);
 			break;
