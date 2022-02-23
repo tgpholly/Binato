@@ -12,6 +12,7 @@ module.exports = class {
 		this.username = username;
 		this.uuid = uuid;
 		this.connectTime = Date.now();
+		this.timeoutTime = Date.now() + 30000;
 		this.queue = Buffer.alloc(0);
 
 		// Binato specific

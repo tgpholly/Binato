@@ -31,7 +31,13 @@ setInterval(() => {
 		if (User.id == 3) continue; // Ignore the bot
 									// Bot: :(
 
-		User.getNewUserInformationFromDatabase();
+		// Logout this user, they're clearly gone.
+		if (Date.now() >= User.timeoutTime)
+			Logout(User);
+		
+		// The user is still here
+		else
+			User.getNewUserInformationFromDatabase();
 	}
 }, 10000);
 
@@ -118,6 +124,9 @@ module.exports = async function(req, res) {
 
 			// Make sure the client's token isn't invalid
 			if (PacketUser != null) {
+				// Update the session timeout time
+				PacketUser.timeoutTime = Date.now() + 60000;
+
 				// Create a new osu! packet reader
 				const osuPacketReader = new osu.Client.Reader(requestData);
 				// Parse current bancho packet
