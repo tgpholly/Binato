@@ -57,19 +57,19 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
 					case "pp":
 						responseMessage = "Set ranking mode to pp";
 						User.rankingMode = 0;
-						User.getNewUserInformationFromDatabase();
+						User.updateUserInfo(true);
 					break;
 
 					case "score":
 						responseMessage = "Set ranking mode to score";
 						User.rankingMode = 1;
-						User.getNewUserInformationFromDatabase();
+						User.updateUserInfo(true);
 					break;
 
 					case "acc":
 						responseMessage = "Set ranking mode to accuracy";
 						User.rankingMode = 2;
-						User.getNewUserInformationFromDatabase();
+						User.updateUserInfo(true);
 					break;
 				}
 			}

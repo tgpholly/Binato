@@ -79,7 +79,7 @@ module.exports = async function(req, res, loginInfo) {
 	NewUser.isTourneyUser = isTourneyClient;
 
 	// Get user's data from the database
-	NewUser.getNewUserInformationFromDatabase();
+	NewUser.updateUserInfo();
 
 	try {
 		// Save the user's location to their class for later use

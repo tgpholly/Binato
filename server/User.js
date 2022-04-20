@@ -65,7 +65,7 @@ module.exports = class {
 	}
 
 	// Gets the user's score information from the database and caches it
-	async getNewUserInformationFromDatabase(forceUpdate = false) {
+	async updateUserInfo(forceUpdate = false) {
 		const userScoreDB = await global.DatabaseHelper.query(`SELECT * FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode} LIMIT 1`);
 		const mappedRankingMode = rankingModes[this.rankingMode];
 		const userRankDB = await global.DatabaseHelper.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY ${mappedRankingMode} DESC`);

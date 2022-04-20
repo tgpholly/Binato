@@ -34,10 +34,6 @@ setInterval(() => {
 		// Logout this user, they're clearly gone.
 		if (Date.now() >= User.timeoutTime)
 			Logout(User);
-		
-		// The user is still here
-		else
-			User.getNewUserInformationFromDatabase();
 	}
 }, 10000);
 
