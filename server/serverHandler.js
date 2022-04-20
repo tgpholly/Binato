@@ -6,6 +6,7 @@ const osu = require("osu-packet"),
 	  parseUserData = require("./util/parseUserData.js"),
 	  User = require("./User.js"),
 	  getUserFromToken = require("./util/getUserByToken.js"),
+	  getUserById = require("./util/getUserById.js"),
 	  bakedResponses = require("./bakedResponses.js"),
 	  Streams = require("./Streams.js"),
 	  DatabaseHelperClass = require("./DatabaseHelper.js"),
@@ -23,9 +24,38 @@ global.botUser.location[1] = -32;
 
 global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.databasePort, config.databaseUsername, config.databasePassword, config.databaseName);
 
-// Start a loop that gets new data for users from the database for use on the user panel
-// TODO: Some way of informing bancho that a user has set a score so details can be pulled down quickly
-//       Possible solution, TCP socket between the score submit server and bancho? redis? (score submit is on a different server, redis probably wouldn't work)
+async function subscribeToChannel(channelName = "", callback = function(message) {})  {
+	// Dup and connect new client for channel subscription (required)
+	const scoreSubmitUpdateClient = global.promClient.duplicate();
+	await scoreSubmitUpdateClient.connect();
+	// Subscribe to channel
+	await scoreSubmitUpdateClient.subscribe(channelName, callback);
+	consoleHelper.printBancho(`Subscribed to ${channelName} channel`);
+}
+
+// Do redis if it's enabled
+if (config.redisEnabled) {
+	(async () => {
+		const { createClient } = require("redis");
+		global.promClient = createClient({
+			url: `redis://${config.redisPassword.replaceAll(" ", "") == "" ? "" : `${config.redisPassword}@`}${config.redisAddress}:${config.redisPort}/${config.redisDatabase}`
+		});
+
+		global.promClient.on('error', e => consoleHelper.printBancho(e));
+
+		const connectionStartTime = Date.now();
+		await global.promClient.connect();
+		consoleHelper.printBancho(`Connected to redis server. Took ${Date.now() - connectionStartTime}ms`);
+
+		// Score submit update channel
+		subscribeToChannel("binato:update_user_stats", (message) => {
+			// Update user info
+			getUserById(parseInt(message)).updateUserInfo(true);
+		});
+	})();
+} else consoleHelper.printWarn("Redis is disabled!");
+
+// User timeout interval
 setInterval(() => {
 	for (let User of global.users.getIterableItems()) {
 		if (User.id == 3) continue; // Ignore the bot
