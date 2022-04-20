@@ -2,6 +2,8 @@ const osu = require("osu-packet"),
 	  consoleHelper = require("../../consoleHelper.js");
 
 module.exports = function(CurrentUser) {
+	if (CurrentUser.uuid === "bot") throw "Tried to log bot out, WTF???";
+
 	const logoutStartTime = Date.now();
 
 	const streamList = global.StreamsHandler.getStreams();
