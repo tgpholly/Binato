@@ -31,8 +31,8 @@ if (config.prometheusEnabled) {
 
 if (config.compression) {
 	app.use(require("compression")());
-	consoleHelper.printBancho("Gzip Compression is enabled.");
-} else consoleHelper.printWarn("Gzip Compression is disabled!");
+	consoleHelper.printBancho("Compression is enabled.");
+} else consoleHelper.printWarn("Compression is disabled!");
 
 app.use((req, res) => {
 	req.packet = Buffer.alloc(0);
