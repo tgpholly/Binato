@@ -319,8 +319,6 @@ module.exports = async function(req, res) {
 			res.removeHeader('X-Powered-By');
 			res.removeHeader('Date');
 			res.writeHead(200, {
-				"cho-protocol": global.protocolVersion,
-				// Nice to have :)
 				"Connection": "keep-alive",
 				"Keep-Alive": "timeout=5, max=100",
 			});
