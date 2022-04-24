@@ -1,17 +1,25 @@
 {
-	"port": 5001,
-	"compression": true,
-	"prometheusEnabled": false,
-	"prometheusPort": 1234,
-	"redisEnabled": false,
-	"redisAddress": "127.0.0.1",
-	"redisPort": 6379,
-	"redisDatabase": 0,
-	"redisPassword": "",
-	"databaseAddress": "127.0.0.1",
-	"databasePort": 3306,
-	"databaseUsername": "username",
-	"databasePassword": "password",
-	"databaseName": "osu!",
-	"databaseKey": "examplekey"
+	"express": {
+		"port": 5001,
+		"compression": true
+	},
+	"prometheus": {
+		"enabled": false,
+		"port": 9100
+	},
+	"redis": {
+		"enabled": false,
+		"address": "127.0.0.1",
+		"port": 6379,
+		"password": "",
+		"database": 0
+	},
+	"database": {
+		"address": "127.0.0.1",
+		"port": 3306,
+		"username": "username",
+		"password": "password",
+		"name": "osu!",
+		"key": "examplekey"
+	}
 }

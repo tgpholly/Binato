@@ -10,7 +10,7 @@ const app = require("express")(),
 	  serverHandler = require("./server/serverHandler.js"),
 	  config = require("./config.json");
 
-if (config.prometheusEnabled) {
+if (config.prometheus.enabled) {
 	// We only need to require this if prom metrics are on.
 	const prom = require("prom-client");
 
@@ -26,10 +26,10 @@ if (config.prometheusEnabled) {
 		res.end(await register.metrics());
 	});
 	
-	prometheusApp.listen(config.prometheusPort, () => consoleHelper.printBancho(`Prometheus metrics listening at port ${config.prometheusPort}`));
+	prometheusApp.listen(config.prometheus.port, () => consoleHelper.printBancho(`Prometheus metrics listening at port ${config.prometheus.port}`));
 } else consoleHelper.printWarn("Prometheus is disabled!");
 
-if (config.compression) {
+if (config.express.compression) {
 	app.use(require("compression")());
 	consoleHelper.printBancho("Compression is enabled.");
 } else consoleHelper.printWarn("Compression is disabled!");
@@ -76,4 +76,4 @@ app.use((req, res) => {
 	});
 });
 
-app.listen(config.port, () => consoleHelper.printBancho(`Binato is up! Listening at port ${config.port}`));
+app.listen(config.express.port, () => consoleHelper.printBancho(`Binato is up! Listening at port ${config.express.port}`));

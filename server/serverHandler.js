@@ -22,7 +22,7 @@ global.botUser = global.users.add("bot", new User(3, "SillyBot", "bot"));
 global.botUser.location[0] = 50;
 global.botUser.location[1] = -32;
 
-global.DatabaseHelper = new DatabaseHelperClass(config.databaseAddress, config.databasePort, config.databaseUsername, config.databasePassword, config.databaseName);
+global.DatabaseHelper = new DatabaseHelperClass(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name);
 
 async function subscribeToChannel(channelName = "", callback = function(message) {})  {
 	// Dup and connect new client for channel subscription (required)
@@ -34,11 +34,11 @@ async function subscribeToChannel(channelName = "", callback = function(message)
 }
 
 // Do redis if it's enabled
-if (config.redisEnabled) {
+if (config.redis.enabled) {
 	(async () => {
 		const { createClient } = require("redis");
 		global.promClient = createClient({
-			url: `redis://${config.redisPassword.replaceAll(" ", "") == "" ? "" : `${config.redisPassword}@`}${config.redisAddress}:${config.redisPort}/${config.redisDatabase}`
+			url: `redis://${config.redis.password.replaceAll(" ", "") == "" ? "" : `${config.redis.password}@`}${config.redis.address}:${config.redis.port}/${config.redis.database}`
 		});
 
 		global.promClient.on('error', e => consoleHelper.printBancho(e));

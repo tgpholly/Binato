@@ -20,7 +20,7 @@ module.exports = {
 			
 			return requiredPWChangeResponse();
 		} else {
-			if (aes256.decrypt(config.databaseKey, userDBData.password) !== loginInfo.password) return incorrectLoginResponse();
+			if (aes256.decrypt(config.database.key, userDBData.password) !== loginInfo.password) return incorrectLoginResponse();
 		}
 
 		return null;
