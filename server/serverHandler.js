@@ -49,8 +49,11 @@ if (config.redisEnabled) {
 
 		// Score submit update channel
 		subscribeToChannel("binato:update_user_stats", (message) => {
+			const user = getUserById(parseInt(message));
 			// Update user info
-			getUserById(parseInt(message)).updateUserInfo(true);
+			user.updateUserInfo(true);
+
+			consoleHelper.printBancho(`[Redis] Score submission stats update request received for ${user.username}`);
 		});
 	})();
 } else consoleHelper.printWarn("Redis is disabled!");
