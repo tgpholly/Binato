@@ -1,16 +1,16 @@
-const request = require("request"), RequestType = require("./RequestType.json");
+const fetch = require("node-fetch");
 
 const functionMap = {
-	0: (resolve, body) => resolve(body),
-	1: (resolve, body) => resolve(JSON.parse(body)),
-	2: null
+	"text": async (res) => await res.text(),
+	"json": async (res) => await res.json()
 };
 
-module.exports = async function(url, reqType = RequestType.Text) {
-	return new Promise((resolve, reject) => {
-		request(url, (err, res, body) => {
-			if (err) reject(err);
-			else functionMap[reqType](resolve, body);
-		});
+module.exports = async function(url, reqType = "text") {
+	return new Promise(async (resolve, reject) => {
+		try {
+			resolve(functionMap[reqType](await fetch(url)));
+		} catch (e) {
+			reject(e);
+		}
 	});
 }
