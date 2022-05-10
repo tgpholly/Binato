@@ -24,13 +24,13 @@ global.botUser.location[1] = -32;
 
 global.DatabaseHelper = new DatabaseHelperClass(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name);
 
-async function subscribeToChannel(channelName = "", callback = function(message) {})  {
+async function subscribeToChannel(channelName = "", callback = function(message = "") {})  {
 	// Dup and connect new client for channel subscription (required)
 	const scoreSubmitUpdateClient = global.promClient.duplicate();
 	await scoreSubmitUpdateClient.connect();
 	// Subscribe to channel
 	await scoreSubmitUpdateClient.subscribe(channelName, callback);
-	consoleHelper.printBancho(`Subscribed to ${channelName} channel`);
+	consoleHelper.printRedis(`Subscribed to ${channelName} channel`);
 }
 
 // Do redis if it's enabled
@@ -41,11 +41,11 @@ if (config.redis.enabled) {
 			url: `redis://${config.redis.password.replaceAll(" ", "") == "" ? "" : `${config.redis.password}@`}${config.redis.address}:${config.redis.port}/${config.redis.database}`
 		});
 
-		global.promClient.on('error', e => consoleHelper.printBancho(e));
+		global.promClient.on('error', e => consoleHelper.printRedis(e));
 
 		const connectionStartTime = Date.now();
 		await global.promClient.connect();
-		consoleHelper.printBancho(`Connected to redis server. Took ${Date.now() - connectionStartTime}ms`);
+		consoleHelper.printRedis(`Connected to redis server. Took ${Date.now() - connectionStartTime}ms`);
 
 		// Score submit update channel
 		subscribeToChannel("binato:update_user_stats", (message) => {
@@ -53,7 +53,7 @@ if (config.redis.enabled) {
 			// Update user info
 			user.updateUserInfo(true);
 
-			consoleHelper.printBancho(`[Redis] Score submission stats update request received for ${user.username}`);
+			consoleHelper.printRedis(`Score submission stats update request received for ${user.username}`);
 		});
 	})();
 } else consoleHelper.printWarn("Redis is disabled!");
