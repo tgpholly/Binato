@@ -57,7 +57,7 @@ module.exports = async function(req, res, loginInfo) {
 	}
 
 	// Get information about the user from the database
-	const userDB = await global.DatabaseHelper.query(`SELECT id FROM users_info WHERE username = "${loginInfo.username}" LIMIT 1`);
+	const userDB = await global.DatabaseHelper.query("SELECT id FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
 
 	// Create a token for the client
 	const newClientToken = uuid();
@@ -131,7 +131,7 @@ module.exports = async function(req, res, loginInfo) {
 		}
 
 		// Construct user's friends list
-		const userFriends = await global.DatabaseHelper.query(`SELECT friendsWith FROM friends WHERE user = ${NewUser.id}`);
+		const userFriends = await global.DatabaseHelper.query("SELECT friendsWith FROM friends WHERE user = ?", [NewUser.id]);
 		let friendsArray = [];
 		for (let i = 0; i < userFriends.length; i++) {
 			friendsArray.push(userFriends[i].friendsWith);

@@ -60,15 +60,18 @@ module.exports = class {
 		this.beatmapChecksum = action.beatmapChecksum;
 		this.currentMods = action.currentMods;
 		this.actionMods = action.currentMods;
-		this.playMode = action.playMode;
+		if (action.playMode != this.playMode) {
+			this.updateUserInfo(true);
+			this.playMode = action.playMode;
+		}
 		this.beatmapID = action.beatmapId;
 	}
 
 	// Gets the user's score information from the database and caches it
 	async updateUserInfo(forceUpdate = false) {
-		const userScoreDB = await global.DatabaseHelper.query(`SELECT * FROM users_modes_info WHERE user_id = ${this.id} AND mode_id = ${this.playMode} LIMIT 1`);
+		const userScoreDB = await global.DatabaseHelper.query("SELECT * FROM users_modes_info WHERE user_id = ? AND mode_id = ? LIMIT 1", [this.id, this.playMode]);
 		const mappedRankingMode = rankingModes[this.rankingMode];
-		const userRankDB = await global.DatabaseHelper.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ${this.playMode} ORDER BY ${mappedRankingMode} DESC`);
+		const userRankDB = await global.DatabaseHelper.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ? ORDER BY ${mappedRankingMode} DESC`, [this.playMode]);
 
 		if (userScoreDB == null || userRankDB == null) throw "fuck";
 

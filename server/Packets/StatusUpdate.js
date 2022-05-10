@@ -21,7 +21,7 @@ module.exports = function(currentUser, id = 0, sendImmidiate = true) {
 		playMode: User.playMode,
 		beatmapId: User.beatmapID,
 		rankedScore: User.rankedScore,
-		accuracy: User.accuracy / 100, // Scale of 0 to 1
+		accuracy: User.accuracy * 0.01, // Scale from 0:100 to 0:1
 		playCount: User.playCount,
 		totalScore: User.totalScore,
 		rank: User.rank, 

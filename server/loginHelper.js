@@ -7,7 +7,7 @@ module.exports = {
 		// Check if there is any login information provided
 		if (loginInfo == null) return incorrectLoginResponse();
 
-		const userDBData = await global.DatabaseHelper.query(`SELECT * FROM users_info WHERE username = "${loginInfo.username}" LIMIT 1`);
+		const userDBData = await global.DatabaseHelper.query("SELECT * FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
 
 		// Make sure a user was found in the database
 		if (Object.keys(userDBData).length < 1) return incorrectLoginResponse();
