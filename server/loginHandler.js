@@ -112,14 +112,10 @@ module.exports = async function(req, res, loginInfo) {
 		// peppy pls, why
 		osuPacketWriter.ChannelListingComplete();
 
-		// Add user to chat channels
+		// Add user to #osu
 		osuPacketWriter.ChannelJoinSuccess("#osu");
 		if (!global.StreamsHandler.isUserInStream("#osu", NewUser.uuid))
 			global.StreamsHandler.addUserToStream("#osu", NewUser.uuid);
-
-		osuPacketWriter.ChannelJoinSuccess("#userlog");
-		if (!global.StreamsHandler.isUserInStream("#userlog", NewUser.uuid))
-			global.StreamsHandler.addUserToStream("#userlog", NewUser.uuid);
 
 		// List all channels out to the client
 		for (let i = 0; i < global.channels.length; i++) {
