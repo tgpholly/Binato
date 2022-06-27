@@ -26,10 +26,10 @@ global.DatabaseHelper = new DatabaseHelperClass(config.database.address, config.
 
 async function subscribeToChannel(channelName = "", callback = function(message = "") {})  {
 	// Dup and connect new client for channel subscription (required)
-	const scoreSubmitUpdateClient = global.promClient.duplicate();
-	await scoreSubmitUpdateClient.connect();
+	const subscriptionClient = global.promClient.duplicate();
+	await subscriptionClient.connect();
 	// Subscribe to channel
-	await scoreSubmitUpdateClient.subscribe(channelName, callback);
+	await subscriptionClient.subscribe(channelName, callback);
 	consoleHelper.printRedis(`Subscribed to ${channelName} channel`);
 }
 
