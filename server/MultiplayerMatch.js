@@ -100,6 +100,8 @@ module.exports = class {
 					break;
 				}
 			}
+			// Make sure this leave call is valid
+			if (MatchUser.inMatch) return;
 
 			// Make sure we don't run more than once
 			// Again, client double firing packets.
@@ -119,6 +121,7 @@ module.exports = class {
 				
 				break;
 			}
+			MatchUser.inMatch = false;
 	
 			osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
 	

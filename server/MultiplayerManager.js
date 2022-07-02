@@ -135,6 +135,7 @@ module.exports = class {
 
 			// Set the user's current match to this match
 			JoiningUser.currentMatch = match;
+			JoiningUser.inMatch = true;
 
 			// Add user to the stream for the match
 			global.StreamsHandler.addUserToStream(streamName, JoiningUser.uuid);

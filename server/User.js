@@ -45,6 +45,8 @@ module.exports = class {
 		this.currentMatch = null;
 		this.matchSlotId = -1;
 
+		this.inMatch = false;
+
 		this.isTourneyUser = false;
 	}
 
