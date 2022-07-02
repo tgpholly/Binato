@@ -338,7 +338,7 @@ module.exports = async function(req, res) {
 					}
 				});
 
-				responseData = PacketUser.queue
+				responseData = PacketUser.queue;
 				PacketUser.clearQueue();
 			} else {
 				// User's token is invlid, force a reconnect
