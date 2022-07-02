@@ -202,6 +202,7 @@ module.exports = class {
 		}
 
 		MatchUser.currentMatch = null;
+		MatchUser.matchSlotId = -1;
 
 		// Update the match listing to reflect this change (either removal or user leaving)
 		this.updateMatchListing();
