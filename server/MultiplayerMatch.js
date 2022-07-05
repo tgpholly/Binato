@@ -90,39 +90,29 @@ module.exports = class {
 	}
 
 	leaveMatch(MatchUser = new User) {
-		try {
-			// Make sure this leave call is valid
-			if (MatchUser.inMatch) return;
-			
-			// Get the user's slot
-			const slot = this.slots[MatchUser.matchSlotId];
+		// Make sure this leave call is valid
+		if (!MatchUser.inMatch) return;
+		
+		// Get the user's slot
+		const slot = this.slots[MatchUser.matchSlotId];
 
-			// Set the slot's status to avaliable
-			slot.playerId = -1;
-			slot.status = 1;
+		// Set the slot's status to avaliable
+		slot.playerId = -1;
+		slot.status = 1;
 
-			MatchUser.currentMatch = null;
-			MatchUser.matchSlotId = -1;
+		// Remove the leaving user from the match's stream
+		global.StreamsHandler.removeUserFromStream(this.matchStreamName, MatchUser.uuid);
+		global.StreamsHandler.removeUserFromStream(this.matchChatStreamName, MatchUser.uuid);
 
-			MatchUser.inMatch = false;
-	
-			this.sendMatchUpdate();
-	
-			// Remove the leaving user from the match's stream
-			global.StreamsHandler.removeUserFromStream(this.matchStreamName, MatchUser.uuid);
-			global.StreamsHandler.removeUserFromStream(this.matchChatStreamName, MatchUser.uuid);
+		// Send this after removing the user from match streams to avoid a leave notification for self
+		this.sendMatchUpdate();
 
-			const osuPacketWriter = new osu.Bancho.Writer;
+		const osuPacketWriter = new osu.Bancho.Writer;
 
-			// Remove user from the multiplayer channel for the match
-			osuPacketWriter.ChannelRevoked("#multiplayer");
+		// Remove user from the multiplayer channel for the match
+		osuPacketWriter.ChannelRevoked("#multiplayer");
 
-			MatchUser.addActionToQueue(osuPacketWriter.toBuffer);
-			
-			return this;
-		} catch (e) {
-			console.error(e);
-		}
+		MatchUser.addActionToQueue(osuPacketWriter.toBuffer);
 	}
 
 	updateMatch(MatchUser = new User, MatchData) {
@@ -192,7 +182,7 @@ module.exports = class {
 	}
 
 	setStateReady(MatchUser = new User) {
-		if (MatchUser.inMatch) return;
+		if (!MatchUser.inMatch) return;
 			
 		// Set the user's ready state to ready
 		this.slots[MatchUser.matchSlotId].status = 8;
@@ -201,7 +191,7 @@ module.exports = class {
 	}
 
 	setStateNotReady(MatchUser = new User) {
-		if (MatchUser.inMatch) return;
+		if (!MatchUser.inMatch) return;
 			
 		// Set the user's ready state to not ready
 		this.slots[MatchUser.matchSlotId].status = 4;
@@ -399,7 +389,8 @@ module.exports = class {
 			this.matchLoadSlots = null;
 
 			this.playerScores = [];
-			for (let slot of this.slots) {
+			for (let i = 0; i < this.slots.length; i++) {
+				const slot = this.slots[i];
 				if (slot.playerId === -1 || slot.status === 1 || slot.status === 2) continue;
 
 				this.playerScores.push({playerId: slot.playerId, slotId: i, score: 0, isCurrentlyFailed: false});
@@ -482,10 +473,10 @@ module.exports = class {
 		MatchScoreData.id = MatchPlayer.matchSlotId;
 
 		// Update the playerScores array accordingly
-		for (let i = 0; i < this.playerScores.length; i++) {
-			if (this.playerScores[i].playerId == MatchPlayer.id) {
-				this.playerScores[i].score = MatchScoreData.totalScore;
-				this.playerScores[i].isCurrentlyFailed = MatchScoreData.currentHp == 254;
+		for (let playerScore of this.playerScores) {
+			if (playerScore.playerId == MatchPlayer.id) {
+				playerScore.score = MatchScoreData.totalScore;
+				playerScore.isCurrentlyFailed = MatchScoreData.currentHp == 254;
 				break;
 			}
 		}

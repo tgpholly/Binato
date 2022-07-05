@@ -2,7 +2,8 @@ const osu = require("osu-packet"),
 	  UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
 	  UserPresence = require("./Packets/UserPresence.js"),
 	  StatusUpdate = require("./Packets/StatusUpdate.js"),
-	  MultiplayerMatch = require("./MultiplayerMatch.js");
+	  MultiplayerMatch = require("./MultiplayerMatch.js"),
+	  User = require("./User.js");
 
 module.exports = class {
 	constructor() {
@@ -164,16 +165,18 @@ module.exports = class {
 		}
 	}
 
-	leaveMultiplayerMatch(MatchUser) {
+	leaveMultiplayerMatch(MatchUser = new User) {
 		// Make sure the user is in a match
 		if (MatchUser.currentMatch == null) return;
 
-		const mpLobby = MatchUser.currentMatch.leaveMatch(MatchUser);
+		const mpMatch = MatchUser.currentMatch;
+		
+		mpMatch.leaveMatch(MatchUser);
 
 		let empty = true;
 		// Check if the match is empty
-		for (let i = 0; i < mpLobby.slots.length; i++) {
-			const slot = mpLobby.slots[i];
+		for (let i = 0; i < mpMatch.slots.length; i++) {
+			const slot = mpMatch.slots[i];
 			// Check if the slot is avaliable
 			if (slot.playerId === -1) continue;
 			
@@ -203,6 +206,8 @@ module.exports = class {
 
 		MatchUser.currentMatch = null;
 		MatchUser.matchSlotId = -1;
+
+		MatchUser.inMatch = false;
 
 		// Update the match listing to reflect this change (either removal or user leaving)
 		this.updateMatchListing();
