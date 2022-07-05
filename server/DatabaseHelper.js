@@ -19,7 +19,10 @@ module.exports = class {
 			this.connectionPool.getConnection((err, connection) => {
 				if (err) {
 					reject(err);
-					connection.release();
+					try { connection.release();}
+					catch (e) {
+						console.error("Failed to release mysql connection", err);
+					}
 				} else {
 					// Use old query
 					if (data == null) {
