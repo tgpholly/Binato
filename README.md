@@ -14,15 +14,25 @@ i'm sorry peppy
  - Private Messages
  - Minimum Viable Product of a bot
    - For a command list check [BotCommandHandler](https://github.com/tgpethan/Binato/blob/master/server/BotCommandHandler.js) or use !help on a live server
- 
-### [List of bugs](https://github.com/tgpethan/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
+   
+### [Planned additions](https://github.com/tgpethan/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement) | [List of currently known bugs](https://github.com/tgpethan/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
 <hr>
 
-## Support:
-While I don't support setting this up yourself (although this is pretty flexible as it stands right now) I will try my best to support this in the time I have. Just make sure you have general knowlage of databases (MySQL in this case) and Node.js .
+## Setup:
+While I don't support setting this up yourself it is fairly easy to do, all that should be required is:
+ - **NodeJS >= 10**
+ - **MariaDB or MySQL** (MariaDB is prefered as that is what this is tested and ran against in prod)
+ - Optional (Disabled via config):
+   - **Redis**
+   - **Prometheus**
 
-Just open a issue and I will get around to it eventually.
+Clone the repo and run `npm i` to install required packages, then copy `config.example.json` to `config.json` and edit to your liking (this is where http compression, prometheus and redis can be enabled/disabled)
+
+After doing this running `node .` should start the server
+
+## Reporting bugs:
+To report a bug [create a new issue](https://github.com/tgpethan/Binato/issues/new) and include information such as your OS / Distro, Node version, disabled Binato features (e.g. Prometheus, Redis, compression) and console output at the time of the bug if applicable.
 
 <hr>
 
@@ -33,6 +43,7 @@ Stable fallback uses HTTP so for that you just need to direct it to the server<b
 You can do this using the hosts file
 
 Location on Linux: /etc/hosts<br>
+Location on Mac: /private/etc/hosts<br>
 Location on Windows: C:/Windows/system32/drivers/etc/hosts
 
 Add an entry in the hosts file that looks like the following:
@@ -64,8 +75,8 @@ An example setup would be:
  - a.example.com (Profile pictures)
 <hr>
 
-## Things not included in this repo:
-### Website
+## Other Binato components:
+### Website:
 Binato's website is handled by [Binato-Website](https://github.com/tgpethan/Binato-Website)
 ### Profile Pictures:
 Profile pictures can be handled by any standard HTTP server, there is also one I made for the task here: [Binato-ProfilePicture](https://github.com/tgpethan/Binato-ProfilePicture)
