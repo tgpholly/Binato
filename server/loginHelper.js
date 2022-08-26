@@ -1,29 +1,47 @@
 const osu = require("osu-packet"),
 	  aes256 = require("aes256"),
+	  crypto = require("crypto"),
 	  config = require("../config.json");
 
 module.exports = {
-	checkLogin:async function(loginInfo) {
-		// Check if there is any login information provided
-		if (loginInfo == null) return incorrectLoginResponse();
+	checkLogin: function(loginInfo) {
+		return new Promise(async (resolve, reject) => {
+			// Check if there is any login information provided
+			if (loginInfo == null) return resolve(incorrectLoginResponse());
 
-		const userDBData = await global.DatabaseHelper.query("SELECT * FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
+			const userDBData = await global.DatabaseHelper.query("SELECT * FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
 
-		// Make sure a user was found in the database
-		if (Object.keys(userDBData).length < 1) return incorrectLoginResponse();
-		// Make sure the username is the same as the login info
-		if (userDBData.username !== loginInfo.username) return incorrectLoginResponse();
-		// If the user has an old md5 password
-		if (userDBData.has_old_password == 1) {
-			// Make sure the password is the same as the login info
-			if (userDBData.password !== loginInfo.password) return incorrectLoginResponse();
-			
-			return requiredPWChangeResponse();
-		} else {
-			if (aes256.decrypt(config.database.key, userDBData.password) !== loginInfo.password) return incorrectLoginResponse();
-		}
+			// Make sure a user was found in the database
+			if (userDBData == null) return resolve(incorrectLoginResponse());
+			// Make sure the username is the same as the login info
+			if (userDBData.username !== loginInfo.username) return resolve(incorrectLoginResponse());
+			/*
+				1: Old MD5 password
+				2: Old AES password
+			*/
+			if (userDBData.has_old_password === 1) {
+				if (userDBData.password_hash !== loginInfo.password)
+					return resolve(incorrectLoginResponse());
+				
+				return resolve(requiredPWChangeResponse());
+			} else if (userDBData.has_old_password === 2) {
+				if (aes256.decrypt(config.database.key, userDBData.password_hash) !== loginInfo.password)
+					return resolve(resolve(incorrectLoginResponse()));
 
-		return null;
+				return resolve(requiredPWChangeResponse());
+			} else {
+				crypto.pbkdf2(loginInfo.password, userDBData.password_salt, config.database.pbkdf2.itterations, config.database.pbkdf2.keylength, "sha512", (err, derivedKey) => {
+					if (err) {
+						return reject(err);
+					} else {
+						if (derivedKey.toString("hex") !== userDBData.password_hash)
+							return resolve(incorrectLoginResponse());
+
+						return resolve(null); // We good
+					}
+				});
+			}
+		});
 	},
 	incorrectLoginResponse: incorrectLoginResponse
 }

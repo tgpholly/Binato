@@ -20,6 +20,10 @@
 		"username": "username",
 		"password": "password",
 		"name": "osu!",
+		"pbkdf2": {
+			"itterations": 1337,
+			"keylength": 1337
+		},
 		"key": "examplekey"
 	}
 }
