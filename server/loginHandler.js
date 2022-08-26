@@ -63,13 +63,9 @@ module.exports = async function(req, res, loginInfo) {
 	const newClientToken = uuid();
 
 	// Make sure user is not already connected, kick off if so.
-	const checkForPreexistingUser = getUserByUsername(loginInfo.username);
-	if (checkForPreexistingUser != null && !isTourneyClient) {
-		for (let user of global.users.getIterableItems()) {
-			// Log them out if they are not a tourney user
-			if (!user.isTourneyUser && user.uuid != newClientToken)
-				Logout(user);
-		}
+	const connectedUser = getUserByUsername(loginInfo.username);
+	if (connectedUser != null && !isTourneyClient && !connectedUser.isTourneyUser) {
+		Logout(connectedUser);
 	}
 
 	// Retreive the newly created user
@@ -136,6 +132,8 @@ module.exports = async function(req, res, loginInfo) {
 		osuPacketWriter.FriendsList(friendsArray);
 
 		osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
+
+		global.DatabaseHelper.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [global.users.getLength() - 1]);
 
 		res.removeHeader('X-Powered-By');
 		res.removeHeader('Date');
