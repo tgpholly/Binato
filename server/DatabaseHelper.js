@@ -1,7 +1,8 @@
 const mysql = require("mysql2");
+const consoleHelper = require("../consoleHelper.js");
 
 module.exports = class {
-	constructor(databaseAddress, databasePort = 3306, databaseUsername, databasePassword, databaseName) {
+	constructor(databaseAddress, databasePort = 3306, databaseUsername, databasePassword, databaseName, connectedCallback) {
 		this.connectionPool = mysql.createPool({
 			connectionLimit: 128,
 			host: databaseAddress,
@@ -10,6 +11,24 @@ module.exports = class {
 			password: databasePassword,
 			database: databaseName
 		});
+
+		const classCreationTime = Date.now();
+		this.dbActive = false;
+		if (connectedCallback == null) {
+			this.dbActive = true;
+		} else {
+			const connectionCheckInterval = setInterval(() => {
+				this.query("SELECT name FROM osu_info LIMIT 1")
+					.then(data => {
+						consoleHelper.printBancho(`Connected to database. Took ${Date.now() - classCreationTime}ms`);
+						this.dbActive = true;
+						clearInterval(connectionCheckInterval);
+
+						connectedCallback();
+					})
+					.catch(err => {});
+			}, 167); // Roughly 6 times per sec
+		}
 	}
 
 	query(query = "", data) {

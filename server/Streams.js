@@ -2,42 +2,42 @@ const getUserByToken = require("./util/getUserByToken.js"),
 	  consoleHelper = require("../consoleHelper.js");
 
 module.exports = class {
-	constructor() {
-		this.avaliableStreams = {};
-		this.avaliableStreamKeys = [];
+	static init() {
+		global.avaliableStreams = {};
+		global.avaliableStreamKeys = [];
 	}
 
-	addStream(streamName = "", removeIfEmpty = false, spectatorHostId = null) {
+	static addStream(streamName = "", removeIfEmpty = false, spectatorHostId = null) {
 		// Make sure a stream with the same name doesn't exist already
-		if (this.avaliableStreamKeys.includes(streamName))
+		if (global.avaliableStreamKeys.includes(streamName))
 			return consoleHelper.printBancho(`Did not add stream [${streamName}] A stream with the same name already exists`);
 		// Add new stream to the list of streams
-		this.avaliableStreams[streamName] = {
+		global.avaliableStreams[streamName] = {
 			streamUsers: [], // An array containing a list of user tokens of the users in a given stream
 			streamSpectatorHost: spectatorHostId, // null unless stream is for spectating
 			removeIfEmpty: removeIfEmpty
 		}
-		this.avaliableStreamKeys = Object.keys(this.avaliableStreams);
+		global.avaliableStreamKeys = Object.keys(global.avaliableStreams);
 		consoleHelper.printBancho(`Added stream [${streamName}]`);
 	}
 
-	removeStream(streamName) {
+	static removeStream(streamName) {
 		try {
-			delete this.avaliableStreams[streamName];
-			this.avaliableStreamKeys = Object.keys(this.avaliableStreams);
+			delete global.avaliableStreams[streamName];
+			global.avaliableStreamKeys = Object.keys(global.avaliableStreams);
 		} catch (e) {
 			consoleHelper.printError(`Was not able to remove stream [${streamName}]`);
 			console.error(e);
 		}
 	}
 
-	addUserToStream(streamName, userToken) {
+	static addUserToStream(streamName, userToken) {
 		// Make sure the stream we are attempting to add this user to even exists
-		if (!this.doesStreamExist(streamName))
+		if (!this.exists(streamName))
 			return consoleHelper.printBancho(`Did not add user to stream [${streamName}] because it does not exist!`);
 
 		// Make sure the user isn't already in the stream
-		if (this.avaliableStreams[streamName].streamUsers.includes(userToken))
+		if (global.avaliableStreams[streamName].streamUsers.includes(userToken))
 			return consoleHelper.printBancho(`Did not add user to stream [${streamName}] because they are already in it!`);
 
 		// Make sure this isn't an invalid user (userId can't be lower than 1)
@@ -45,16 +45,16 @@ module.exports = class {
 			return consoleHelper.printBancho(`Did not add user to stream [${streamName}] because their token is invalid!`);
 
 		// Add user's token to the stream's user list
-		this.avaliableStreams[streamName].streamUsers.push(userToken);
+		global.avaliableStreams[streamName].streamUsers.push(userToken);
 		consoleHelper.printBancho(`Added user [${userToken}] to stream ${streamName}`);
 	}
 
-	removeUserFromStream(streamName, userToken) {
+	static removeUserFromStream(streamName, userToken) {
 		// Make sure the stream we are attempting to add this user to even exists
-		if (!this.doesStreamExist(streamName))
+		if (!this.exists(streamName))
 			return consoleHelper.printBancho(`Did not remove user from stream [${streamName}] because it does not exist!`);
 
-		const stream = this.avaliableStreams[streamName];
+		const stream = global.avaliableStreams[streamName];
 
 		// Make sure the user isn't already in the stream
 		if (!stream.streamUsers.includes(userToken))
@@ -82,18 +82,18 @@ module.exports = class {
 		}
 
 		if (stream.removeIfEmpty && stream.streamUsers.length == 0) {
-			this.removeStream(stream);
+			this.removeStream(streamName);
 			consoleHelper.printBancho(`Removed stream [${streamName}] There were no users in stream`);
 		}
 	}
 
-	sendToStream(streamName, streamData, initUser = null) {
+	static sendToStream(streamName, streamData, initUser = null) {
 		// Make sure the stream we are attempting to send to even exists
-		if (!this.doesStreamExist(streamName))
+		if (!this.exists(streamName))
 			return consoleHelper.printBancho(`Did not send to stream [${streamName}] because it does not exist!`);
 
 		// Get the stream to send the data to
-		const currentStream = this.avaliableStreams[streamName];
+		const currentStream = global.avaliableStreams[streamName];
 
 		// Loop through the users in this stream
 		for (let i = 0; i < currentStream.streamUsers.length; i++) {
@@ -113,17 +113,17 @@ module.exports = class {
 		}
 	}
 
-	doesStreamExist(streamName) {
-		return this.avaliableStreamKeys.includes(streamName);
+	static exists(streamName) {
+		return global.avaliableStreamKeys.includes(streamName);
 	}
 
-	getStreams() {
+	static getStreams() {
 		// Return the names of all avaliable streams
-		return this.avaliableStreamKeys;
+		return global.avaliableStreamKeys;
 	}
 
-	isUserInStream(streamName, userToken) {
-		if (this.avaliableStreams[streamName].streamUsers.includes(userToken)) return true;
+	static isUserInStream(streamName, userToken) {
+		if (global.avaliableStreams[streamName].streamUsers.includes(userToken)) return true;
 		else return false;
 	}
 }

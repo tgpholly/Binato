@@ -1,5 +1,6 @@
 const osu = require("osu-packet"),
 	  maths = require("./util/Maths.js"),
+	  Streams = require("./Streams.js"),
 	  OsuBattleRoyale = require("./MultiplayerExtras/OsuBattleRoyale.js");
 
 module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false) {
@@ -123,7 +124,7 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
 									target: "#multiplayer",
 									senderId: global.botUser.id
 								});
-								global.StreamsHandler.sendToStream(Stream, local_osuPacketWriter.toBuffer, null);
+								Streams.sendToStream(Stream, local_osuPacketWriter.toBuffer, null);
 							} else if (countdown == 0) {
 								local_osuPacketWriter.SendMessage({
 									sendingClient: global.botUser.username,
@@ -131,7 +132,7 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
 									target: "#multiplayer",
 									senderId: global.botUser.id
 								});
-								global.StreamsHandler.sendToStream(Stream, local_osuPacketWriter.toBuffer, null);
+								Streams.sendToStream(Stream, local_osuPacketWriter.toBuffer, null);
 								User.currentMatch.matchStartCountdownActive = false;
 								setTimeout(() => User.currentMatch.startMatch(), 1000);
 								clearInterval(intervalRef);
@@ -159,7 +160,7 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
 								senderId: global.botUser.id
 							});
 							User.currentMatch.multiplayerExtras = null;
-							global.StreamsHandler.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
+							Streams.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
 						}
 						else enableOBR(User, Stream, commandBanchoPacketWriter);
 					}
@@ -190,7 +191,7 @@ module.exports = function(User, Message, Stream, IsCalledFromMultiplayer = false
 			});
 		}
 	}
-	global.StreamsHandler.sendToStream(Stream, osuPacketWriter.toBuffer, null);
+	Streams.sendToStream(Stream, osuPacketWriter.toBuffer, null);
 }
 
 function enableOBR(User, Stream, commandBanchoPacketWriter) {
@@ -208,5 +209,5 @@ function enableOBR(User, Stream, commandBanchoPacketWriter) {
 		target: "#multiplayer",
 		senderId: global.botUser.id
 	});
-	global.StreamsHandler.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
+	Streams.sendToStream(Stream, commandBanchoPacketWriter.toBuffer, null);
 }

@@ -1,5 +1,7 @@
+const Streams = require("../Streams.js");
+
 module.exports = function(CurrentUser, data) {
 	if (data == "#multiplayer") return; // Ignore requests for multiplayer
 
-	global.StreamsHandler.removeUserFromStream(data, CurrentUser.uuid);
+	Streams.removeUserFromStream(data, CurrentUser.uuid);
 }

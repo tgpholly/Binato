@@ -9,6 +9,7 @@ const osu = require("osu-packet"),
 	  countryHelper = require("./countryHelper.js"),
 	  loginHelper = require("./loginHelper.js"),
 	  Logout = require("./Packets/Logout.js"),
+	  Streams = require("./Streams.js"),
 	  UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
 	  UserPresence = require("./Packets/UserPresence.js"),
 	  StatusUpdate = require("./Packets/StatusUpdate.js");
@@ -110,8 +111,8 @@ module.exports = async function(req, res, loginInfo) {
 
 		// Add user to #osu
 		osuPacketWriter.ChannelJoinSuccess("#osu");
-		if (!global.StreamsHandler.isUserInStream("#osu", NewUser.uuid))
-			global.StreamsHandler.addUserToStream("#osu", NewUser.uuid);
+		if (!Streams.isUserInStream("#osu", NewUser.uuid))
+			Streams.addUserToStream("#osu", NewUser.uuid);
 
 		// List all channels out to the client
 		for (let i = 0; i < global.channels.length; i++) {

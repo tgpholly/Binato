@@ -1,13 +1,16 @@
 const osu = require("osu-packet"),
 	  getUserById = require("./util/getUserById.js"),
 	  StatusUpdate = require("./Packets/StatusUpdate.js"),
+	  Streams = require("./Streams.js"),
 	  User = require("./User.js");
 
 // TODO: Cache the player's slot position in their user class for a small optimisation
 
-module.exports = class {
-	constructor(MatchHost = new User, MatchData = {matchId: -1,inProgress: false,matchType: 0,activeMods: 0,gameName: "",gamePassword: '',beatmapName: '',beatmapId: 1250198,beatmapChecksum: '',slots: [],host: 0,playMode: 0,matchScoringType: 0,matchTeamType: 0,specialModes: 0,seed: 0}) {
-		this.matchId = global.getAndAddToHistoricalMultiplayerMatches();
+class MultiplayerMatch {
+	constructor(MatchData = {matchId: -1,inProgress: false,matchType: 0,activeMods: 0,gameName: "",gamePassword: '',beatmapName: '',beatmapId: 0,beatmapChecksum: '',slots: [],host: 0,playMode: 0,matchScoringType: 0,matchTeamType: 0,specialModes: 0,seed: 0}) {
+		this.matchId = MatchData.matchId;
+
+		this.roundId = 0;
 
 		this.inProgress = MatchData.inProgress;
 		this.matchStartCountdownActive = false;
@@ -51,21 +54,43 @@ module.exports = class {
 
 		this.isTourneyMatch = false;
 		this.tourneyClientUsers = [];
+	}
 
-		const osuPacketWriter = new osu.Bancho.Writer;
+	static createMatch(MatchHost = new User, MatchData = {matchId: -1,inProgress: false,matchType: 0,activeMods: 0,gameName: "",gamePassword: '',beatmapName: '',beatmapId: 0,beatmapChecksum: '',slots: [],host: 0,playMode: 0,matchScoringType: 0,matchTeamType: 0,specialModes: 0,seed: 0}) {
+		return new Promise(async (resolve, reject) => {
+			MatchData.matchId = (await global.DatabaseHelper.query(
+				"INSERT INTO mp_matches (id, name, open_time, close_time, seed) VALUES (NULL, ?, UNIX_TIMESTAMP(), NULL, ?) RETURNING id;",
+				[MatchData.gameName, MatchData.seed]
+			))[0]["id"];
 
-		// Update the status of the current user
-		StatusUpdate(MatchHost, MatchHost.id);
-		osuPacketWriter.MatchNew(this.createOsuMatchJSON());
+			const matchInstance = new MultiplayerMatch(MatchData);
 
-		// Queue match creation for user
-		MatchHost.addActionToQueue(osuPacketWriter.toBuffer);
+			console.log(matchInstance.matchId);
 
-		global.StreamsHandler.addStream(this.matchStreamName, true, this.matchId);
-		global.StreamsHandler.addStream(this.matchChatStreamName, true, this.matchId);
+			// Update the status of the current user
+			StatusUpdate(MatchHost, MatchHost.id);
 
-		// Update the match listing for users in the multiplayer lobby
-		global.MultiplayerManager.updateMatchListing();
+			const osuPacketWriter = new osu.Bancho.Writer;
+
+			osuPacketWriter.MatchNew(matchInstance.createOsuMatchJSON());
+
+			MatchHost.addActionToQueue(osuPacketWriter.toBuffer);
+
+			Streams.addStream(matchInstance.matchStreamName, true, matchInstance.matchId);
+			Streams.addStream(matchInstance.matchChatStreamName, true, matchInstance.matchId);
+
+			// Update the match listing for users in the multiplayer lobby
+			global.MultiplayerManager.updateMatchListing();
+
+			resolve(matchInstance);
+		});
+	}
+
+	getSlotIdByPlayerId(playerId = 0) {
+		const player = getUserById(playerId);
+
+		if (player != null) return player.matchSlotId;
+		else return null;
 	}
 
 	createOsuMatchJSON() {
@@ -101,8 +126,8 @@ module.exports = class {
 		slot.status = 1;
 
 		// Remove the leaving user from the match's stream
-		global.StreamsHandler.removeUserFromStream(this.matchStreamName, MatchUser.uuid);
-		global.StreamsHandler.removeUserFromStream(this.matchChatStreamName, MatchUser.uuid);
+		Streams.removeUserFromStream(this.matchStreamName, MatchUser.uuid);
+		Streams.removeUserFromStream(this.matchChatStreamName, MatchUser.uuid);
 
 		// Send this after removing the user from match streams to avoid a leave notification for self
 		this.sendMatchUpdate();
@@ -115,7 +140,7 @@ module.exports = class {
 		MatchUser.addActionToQueue(osuPacketWriter.toBuffer);
 	}
 
-	updateMatch(MatchUser = new User, MatchData) {
+	async updateMatch(MatchUser = new User, MatchData) {
 		// Update match with new data
 		this.inProgress = MatchData.inProgress;
 
@@ -123,7 +148,10 @@ module.exports = class {
 
 		this.activeMods = MatchData.activeMods;
 
-		this.gameName = MatchData.gameName;
+		if (this.gameName !== MatchData.gameName) {
+			this.gameName = MatchData.gameName;
+			await global.DatabaseHelper.query("UPDATE mp_matches SET name = ? WHERE id = ?", [this.gameName, this.matchId]);
+		}
 		if (MatchData.gamePassword == '') MatchData.gamePassword == null;
 		this.gamePassword = MatchData.gamePassword;
 
@@ -139,7 +167,10 @@ module.exports = class {
 		this.matchTeamType = MatchData.matchTeamType;
 		this.specialModes = MatchData.specialModes;
 
-		this.seed = MatchData.seed;
+		if (this.seed !== MatchData.seed) {
+			this.seed = MatchData.seed;
+			await global.DatabaseHelper.query("UPDATE mp_matches SET seed = ? WHERE id = ?", [this.seed, this.matchId]);
+		}
 
 		this.sendMatchUpdate();
 
@@ -153,7 +184,8 @@ module.exports = class {
 		osuPacketWriter.MatchUpdate(this.createOsuMatchJSON());
 
 		// Update all users in the match with new match information
-		global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+		if (Streams.exists(this.matchStreamName))
+			Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
 	}
 
 	moveToSlot(MatchUser = new User, SlotToMoveTo) {
@@ -234,7 +266,7 @@ module.exports = class {
 
 			if (cachedPlayerToken !== null && cachedPlayerToken !== "") {
 				// Remove the kicked user from the match stream
-				global.StreamsHandler.removeUserFromStream(this.matchStreamName, cachedPlayerToken);
+				Streams.removeUserFromStream(this.matchStreamName, cachedPlayerToken);
 			}
 		}
 	}
@@ -288,7 +320,7 @@ module.exports = class {
 			osuPacketWriter.MatchPlayerSkipped(MatchUser.id);
 			osuPacketWriter.MatchSkip();
 
-			global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+			Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
 
 			this.matchSkippedSlots = null;
 		} else {
@@ -296,7 +328,7 @@ module.exports = class {
 			
 			osuPacketWriter.MatchPlayerSkipped(MatchUser.id);
 
-			global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+			Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
 		}
 	}
 
@@ -356,7 +388,7 @@ module.exports = class {
 		osuPacketWriter.MatchStart(this.createOsuMatchJSON());
 
 		// Inform all users in the match that it has started
-		global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+		Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
 
 		// Update all users in the match with new info
 		this.sendMatchUpdate();
@@ -383,7 +415,7 @@ module.exports = class {
 		if (allLoaded) {
 			let osuPacketWriter = new osu.Bancho.Writer;
 			osuPacketWriter.MatchAllPlayersLoaded();
-			global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+			Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
 
 			// Blank out user loading array
 			this.matchLoadSlots = null;
@@ -432,25 +464,42 @@ module.exports = class {
 		if (allLoaded) this.finishMatch();
 	}
 
-	finishMatch() {
+	async finishMatch() {
 		if (!this.inProgress) return;
 		this.matchLoadSlots = null;
 		this.inProgress = false;
 		let osuPacketWriter = new osu.Bancho.Writer;
 
+		let queryData = [this.matchId, this.roundId++, this.playMode, this.matchType, this.matchScoringType, this.matchTeamType, this.activeMods, this.beatmapChecksum, (this.specialModes === 1) ? 1 : 0];
+
 		// Loop through all slots in the match
 		for (let slot of this.slots) {
 			// Make sure the slot has a user
-			if (slot.playerId === -1 || slot.status === 1 || slot.status === 2) continue;
+			if (slot.playerId === -1 || slot.status === 1 || slot.status === 2) {
+				queryData.push(null);
+				continue;
+			}
+
+			let score = null;
+			for (let _playerScore of this.playerScores) {
+				if (_playerScore.playerId === slot.playerId) {
+					score = _playerScore._raw;
+					break;
+				}
+			}
+
+			queryData.push(`${slot.playerId}|${score.totalScore}|${score.maxCombo}|${score.count300}|${score.count100}|${score.count50}|${score.countGeki}|${score.countKatu}|${score.countMiss}|${(score.currentHp == 254) ? 1 : 0}${(this.specialModes === 1) ? `|${slot.mods}` : ""}|${score.usingScoreV2 ? 1 : 0}${score.usingScoreV2 ? `|${score.comboPortion}|${score.bonusPortion}` : ""}`);
 
 			// Set the user's status back to normal from playing
 			slot.status = 4;
 		}
 
+		console.log(queryData);
+
 		osuPacketWriter.MatchComplete();
 
 		// Inform all users in the match that it is complete
-		global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+		Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
 
 		// Update all users in the match with new info
 		this.sendMatchUpdate();
@@ -459,6 +508,8 @@ module.exports = class {
 		global.MultiplayerManager.updateMatchListing();
 
 		if (this.multiplayerExtras != null) this.multiplayerExtras.onMatchFinished(JSON.parse(JSON.stringify(this.playerScores)));
+
+		await global.DatabaseHelper.query("INSERT INTO mp_match_rounds (id, match_id, round_id, round_mode, match_type, round_scoring_type, round_team_type, round_mods, beatmap_md5, freemod, player0, player1, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player12, player13, player14, player15) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", queryData);
 
 		this.playerScores = null;
 	}
@@ -477,6 +528,7 @@ module.exports = class {
 			if (playerScore.playerId == MatchPlayer.id) {
 				playerScore.score = MatchScoreData.totalScore;
 				playerScore.isCurrentlyFailed = MatchScoreData.currentHp == 254;
+				playerScore._raw = MatchScoreData;
 				break;
 			}
 		}
@@ -484,7 +536,7 @@ module.exports = class {
 		osuPacketWriter.MatchScoreUpdate(MatchScoreData);
 
 		// Send the newly updated score to all users in the match
-		global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+		Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
 	}
 
 	matchFailed(MatchUser = new User) {
@@ -495,6 +547,8 @@ module.exports = class {
 
 		osuPacketWriter.MatchPlayerFailed(MatchUser.id);
 
-		global.StreamsHandler.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+		Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
 	}
 }
+
+module.exports = MultiplayerMatch;

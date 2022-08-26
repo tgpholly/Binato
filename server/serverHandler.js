@@ -22,7 +22,11 @@ global.botUser = global.users.add("bot", new User(3, "SillyBot", "bot"));
 global.botUser.location[0] = 50;
 global.botUser.location[1] = -32;
 
-global.DatabaseHelper = new DatabaseHelperClass(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name);
+global.DatabaseHelper = new DatabaseHelperClass(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name, async () => {
+	// Close any unclosed db matches on startup
+	global.DatabaseHelper.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
+	global.DatabaseHelper.query("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
+});
 
 async function subscribeToChannel(channelName = "", callback = function(message = "") {})  {
 	// Dup and connect new client for channel subscription (required)
@@ -81,7 +85,8 @@ global.addChatMessage = function(msg) {
 	}
 }
 
-global.StreamsHandler = new Streams();
+// Init stream class
+Streams.init();
 
 // An array containing all chat channels
 global.channels = [
@@ -94,19 +99,11 @@ global.channels = [
 
 // Create a stream for each chat channel
 for (let i = 0; i < global.channels.length; i++) {
-	global.StreamsHandler.addStream(global.channels[i].channelName, false);
+	Streams.addStream(global.channels[i].channelName, false);
 }
 
 // Add a stream for the multiplayer lobby
-global.StreamsHandler.addStream("multiplayer_lobby", false);
-
-if (!fs.existsSync("tHMM.ds")) fs.writeFileSync("tHMM.ds", "0");
-global.totalHistoricalMultiplayerMatches = parseInt(fs.readFileSync("tHMM.ds").toString());
-global.getAndAddToHistoricalMultiplayerMatches = function() {
-	global.totalHistoricalMultiplayerMatches++;
-	fs.writeFile("tHMM.ds", `${global.totalHistoricalMultiplayerMatches}`, () => {});
-	return global.totalHistoricalMultiplayerMatches;
-}
+Streams.addStream("multiplayer_lobby", false);
 
 // Include packets
 const ChangeAction = require("./Packets/ChangeAction.js"),

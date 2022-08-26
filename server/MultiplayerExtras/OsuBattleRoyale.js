@@ -1,6 +1,7 @@
 const osu = require("osu-packet"),
 	  MultiplayerMatch = require("../MultiplayerMatch.js"),
-	  getUserById = require("../util/getUserById.js");
+	  getUserById = require("../util/getUserById.js"),
+	  Streams = require("../Streams.js");
 
 function sameScoreCheck(playerScores = [{playerId:0,slotId:0,score:0,isCurrentlyFailed:false}], lowestScore = 0) {
 	for (let playerScore of playerScores) {
@@ -27,8 +28,8 @@ function kickLowScorers(playerScores = [{playerId:0,slotId:0,score:0,isCurrently
 			slot.playerId = -1;
 			slot.status = 2;
 			// Remove the kicked player from the match's stream
-			global.StreamsHandler.removeUserFromStream(MultiplayerMatch.matchStreamName, kickedPlayer.uuid);
-			global.StreamsHandler.removeUserFromStream(MultiplayerMatch.matchChatStreamName, kickedPlayer.uuid);
+			Streams.removeUserFromStream(MultiplayerMatch.matchStreamName, kickedPlayer.uuid);
+			Streams.removeUserFromStream(MultiplayerMatch.matchChatStreamName, kickedPlayer.uuid);
 			// Remove the kicked player's referance this this match
 			kickedPlayer.currentMatch = null;
 
@@ -52,7 +53,7 @@ function kickLowScorers(playerScores = [{playerId:0,slotId:0,score:0,isCurrently
 				senderId: global.botUser.id
 			});
 
-			global.StreamsHandler.sendToStream(MultiplayerMatch.matchChatStreamName, osuPacketWriter.toBuffer, null);
+			Streams.sendToStream(MultiplayerMatch.matchChatStreamName, osuPacketWriter.toBuffer, null);
 		}
 	}
 }

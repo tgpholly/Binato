@@ -3,6 +3,7 @@ const osu = require("osu-packet"),
 	  UserPresence = require("./Packets/UserPresence.js"),
 	  StatusUpdate = require("./Packets/StatusUpdate.js"),
 	  MultiplayerMatch = require("./MultiplayerMatch.js"),
+	  Streams = require("./Streams.js"),
 	  User = require("./User.js");
 
 module.exports = class {
@@ -16,10 +17,10 @@ module.exports = class {
 			currentUser.currentMatch.leaveMatch(currentUser);
 
 		// Add user to the stream for the lobby
-		global.StreamsHandler.addUserToStream("multiplayer_lobby", currentUser.uuid);
+		Streams.addUserToStream("multiplayer_lobby", currentUser.uuid);
 
 		// Send user ids of all online users to all users in the lobby
-		global.StreamsHandler.sendToStream("multiplayer_lobby", UserPresenceBundle(currentUser, false), null);
+		Streams.sendToStream("multiplayer_lobby", UserPresenceBundle(currentUser, false), null);
 
 		// Loop through all matches
 		for (let i = 0; i < this.matches.length; i++) {
@@ -30,8 +31,8 @@ module.exports = class {
 				if (slot.playerId == -1 || slot.status == 2) continue;
 
 				// Send information for this user to all users in the lobby
-				global.StreamsHandler.sendToStream("multiplayer_lobby", UserPresence(currentUser, slot.playerId, false), null);
-				global.StreamsHandler.sendToStream("multiplayer_lobby", StatusUpdate(currentUser, slot.playerId, false), null);
+				Streams.sendToStream("multiplayer_lobby", UserPresence(currentUser, slot.playerId, false), null);
+				Streams.sendToStream("multiplayer_lobby", StatusUpdate(currentUser, slot.playerId, false), null);
 			}
 			const osuPacketWriter = new osu.Bancho.Writer;
 
@@ -40,11 +41,12 @@ module.exports = class {
 
 			currentUser.addActionToQueue(osuPacketWriter.toBuffer);
 		}
+		
 		const osuPacketWriter = new osu.Bancho.Writer;
 
 		// Add the user to the #lobby channel
-		if (!global.StreamsHandler.isUserInStream("#lobby", currentUser.uuid)) {
-			global.StreamsHandler.addUserToStream("#lobby", currentUser.uuid);
+		if (!Streams.isUserInStream("#lobby", currentUser.uuid)) {
+			Streams.addUserToStream("#lobby", currentUser.uuid);
 			osuPacketWriter.ChannelJoinSuccess("#lobby");
 		}
 		
@@ -53,13 +55,13 @@ module.exports = class {
 
 	userLeaveLobby(currentUser) {
 		// Remove user from the stream for the multiplayer lobby if they are a part of it
-		if (global.StreamsHandler.isUserInStream("multiplayer_lobby", currentUser.uuid))
-			global.StreamsHandler.removeUserFromStream("multiplayer_lobby", currentUser.uuid);
+		if (Streams.isUserInStream("multiplayer_lobby", currentUser.uuid))
+			Streams.removeUserFromStream("multiplayer_lobby", currentUser.uuid);
 	}
 	
 	updateMatchListing() {
 		// Send user ids of all online users to all users in the lobby
-		global.StreamsHandler.sendToStream("multiplayer_lobby", UserPresenceBundle(null, false), null);
+		Streams.sendToStream("multiplayer_lobby", UserPresenceBundle(null, false), null);
 
 		// List through all matches
 		for (let i = 0; i < this.matches.length; i++) {
@@ -70,8 +72,8 @@ module.exports = class {
 				if (slot.playerId == -1 || slot.status == 2) continue;
 
 				// Send information for this user to all users in the lobby
-				global.StreamsHandler.sendToStream("multiplayer_lobby", UserPresence(null, slot.playerId, false), null);
-				global.StreamsHandler.sendToStream("multiplayer_lobby", StatusUpdate(null, slot.playerId, false), null);
+				Streams.sendToStream("multiplayer_lobby", UserPresence(null, slot.playerId, false), null);
+				Streams.sendToStream("multiplayer_lobby", StatusUpdate(null, slot.playerId, false), null);
 			}
 			const osuPacketWriter = new osu.Bancho.Writer;
 
@@ -79,13 +81,13 @@ module.exports = class {
 			osuPacketWriter.MatchNew(this.matches[i].createOsuMatchJSON());
 
 			// Send this data back to every user in the lobby
-			global.StreamsHandler.sendToStream("multiplayer_lobby", osuPacketWriter.toBuffer, null);
+			Streams.sendToStream("multiplayer_lobby", osuPacketWriter.toBuffer, null);
 		}
 	}
 
-	createMultiplayerMatch(MatchHost, MatchData) {
+	async createMultiplayerMatch(MatchHost, MatchData) {
 		let matchClass = null;
-		this.matches.push(matchClass = new MultiplayerMatch(MatchHost, MatchData));
+		this.matches.push(matchClass = await MultiplayerMatch.createMatch(MatchHost, MatchData));
 
 		// Join the user to the newly created match
 		this.joinMultiplayerMatch(MatchHost, {
@@ -139,11 +141,11 @@ module.exports = class {
 			JoiningUser.inMatch = true;
 
 			// Add user to the stream for the match
-			global.StreamsHandler.addUserToStream(streamName, JoiningUser.uuid);
-			global.StreamsHandler.addUserToStream(chatStreamName, JoiningUser.uuid);
+			Streams.addUserToStream(streamName, JoiningUser.uuid);
+			Streams.addUserToStream(chatStreamName, JoiningUser.uuid);
 
 			// Inform all users in the match that a new user has joined
-			global.StreamsHandler.sendToStream(streamName, osuPacketWriter1.toBuffer, null);
+			Streams.sendToStream(streamName, osuPacketWriter1.toBuffer, null);
 
 			osuPacketWriter.ChannelJoinSuccess("#multiplayer");
 
@@ -165,7 +167,7 @@ module.exports = class {
 		}
 	}
 
-	leaveMultiplayerMatch(MatchUser = new User) {
+	async leaveMultiplayerMatch(MatchUser = new User) {
 		// Make sure the user is in a match
 		if (MatchUser.currentMatch == null) return;
 
@@ -202,6 +204,9 @@ module.exports = class {
 
 			// Remove this match from the list of active matches
 			this.matches.splice(matchIndex, 1);
+
+			// Close the db match
+			global.DatabaseHelper.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE id = ?", [mpMatch.matchId]);
 		}
 
 		MatchUser.currentMatch = null;
@@ -211,11 +216,6 @@ module.exports = class {
 
 		// Update the match listing to reflect this change (either removal or user leaving)
 		this.updateMatchListing();
-
-		// Delay a 2nd match listing update
-		setTimeout(() => {
-			this.updateMatchListing();
-		}, 1000);
 	}
 
 	getMatch(MatchID) {

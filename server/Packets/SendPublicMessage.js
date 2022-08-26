@@ -1,6 +1,7 @@
 const osu = require("osu-packet"),
 	  botCommandHandler = require("../BotCommandHandler.js"),
-	  consoleHelper = require("../../consoleHelper.js");
+	  consoleHelper = require("../../consoleHelper.js"),
+	  Streams = require("../Streams.js");
 
 module.exports = function(CurrentUser, CurrentPacket) {
 	let isSendingChannelLocked = false;
@@ -39,16 +40,16 @@ module.exports = function(CurrentUser, CurrentPacket) {
 	});
 
 	if (CurrentPacket.target == "#multiplayer") {
-		global.StreamsHandler.sendToStream(CurrentUser.currentMatch.matchChatStreamName, osuPacketWriter.toBuffer, CurrentUser.uuid);
+		Streams.sendToStream(CurrentUser.currentMatch.matchChatStreamName, osuPacketWriter.toBuffer, CurrentUser.uuid);
 		botCommandHandler(CurrentUser, CurrentPacket.message, CurrentUser.currentMatch.matchChatStreamName, true);
 		return;
 	}
 
 	// Check the stream that we're sending to even exists
-	if (!global.StreamsHandler.doesStreamExist(CurrentPacket.target)) return;
+	if (!Streams.exists(CurrentPacket.target)) return;
 
 	// Write chat message to stream asociated with chat channel
-	global.StreamsHandler.sendToStream(CurrentPacket.target, osuPacketWriter.toBuffer, CurrentUser.uuid);
+	Streams.sendToStream(CurrentPacket.target, osuPacketWriter.toBuffer, CurrentUser.uuid);
 	if (CurrentPacket.target == "#osu")
 		global.addChatMessage(`${CurrentUser.username}: ${CurrentPacket.message.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}`);
 		

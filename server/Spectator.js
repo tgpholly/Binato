@@ -1,17 +1,18 @@
 const osu = require("osu-packet"),
-	  getUserById = require("./util/getUserById.js");
+	  getUserById = require("./util/getUserById.js"),
+	  Streams = require("./Streams.js");
 
 module.exports = {
 	startSpectatingUser:function(currentUser, spectatedId) {
 		// Get the user this user is trying to spectate
 		const User = getUserById(spectatedId);
-		if (global.StreamsHandler.doesStreamExist(`sp_${User.id}`)) {
+		if (Streams.exists(`sp_${User.id}`)) {
 			// Just add user to stream since it already exists
-			global.StreamsHandler.addUserToStream(`sp_${User.id}`, currentUser.uuid);
+			Streams.addUserToStream(`sp_${User.id}`, currentUser.uuid);
 		} else {
 			// Stream doesn't exist, create it and add the spectator
-			global.StreamsHandler.addStream(`sp_${User.id}`, true, spectatedId);
-			global.StreamsHandler.addUserToStream(`sp_${User.id}`, currentUser.uuid);
+			Streams.addStream(`sp_${User.id}`, true, spectatedId);
+			Streams.addUserToStream(`sp_${User.id}`, currentUser.uuid);
 		}
 
 		// We want to do this stuff regardless
@@ -34,7 +35,7 @@ module.exports = {
 		osuPacketWriter.FellowSpectatorJoined(currentUser.id);
 
 		// Send this packet to all the spectators
-		global.StreamsHandler.sendToStream(`sp_${User.id}`, osuPacketWriter.toBuffer);
+		Streams.sendToStream(`sp_${User.id}`, osuPacketWriter.toBuffer);
 	},
 
 	sendSpectatorFrames(currentUser, data) {
@@ -45,7 +46,7 @@ module.exports = {
 		osuPacketWriter.SpectateFrames(data);
 
 		// Send the frames to all the spectators
-		global.StreamsHandler.sendToStream(`sp_${currentUser.id}`, osuPacketWriter.toBuffer, null);
+		Streams.sendToStream(`sp_${currentUser.id}`, osuPacketWriter.toBuffer, null);
 	},
 
 	stopSpectatingUser(currentUser) {
@@ -61,7 +62,7 @@ module.exports = {
 		spectatedUser.addActionToQueue(osuPacketWriter.toBuffer);
 
 		// Remove this user from the spectator stream
-		global.StreamsHandler.removeUserFromStream(`sp_${spectatedUser.id}`, currentUser.uuid);
+		Streams.removeUserFromStream(`sp_${spectatedUser.id}`, currentUser.uuid);
 
 		// Make a new clear osu packet writer
 		osuPacketWriter = new osu.Bancho.Writer;
@@ -70,6 +71,6 @@ module.exports = {
 		osuPacketWriter.FellowSpectatorLeft(currentUser.id);
 
 		// Send this packet to all spectators
-		global.StreamsHandler.sendToStream(`sp_${spectatedUser.id}`, osuPacketWriter.toBuffer);
+		Streams.sendToStream(`sp_${spectatedUser.id}`, osuPacketWriter.toBuffer);
 	}
 }
