@@ -1,4 +1,4 @@
-# Binato [![CodeFactor](https://www.codefactor.io/repository/github/tgpethan/binato/badge/master)](https://www.codefactor.io/repository/github/tgpethan/binato/overview/master)
+# Binato [![CodeFactor](https://www.codefactor.io/repository/github/tgpholly/binato/badge)](https://www.codefactor.io/repository/github/tgpholly/binato)
 An implementation of osu!bancho in Javascript
 
 i'm sorry peppy
@@ -13,9 +13,9 @@ i'm sorry peppy
  - Chat & Channels
  - Private Messages
  - Minimum Viable Product of a bot
-   - For a command list check [BotCommandHandler](https://github.com/tgpethan/Binato/blob/master/server/BotCommandHandler.js) or use !help on a live server
+   - For a command list check [BotCommandHandler](https://github.com/tgpholly/Binato/blob/master/server/BotCommandHandler.js) or use !help on a live server
    
-### [Planned additions](https://github.com/tgpethan/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement) | [List of currently known bugs](https://github.com/tgpethan/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
+### [Planned additions](https://github.com/tgpholly/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement) | [List of currently known bugs](https://github.com/tgpethan/Binato/issues?q=is%3Aopen+is%3Aissue+label%3Abug)
 
 <hr>
 
@@ -32,7 +32,7 @@ Clone the repo and run `npm i` to install required packages, then copy `config.e
 After doing this running `node .` should start the server
 
 ## Reporting bugs:
-To report a bug [create a new issue](https://github.com/tgpethan/Binato/issues/new) and include information such as your OS / Distro, Node version, disabled Binato features (e.g. Prometheus, Redis, compression) and console output at the time of the bug if applicable.
+To report a bug [create a new issue](https://github.com/tgpholly/Binato/issues/new) and include information such as your OS / Distro, Node version, disabled Binato features (e.g. Prometheus, Redis, compression) and console output at the time of the bug if applicable.
 
 <hr>
 
@@ -77,6 +77,6 @@ An example setup would be:
 
 ## Other Binato components:
 ### Website:
-Binato's website is handled by [Binato-Website](https://github.com/tgpethan/Binato-Website)
+Binato's website is handled by [Binato-Website](https://github.com/tgpholly/Binato-Website)
 ### Profile Pictures:
-Profile pictures can be handled by any standard HTTP server, there is also one I made for the task here: [Binato-ProfilePicture](https://github.com/tgpethan/Binato-ProfilePicture)
+Profile pictures can be handled by any standard HTTP server, there is also one I made for the task here: [Binato-ProfilePicture](https://github.com/tgpholly/Binato-ProfilePicture)
