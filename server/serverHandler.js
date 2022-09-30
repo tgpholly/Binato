@@ -177,10 +177,6 @@ module.exports = async function(req, res) {
 							UserPresenceBundle(PacketUser);
 						break;
 
-						case packetIDs.client_pong: // Pretty sure this is just a client ping
-													// so we probably don't do anything here
-						break;                      // It's probably just the client wanting to pull data down. (That's exactly what it is)
-
 						case packetIDs.client_startSpectating:
 							Spectator.startSpectatingUser(PacketUser, CurrentPacket.data);
 						break;
@@ -328,7 +324,7 @@ module.exports = async function(req, res) {
 
 						default:
 							// Ignore client_beatmapInfoRequest and client_receiveUpdates
-							if (CurrentPacket.id == 68 || CurrentPacket.id == 79) break;
+							if (CurrentPacket.id == 68 || CurrentPacket.id == 79 || CurrentPacket.id == 4) break;
 							// Print out unimplemented packet
 							console.dir(CurrentPacket);
 						break;
