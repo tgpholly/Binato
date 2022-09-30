@@ -148,10 +148,9 @@ class MultiplayerMatch {
 
 		this.activeMods = MatchData.activeMods;
 
-		if (this.gameName !== MatchData.gameName) {
-			this.gameName = MatchData.gameName;
-			await global.DatabaseHelper.query("UPDATE mp_matches SET name = ? WHERE id = ?", [this.gameName, this.matchId]);
-		}
+		const gameNameChanged = this.gameName !== MatchData.gameName;
+		this.gameName = MatchData.gameName;
+
 		if (MatchData.gamePassword == '') MatchData.gamePassword == null;
 		this.gamePassword = MatchData.gamePassword;
 
@@ -167,9 +166,20 @@ class MultiplayerMatch {
 		this.matchTeamType = MatchData.matchTeamType;
 		this.specialModes = MatchData.specialModes;
 
-		if (this.seed !== MatchData.seed) {
-			this.seed = MatchData.seed;
-			await global.DatabaseHelper.query("UPDATE mp_matches SET seed = ? WHERE id = ?", [this.seed, this.matchId]);
+		const gameSeedChanged = this.seed !== MatchData.seed;
+		this.seed = MatchData.seed;
+
+		if (gameNameChanged || gameSeedChanged) {
+			const queryData = [];
+			if (gameNameChanged) {
+				queryData.push(MatchData.gameName);
+			}
+			if (gameSeedChanged) {
+				queryData.push(MatchData.seed);
+			}
+			queryData.push(this.matchId);
+
+			await global.DatabaseHelper.query(`UPDATE mp_matches SET ${gameNameChanged ? `name = ?${gameSeedChanged ? ", " : ""}` : ""}${gameSeedChanged ? `seed = ?` : ""} WHERE id = ?`, queryData);
 		}
 
 		this.sendMatchUpdate();
@@ -430,7 +440,7 @@ class MultiplayerMatch {
 		}
 	}
 
-	onPlayerFinishMatch(MatchUser = new User) {
+	async onPlayerFinishMatch(MatchUser = new User) {
 		if (this.matchLoadSlots == null) {
 			// Repopulate user loading slots again
 			this.matchLoadSlots = [];
@@ -461,7 +471,7 @@ class MultiplayerMatch {
 		}
 
 		// All players have finished playing, finish the match
-		if (allLoaded) this.finishMatch();
+		if (allLoaded) await this.finishMatch();
 	}
 
 	async finishMatch() {

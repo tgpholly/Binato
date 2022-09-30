@@ -159,7 +159,7 @@ module.exports = async function(req, res) {
 				const PacketData = osuPacketReader.Parse();
 
 				// Go through each packet sent by the client
-				PacketData.forEach(CurrentPacket => {
+				for (CurrentPacket of PacketData) {
 					switch (CurrentPacket.id) {
 						case packetIDs.client_changeAction:
 							ChangeAction(PacketUser, CurrentPacket.data);
@@ -170,7 +170,7 @@ module.exports = async function(req, res) {
 						break;
 
 						case packetIDs.client_logout:
-							Logout(PacketUser);
+							await Logout(PacketUser);
 						break;
 
 						case packetIDs.client_requestStatusUpdate:
@@ -206,7 +206,7 @@ module.exports = async function(req, res) {
 						break;
 
 						case packetIDs.client_createMatch:
-							global.MultiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
+							await global.MultiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case packetIDs.client_joinMatch:
@@ -222,7 +222,7 @@ module.exports = async function(req, res) {
 						break;
 
 						case packetIDs.client_matchChangeSettings:
-							PacketUser.currentMatch.updateMatch(PacketUser, CurrentPacket.data);
+							await PacketUser.currentMatch.updateMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case packetIDs.client_matchNotReady:
@@ -230,7 +230,7 @@ module.exports = async function(req, res) {
 						break;
 
 						case packetIDs.client_partMatch:
-							global.MultiplayerManager.leaveMultiplayerMatch(PacketUser);
+							await global.MultiplayerManager.leaveMultiplayerMatch(PacketUser);
 						break;
 
 						// Also handles user kick if the slot has a user
@@ -267,7 +267,7 @@ module.exports = async function(req, res) {
 						break;
 
 						case packetIDs.client_matchComplete:
-							PacketUser.currentMatch.onPlayerFinishMatch(PacketUser);
+							await PacketUser.currentMatch.onPlayerFinishMatch(PacketUser);
 						break;
 
 						case packetIDs.client_matchScoreUpdate:
@@ -333,7 +333,7 @@ module.exports = async function(req, res) {
 							console.dir(CurrentPacket);
 						break;
 					}
-				});
+				}
 
 				responseData = PacketUser.queue;
 				PacketUser.clearQueue();
