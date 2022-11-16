@@ -1,7 +1,8 @@
-const osu = require("osu-packet"),
-	  fs = require("fs"),
-	  consoleHelper = require("../consoleHelper.js"),
-	  packetIDs = require("./packetIDs.js"),
+import * as osu from "osu-packet";
+import { ConsoleHelper } from "../ConsoleHelper";
+import { Packets } from "./enums/Packets";
+
+const 
 	  loginHandler = require("./loginHandler.js"),
 	  parseUserData = require("./util/parseUserData.js"),
 	  User = require("./User.js"),
@@ -34,7 +35,7 @@ async function subscribeToChannel(channelName = "", callback = function(message 
 	await subscriptionClient.connect();
 	// Subscribe to channel
 	await subscriptionClient.subscribe(channelName, callback);
-	consoleHelper.printRedis(`Subscribed to ${channelName} channel`);
+	ConsoleHelper.printRedis(`Subscribed to ${channelName} channel`);
 }
 
 // Do redis if it's enabled
@@ -128,25 +129,25 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
 // A class for managing everything multiplayer
 global.MultiplayerManager = new MultiplayerManager();
 
-module.exports = async function(req, res) {
+module.exports = async function(req, res, packet:Buffer) {
 	// Get the client's token string and request data
-	const requestTokenString = req.header("osu-token"),
-		  requestData = req.packet;
+	const requestTokenString:string = req.header("osu-token"),
+		  requestData:Buffer = packet;
 	
 	// Server's response
-	let responseData;
+	let responseData:Buffer;
 
 	// Check if the user is logged in
 	if (requestTokenString == null) {
 		// Client doesn't have a token yet, let's auth them!
 		const userData = parseUserData(requestData);
-		consoleHelper.printBancho(`New client connection. [User: ${userData.username}]`);
+		ConsoleHelper.printBancho(`New client connection. [User: ${userData.username}]`);
 		await loginHandler(req, res, userData);
 	} else {
 		// Client has a token, let's see what they want.
 		try {
 			// Get the current user
-			const PacketUser = getUserFromToken(requestTokenString);
+			const PacketUser:User = getUserFromToken(requestTokenString);
 
 			// Make sure the client's token isn't invalid
 			if (PacketUser != null) {
@@ -161,164 +162,164 @@ module.exports = async function(req, res) {
 				// Go through each packet sent by the client
 				for (CurrentPacket of PacketData) {
 					switch (CurrentPacket.id) {
-						case packetIDs.client_changeAction:
+						case Packets.Client_ChangeAction:
 							ChangeAction(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_sendPublicMessage:
+						case Packets.Client_SendPublicMessage:
 							SendPublicMessage(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_logout:
+						case Packets.Client_Logout:
 							await Logout(PacketUser);
 						break;
 
-						case packetIDs.client_requestStatusUpdate:
+						case Packets.Client_RequestStatusUpdate:
 							UserPresenceBundle(PacketUser);
 						break;
 
-						case packetIDs.client_startSpectating:
+						case Packets.Client_StartSpectating:
 							Spectator.startSpectatingUser(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_spectateFrames:
+						case Packets.Client_SpectateFrames:
 							Spectator.sendSpectatorFrames(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_stopSpectating:
+						case Packets.Client_StopSpectating:
 							Spectator.stopSpectatingUser(PacketUser);
 						break;
 
-						case packetIDs.client_sendPrivateMessage:
+						case Packets.client_sendPrivateMessage:
 							SendPrivateMessage(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_joinLobby:
+						case Packets.client_joinLobby:
 							global.MultiplayerManager.userEnterLobby(PacketUser);
 						break;
 
-						case packetIDs.client_partLobby:
+						case Packets.client_partLobby:
 							global.MultiplayerManager.userLeaveLobby(PacketUser);
 						break;
 
-						case packetIDs.client_createMatch:
+						case Packets.client_createMatch:
 							await global.MultiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_joinMatch:
+						case Packets.client_joinMatch:
 							global.MultiplayerManager.joinMultiplayerMatch(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_matchChangeSlot:
+						case Packets.client_matchChangeSlot:
 							PacketUser.currentMatch.moveToSlot(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_matchReady:
+						case Packets.client_matchReady:
 							PacketUser.currentMatch.setStateReady(PacketUser);
 						break;
 
-						case packetIDs.client_matchChangeSettings:
+						case Packets.client_matchChangeSettings:
 							await PacketUser.currentMatch.updateMatch(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_matchNotReady:
+						case Packets.client_matchNotReady:
 							PacketUser.currentMatch.setStateNotReady(PacketUser);
 						break;
 
-						case packetIDs.client_partMatch:
+						case Packets.client_partMatch:
 							await global.MultiplayerManager.leaveMultiplayerMatch(PacketUser);
 						break;
 
 						// Also handles user kick if the slot has a user
-						case packetIDs.client_matchLock:
+						case Packets.client_matchLock:
 							PacketUser.currentMatch.lockMatchSlot(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_matchNoBeatmap:
+						case Packets.client_matchNoBeatmap:
 							PacketUser.currentMatch.missingBeatmap(PacketUser);
 						break;
 
-						case packetIDs.client_matchSkipRequest:
+						case Packets.client_matchSkipRequest:
 							PacketUser.currentMatch.matchSkip(PacketUser);
 						break;
 						
-						case packetIDs.client_matchHasBeatmap:
+						case Packets.client_matchHasBeatmap:
 							PacketUser.currentMatch.notMissingBeatmap(PacketUser);
 						break;
 
-						case packetIDs.client_matchTransferHost:
+						case Packets.client_matchTransferHost:
 							PacketUser.currentMatch.transferHost(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_matchChangeMods:
+						case Packets.client_matchChangeMods:
 							PacketUser.currentMatch.updateMods(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_matchStart:
+						case Packets.client_matchStart:
 							PacketUser.currentMatch.startMatch();
 						break;
 
-						case packetIDs.client_matchLoadComplete:
+						case Packets.client_matchLoadComplete:
 							PacketUser.currentMatch.matchPlayerLoaded(PacketUser);
 						break;
 
-						case packetIDs.client_matchComplete:
+						case Packets.client_matchComplete:
 							await PacketUser.currentMatch.onPlayerFinishMatch(PacketUser);
 						break;
 
-						case packetIDs.client_matchScoreUpdate:
+						case Packets.client_matchScoreUpdate:
 							PacketUser.currentMatch.updatePlayerScore(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_matchFailed:
+						case Packets.client_matchFailed:
 							PacketUser.currentMatch.matchFailed(PacketUser);
 						break;
 
-						case packetIDs.client_matchChangeTeam:
+						case Packets.client_matchChangeTeam:
 							PacketUser.currentMatch.changeTeam(PacketUser);
 						break;
 
-						case packetIDs.client_channelJoin:
+						case Packets.client_channelJoin:
 							ChannelJoin(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_channelPart:
+						case Packets.client_channelPart:
 							ChannelPart(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_setAwayMessage:
+						case Packets.client_setAwayMessage:
 							SetAwayMessage(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_friendAdd:
+						case Packets.client_friendAdd:
 							AddFriend(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_friendRemove:
+						case Packets.client_friendRemove:
 							RemoveFriend(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_userStatsRequest:
+						case Packets.client_userStatsRequest:
 							UserStatsRequest(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_specialMatchInfoRequest:
+						case Packets.client_specialMatchInfoRequest:
 							TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_specialJoinMatchChannel:
+						case Packets.client_specialJoinMatchChannel:
 							TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_specialLeaveMatchChannel:
+						case Packets.client_specialLeaveMatchChannel:
 							TourneyMatchLeaveChannel(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_invite:
+						case Packets.client_invite:
 							MultiplayerInvite(PacketUser, CurrentPacket.data);
 						break;
 
-						case packetIDs.client_userPresenceRequest:
+						case Packets.client_userPresenceRequest:
 							UserPresence(PacketUser, PacketUser.id); // Can't really think of a way to generalize this?
 						break;
 
