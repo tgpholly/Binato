@@ -56,7 +56,7 @@ export enum Packets {
 	Client_MatchNoBeatmap,
 	Client_MatchNotReady,
 	Client_MatchFailed,
-	Server_MatchComplete,
+	Server_MatchComplete = 58,
 	Client_MatchHasBeatmap,
 	Client_MatchSkipRequest,
 	Server_MatchSkip,
@@ -109,5 +109,5 @@ export enum Packets {
 	// NOTE: Tournament client only
 	Client_SpecialJoinMatchChannel,
 	// NOTE: Tournament client only
-	Client_SpecialLeaveMatchChanne,
+	Client_SpecialLeaveMatchChannel,
 }

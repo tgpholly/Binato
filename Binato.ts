@@ -1,12 +1,13 @@
-import { Application } from "express";
+import { ChatHistory } from "./server/ChatHistory";
 import compression from "compression";
+import config from "./config.json";
 import { ConsoleHelper } from "./ConsoleHelper";
 import express from "express";
-import { readFile } from "fs";
+import { HandleRequest } from "./server/BanchoServer";
+import { readFileSync } from "fs";
 import { Registry, collectDefaultMetrics } from "prom-client";
 
-const binatoApp:Application = express();
-const config = require("./config.json");
+const binatoApp:express.Application = express();
 
 if (config["prometheus"]["enabled"]) {
 	const register:Registry = new Registry();
@@ -14,7 +15,7 @@ if (config["prometheus"]["enabled"]) {
 
 	collectDefaultMetrics({ register });
 
-	const prometheusApp:Application = express();
+	const prometheusApp:express.Application = express();
 	prometheusApp.get("/metrics", async (req, res) => {
 		res.end(await register.metrics());
 	});
@@ -31,6 +32,8 @@ if (config["express"]["compression"]) {
 	ConsoleHelper.printWarn("Compression is disabled");	
 }
 
+const INDEX_PAGE:string = readFileSync("./web/serverPage.html").toString();
+
 binatoApp.use((req, res) => {
 	let packet:Buffer = Buffer.alloc(0);
 	req.on("data", (chunk:Buffer) => packet = Buffer.concat([packet, chunk], packet.length + chunk.length));
@@ -38,21 +41,9 @@ binatoApp.use((req, res) => {
 		switch (req.method) {
 			case "GET":
 				if (req.url == "/" || req.url == "/index.html" || req.url == "/index") {
-					res.sendFile(`${__dirname}/web/serverPage.html`);
+					res.send(INDEX_PAGE);
 				} else if (req.url == "/chat") {
-					readFile("./web/chatPageTemplate.html", (err, data) => {
-						if (err) throw err;
-
-						let lines = "", flip = false;
-						const limit = global.chatHistory.length < 10 ? 10 : global.chatHistory.length;
-						for (let i = global.chatHistory.length - 10; i < limit; i++) {
-							if (i < 0) i = 0;
-							lines += `<div class="line line${flip ? 1 : 0}">${global.chatHistory[i] == null ? "<hidden>blank</hidden>" : global.chatHistory[i]}</div>`
-							flip = !flip;
-						}
-						
-						res.send(data.toString().replace("|content|", lines));
-					});
+					res.send(ChatHistory.GenerateForWeb());
 				}
 			break;
 
@@ -60,8 +51,8 @@ binatoApp.use((req, res) => {
 				// Make sure this address should respond to bancho requests
 				// Bancho addresses: c, c1, c2, c3, c4, c5, c6, ce
 				// Just looking for the first character being "c" *should* be enough
-				if (req.headers["host"].split(".")[0][0] == "c")
-					serverHandler(req, res);
+				if (req.headers.host != null && req.headers.host.split(".")[0][0] == "c")
+					HandleRequest(req, res, packet);
 				else
 					res.status(400).send("400 | Bad Request!<br>Binato only accepts POST requests on Bancho subdomains.<hr>Binato");
 			break;

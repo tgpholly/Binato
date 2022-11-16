@@ -1,71 +1,76 @@
-import * as osu from "osu-packet";
+import config from "../config.json";
 import { ConsoleHelper } from "../ConsoleHelper";
+import { Database } from "./objects/Database";
+import { UserArray } from "./objects/UserArray";
+import { LatLng } from "./objects/LatLng";
 import { Packets } from "./enums/Packets";
+import { RedisClientType, createClient } from "redis";
+import { replaceAll } from "./Util";
+import { Request, Response } from "express";
+import { User } from "./objects/User";
+import * as osu from "osu-packet";
 
-const 
+/*const 
 	  loginHandler = require("./loginHandler.js"),
 	  parseUserData = require("./util/parseUserData.js"),
-	  User = require("./User.js"),
 	  getUserFromToken = require("./util/getUserByToken.js"),
 	  getUserById = require("./util/getUserById.js"),
 	  bakedResponses = require("./bakedResponses.js"),
-	  Streams = require("./Streams.js"),
-	  DatabaseHelperClass = require("./DatabaseHelper.js"),
-	  funkyArray = require("./util/funkyArray.js"),
-	  config = require("../config.json");
+	  Streams = require("./Streams.js");*/
 
-// Users funkyArray for session storage
-global.users = new funkyArray();
-
-// Add the bot user
-global.botUser = global.users.add("bot", new User(3, "SillyBot", "bot"));
-// Set the bot's position on the map
-global.botUser.location[0] = 50;
-global.botUser.location[1] = -32;
-
-global.DatabaseHelper = new DatabaseHelperClass(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name, async () => {
+const DB:Database = new Database(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name, async () => {
 	// Close any unclosed db matches on startup
-	global.DatabaseHelper.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
-	global.DatabaseHelper.query("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
+	DB.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
+	DB.query("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
 });
 
-async function subscribeToChannel(channelName = "", callback = function(message = "") {})  {
+// Users funkyArray for session storage
+const users = new UserArray();
+
+// Add the bot user
+const botUser:User = users.add("bot", new User(3, "SillyBot", "bot", DB));
+// Set the bot's position on the map
+botUser.location = new LatLng(50, -32);
+
+let redisClient:RedisClientType;
+
+async function subscribeToChannel(channelName:string, callback:(message:string) => void) {
 	// Dup and connect new client for channel subscription (required)
-	const subscriptionClient = global.promClient.duplicate();
+	const subscriptionClient:RedisClientType = redisClient.duplicate();
 	await subscriptionClient.connect();
 	// Subscribe to channel
 	await subscriptionClient.subscribe(channelName, callback);
 	ConsoleHelper.printRedis(`Subscribed to ${channelName} channel`);
 }
 
-// Do redis if it's enabled
 if (config.redis.enabled) {
 	(async () => {
-		const { createClient } = require("redis");
-		global.promClient = createClient({
-			url: `redis://${config.redis.password.replaceAll(" ", "") == "" ? "" : `${config.redis.password}@`}${config.redis.address}:${config.redis.port}/${config.redis.database}`
+		redisClient = createClient({
+			url: `redis://${replaceAll(config.redis.password, " ", "") == "" ? "" : `${config.redis.password}@`}${config.redis.address}:${config.redis.port}/${config.redis.database}`
 		});
 
-		global.promClient.on('error', e => consoleHelper.printRedis(e));
+		redisClient.on('error', e => ConsoleHelper.printRedis(e));
 
 		const connectionStartTime = Date.now();
-		await global.promClient.connect();
-		consoleHelper.printRedis(`Connected to redis server. Took ${Date.now() - connectionStartTime}ms`);
+		await redisClient.connect();
+		ConsoleHelper.printRedis(`Connected to redis server. Took ${Date.now() - connectionStartTime}ms`);
 
 		// Score submit update channel
 		subscribeToChannel("binato:update_user_stats", (message) => {
-			const user = getUserById(parseInt(message));
-			// Update user info
-			user.updateUserInfo(true);
+			if (typeof(message) === "string") {
+				const user = users.getById(parseInt(message));
+				// Update user info
+				user.updateUserInfo(true);
 
-			consoleHelper.printRedis(`Score submission stats update request received for ${user.username}`);
+				ConsoleHelper.printRedis(`Score submission stats update request received for ${user.username}`);
+			}
 		});
 	})();
-} else consoleHelper.printWarn("Redis is disabled!");
+} else ConsoleHelper.printWarn("Redis is disabled!");
 
 // User timeout interval
 setInterval(() => {
-	for (let User of global.users.getIterableItems()) {
+	for (let User of users.getIterableItems()) {
 		if (User.id == 3) continue; // Ignore the bot
 									// Bot: :(
 
@@ -75,36 +80,25 @@ setInterval(() => {
 	}
 }, 10000);
 
-// An array containing the last 15 messages in chat
-global.chatHistory = [];
-global.addChatMessage = function(msg) {
-	if (global.chatHistory.length == 15) {
-		global.chatHistory.splice(0, 1);
-		global.chatHistory.push(msg);
-	} else {
-		global.chatHistory.push(msg);
-	}
-}
-
 // Init stream class
-Streams.init();
+//Streams.init();
 
 // An array containing all chat channels
-global.channels = [
+/*global.channels = [
 	{ channelName:"#osu", channelTopic:"The main channel", channelUserCount: 0, locked: false },
 	{ channelName:"#userlog", channelTopic:"Log about stuff doing go on yes very", channelUserCount: 0, locked: false },
 	{ channelName:"#lobby", channelTopic:"Talk about multiplayer stuff", channelUserCount: 0, locked: false },
 	{ channelName:"#english", channelTopic:"Talk in exclusively English", channelUserCount: 0, locked: false },
 	{ channelName:"#japanese", channelTopic:"Talk in exclusively Japanese", channelUserCount: 0, locked: false },
-];
+];*/
 
 // Create a stream for each chat channel
-for (let i = 0; i < global.channels.length; i++) {
+/*for (let i = 0; i < global.channels.length; i++) {
 	Streams.addStream(global.channels[i].channelName, false);
-}
+}*/
 
 // Add a stream for the multiplayer lobby
-Streams.addStream("multiplayer_lobby", false);
+//Streams.addStream("multiplayer_lobby", false);
 
 // Include packets
 const ChangeAction = require("./Packets/ChangeAction.js"),
@@ -127,11 +121,11 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
 	  TourneyMatchLeaveChannel = require("./Packets/TourneyLeaveMatchChannel.js");
 
 // A class for managing everything multiplayer
-global.MultiplayerManager = new MultiplayerManager();
+const multiplayerManager:MultiplayerManager = new MultiplayerManager();
 
-module.exports = async function(req, res, packet:Buffer) {
+export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 	// Get the client's token string and request data
-	const requestTokenString:string = req.header("osu-token"),
+	const requestTokenString:string | undefined = req.header("osu-token"),
 		  requestData:Buffer = packet;
 	
 	// Server's response
@@ -147,7 +141,7 @@ module.exports = async function(req, res, packet:Buffer) {
 		// Client has a token, let's see what they want.
 		try {
 			// Get the current user
-			const PacketUser:User = getUserFromToken(requestTokenString);
+			const PacketUser:User = users.getByToken(requestTokenString);
 
 			// Make sure the client's token isn't invalid
 			if (PacketUser != null) {
@@ -160,7 +154,7 @@ module.exports = async function(req, res, packet:Buffer) {
 				const PacketData = osuPacketReader.Parse();
 
 				// Go through each packet sent by the client
-				for (CurrentPacket of PacketData) {
+				for (let CurrentPacket of PacketData) {
 					switch (CurrentPacket.id) {
 						case Packets.Client_ChangeAction:
 							ChangeAction(PacketUser, CurrentPacket.data);
@@ -190,136 +184,136 @@ module.exports = async function(req, res, packet:Buffer) {
 							Spectator.stopSpectatingUser(PacketUser);
 						break;
 
-						case Packets.client_sendPrivateMessage:
+						case Packets.Client_sendPrivateMessage:
 							SendPrivateMessage(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_joinLobby:
+						case Packets.Client_joinLobby:
 							global.MultiplayerManager.userEnterLobby(PacketUser);
 						break;
 
-						case Packets.client_partLobby:
+						case Packets.Client_partLobby:
 							global.MultiplayerManager.userLeaveLobby(PacketUser);
 						break;
 
-						case Packets.client_createMatch:
+						case Packets.Client_createMatch:
 							await global.MultiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_joinMatch:
+						case Packets.Client_joinMatch:
 							global.MultiplayerManager.joinMultiplayerMatch(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_matchChangeSlot:
+						case Packets.Client_matchChangeSlot:
 							PacketUser.currentMatch.moveToSlot(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_matchReady:
+						case Packets.Client_matchReady:
 							PacketUser.currentMatch.setStateReady(PacketUser);
 						break;
 
-						case Packets.client_matchChangeSettings:
+						case Packets.Client_matchChangeSettings:
 							await PacketUser.currentMatch.updateMatch(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_matchNotReady:
+						case Packets.Client_matchNotReady:
 							PacketUser.currentMatch.setStateNotReady(PacketUser);
 						break;
 
-						case Packets.client_partMatch:
+						case Packets.Client_partMatch:
 							await global.MultiplayerManager.leaveMultiplayerMatch(PacketUser);
 						break;
 
 						// Also handles user kick if the slot has a user
-						case Packets.client_matchLock:
+						case Packets.Client_matchLock:
 							PacketUser.currentMatch.lockMatchSlot(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_matchNoBeatmap:
+						case Packets.Client_matchNoBeatmap:
 							PacketUser.currentMatch.missingBeatmap(PacketUser);
 						break;
 
-						case Packets.client_matchSkipRequest:
+						case Packets.Client_matchSkipRequest:
 							PacketUser.currentMatch.matchSkip(PacketUser);
 						break;
 						
-						case Packets.client_matchHasBeatmap:
+						case Packets.Client_matchHasBeatmap:
 							PacketUser.currentMatch.notMissingBeatmap(PacketUser);
 						break;
 
-						case Packets.client_matchTransferHost:
+						case Packets.Client_matchTransferHost:
 							PacketUser.currentMatch.transferHost(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_matchChangeMods:
+						case Packets.Client_matchChangeMods:
 							PacketUser.currentMatch.updateMods(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_matchStart:
+						case Packets.Client_matchStart:
 							PacketUser.currentMatch.startMatch();
 						break;
 
-						case Packets.client_matchLoadComplete:
+						case Packets.Client_matchLoadComplete:
 							PacketUser.currentMatch.matchPlayerLoaded(PacketUser);
 						break;
 
-						case Packets.client_matchComplete:
+						case Packets.Client_matchComplete:
 							await PacketUser.currentMatch.onPlayerFinishMatch(PacketUser);
 						break;
 
-						case Packets.client_matchScoreUpdate:
+						case Packets.Client_matchScoreUpdate:
 							PacketUser.currentMatch.updatePlayerScore(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_matchFailed:
+						case Packets.Client_matchFailed:
 							PacketUser.currentMatch.matchFailed(PacketUser);
 						break;
 
-						case Packets.client_matchChangeTeam:
+						case Packets.Client_matchChangeTeam:
 							PacketUser.currentMatch.changeTeam(PacketUser);
 						break;
 
-						case Packets.client_channelJoin:
+						case Packets.Client_channelJoin:
 							ChannelJoin(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_channelPart:
+						case Packets.Client_channelPart:
 							ChannelPart(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_setAwayMessage:
+						case Packets.Client_setAwayMessage:
 							SetAwayMessage(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_friendAdd:
+						case Packets.Client_friendAdd:
 							AddFriend(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_friendRemove:
+						case Packets.Client_friendRemove:
 							RemoveFriend(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_userStatsRequest:
+						case Packets.Client_userStatsRequest:
 							UserStatsRequest(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_specialMatchInfoRequest:
+						case Packets.Client_specialMatchInfoRequest:
 							TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_specialJoinMatchChannel:
+						case Packets.Client_specialJoinMatchChannel:
 							TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_specialLeaveMatchChannel:
+						case Packets.Client_specialLeaveMatchChannel:
 							TourneyMatchLeaveChannel(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_invite:
+						case Packets.Client_invite:
 							MultiplayerInvite(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.client_userPresenceRequest:
+						case Packets.Client_userPresenceRequest:
 							UserPresence(PacketUser, PacketUser.id); // Can't really think of a way to generalize this?
 						break;
 
