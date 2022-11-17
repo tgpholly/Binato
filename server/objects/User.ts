@@ -1,7 +1,7 @@
 import { Database } from "./Database";
 import { LatLng } from "./LatLng";
 import { RankingModes } from "../enums/RankingModes";
-const StatusUpdate = require("./Packets/StatusUpdate.js");
+//const StatusUpdate = require("./Packets/StatusUpdate.js");
 
 const rankingModes = [
 	"pp_raw",
@@ -89,9 +89,9 @@ export class User {
 
 	// Gets the user's score information from the database and caches it
 	async updateUserInfo(forceUpdate:boolean = false) : Promise<void> {
-		const userScoreDB:any = await this.dbConnection.query("SELECT * FROM users_modes_info WHERE user_id = ? AND mode_id = ? LIMIT 1", [this.id, this.playMode]);
+		const userScoreDB = await this.dbConnection.query("SELECT * FROM users_modes_info WHERE user_id = ? AND mode_id = ? LIMIT 1", [this.id, this.playMode]);
 		const mappedRankingMode = rankingModes[this.rankingMode];
-		const userRankDB:any = await this.dbConnection.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ? ORDER BY ${mappedRankingMode} DESC`, [this.playMode]);
+		const userRankDB = await this.dbConnection.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ? ORDER BY ${mappedRankingMode} DESC`, [this.playMode]);
 
 		if (userScoreDB == null || userRankDB == null) throw "fuck";
 
@@ -132,7 +132,7 @@ export class User {
 		else this.pp = 0;
 
 		if (userScoreUpdate || forceUpdate) {
-			StatusUpdate(this, this.id);
+			//StatusUpdate(this, this.id);
 		}
 	}
 }

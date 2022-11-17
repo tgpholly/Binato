@@ -1,11 +1,11 @@
 import { ChatHistory } from "./server/ChatHistory";
 import compression from "compression";
-import config from "./config.json";
 import { ConsoleHelper } from "./ConsoleHelper";
 import express from "express";
 import { HandleRequest } from "./server/BanchoServer";
 import { readFileSync } from "fs";
 import { Registry, collectDefaultMetrics } from "prom-client";
+const config:any = JSON.parse(readFileSync(__dirname + "/config.json").toString());
 
 const binatoApp:express.Application = express();
 
@@ -48,13 +48,7 @@ binatoApp.use((req, res) => {
 			break;
 
 			case "POST":
-				// Make sure this address should respond to bancho requests
-				// Bancho addresses: c, c1, c2, c3, c4, c5, c6, ce
-				// Just looking for the first character being "c" *should* be enough
-				if (req.headers.host != null && req.headers.host.split(".")[0][0] == "c")
-					HandleRequest(req, res, packet);
-				else
-					res.status(400).send("400 | Bad Request!<br>Binato only accepts POST requests on Bancho subdomains.<hr>Binato");
+				HandleRequest(req, res, packet);
 			break;
 
 			default:
@@ -63,3 +57,5 @@ binatoApp.use((req, res) => {
 		}
 	});
 });
+
+binatoApp.listen(config.express.port, () => ConsoleHelper.printBancho(`Binato is up! Listening at port ${config.express.port}`));

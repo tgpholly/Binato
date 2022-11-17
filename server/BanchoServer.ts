@@ -1,14 +1,17 @@
-import config from "../config.json";
 import { ConsoleHelper } from "../ConsoleHelper";
 import { Database } from "./objects/Database";
-import { UserArray } from "./objects/UserArray";
 import { LatLng } from "./objects/LatLng";
+import { LoginProcess } from "./LoginProcess";
 import { Packets } from "./enums/Packets";
-import { RedisClientType, createClient } from "redis";
 import { replaceAll } from "./Util";
+import { readFileSync } from "fs";
+import { RedisClientType, createClient } from "redis";
 import { Request, Response } from "express";
+import { UserArray } from "./objects/UserArray";
 import { User } from "./objects/User";
-import * as osu from "osu-packet";
+const config:any = JSON.parse(readFileSync(__dirname + "/config.json").toString());
+// TODO: Port osu-packet to TypeScript
+const osu = require("osu-packet");
 
 /*const 
 	  loginHandler = require("./loginHandler.js"),
@@ -59,10 +62,12 @@ if (config.redis.enabled) {
 		subscribeToChannel("binato:update_user_stats", (message) => {
 			if (typeof(message) === "string") {
 				const user = users.getById(parseInt(message));
-				// Update user info
-				user.updateUserInfo(true);
+				if (user != null) {
+					// Update user info
+					user.updateUserInfo(true);
 
-				ConsoleHelper.printRedis(`Score submission stats update request received for ${user.username}`);
+					ConsoleHelper.printRedis(`Score submission stats update request received for ${user.username}`);
+				}
 			}
 		});
 	})();
@@ -71,12 +76,11 @@ if (config.redis.enabled) {
 // User timeout interval
 setInterval(() => {
 	for (let User of users.getIterableItems()) {
-		if (User.id == 3) continue; // Ignore the bot
-									// Bot: :(
+		if (User.uuid == "bot") continue; // Ignore the bot
 
 		// Logout this user, they're clearly gone.
-		if (Date.now() >= User.timeoutTime)
-			Logout(User);
+		// if (Date.now() >= User.timeoutTime)
+		// 	Logout(User);
 	}
 }, 10000);
 
@@ -101,7 +105,7 @@ setInterval(() => {
 //Streams.addStream("multiplayer_lobby", false);
 
 // Include packets
-const ChangeAction = require("./Packets/ChangeAction.js"),
+/*const ChangeAction = require("./Packets/ChangeAction.js"),
 	  SendPublicMessage = require("./Packets/SendPublicMessage.js"),
 	  Logout = require("./Packets/Logout.js"),
 	  Spectator = require("./Spectator.js"),
@@ -118,30 +122,37 @@ const ChangeAction = require("./Packets/ChangeAction.js"),
 	  MultiplayerInvite = require("./Packets/MultiplayerInvite.js"),
 	  TourneyMatchSpecialInfo = require("./Packets/TourneyMatchSpecialInfo.js"),
 	  TourneyMatchJoinChannel = require("./Packets/TourneyMatchSpecialInfo.js"),
-	  TourneyMatchLeaveChannel = require("./Packets/TourneyLeaveMatchChannel.js");
+	  TourneyMatchLeaveChannel = require("./Packets/TourneyLeaveMatchChannel.js");*/
 
 // A class for managing everything multiplayer
-const multiplayerManager:MultiplayerManager = new MultiplayerManager();
+//const multiplayerManager:MultiplayerManager = new MultiplayerManager();
+
+const EMPTY_BUFFER = Buffer.alloc(0);
 
 export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
+	// Remove headers we don't need for Bancho
+	res.removeHeader('X-Powered-By');
+	res.removeHeader('Date');
+
 	// Get the client's token string and request data
-	const requestTokenString:string | undefined = req.header("osu-token"),
-		  requestData:Buffer = packet;
-	
-	// Server's response
-	let responseData:Buffer;
+	const requestTokenString:string | undefined = req.header("osu-token");
 
 	// Check if the user is logged in
 	if (requestTokenString == null) {
-		// Client doesn't have a token yet, let's auth them!
-		const userData = parseUserData(requestData);
-		ConsoleHelper.printBancho(`New client connection. [User: ${userData.username}]`);
-		await loginHandler(req, res, userData);
+		// Only do this if we're absolutely sure that we're connected to the DB
+		if (DB.connected) {
+			// Client doesn't have a token yet, let's auth them!
+			
+			await LoginProcess(req, res, packet, DB, users);
+			DB.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [users.getLength() - 1]);
+		}
 	} else {
+		let responseData:Buffer | string = EMPTY_BUFFER;
+
 		// Client has a token, let's see what they want.
 		try {
 			// Get the current user
-			const PacketUser:User = users.getByToken(requestTokenString);
+			const PacketUser:User | undefined = users.getByToken(requestTokenString);
 
 			// Make sure the client's token isn't invalid
 			if (PacketUser != null) {
@@ -149,13 +160,13 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 				PacketUser.timeoutTime = Date.now() + 60000;
 
 				// Create a new osu! packet reader
-				const osuPacketReader = new osu.Client.Reader(requestData);
+				const osuPacketReader = new osu.Client.Reader(packet);
 				// Parse current bancho packet
 				const PacketData = osuPacketReader.Parse();
 
 				// Go through each packet sent by the client
 				for (let CurrentPacket of PacketData) {
-					switch (CurrentPacket.id) {
+					/*switch (CurrentPacket.id) {
 						case Packets.Client_ChangeAction:
 							ChangeAction(PacketUser, CurrentPacket.data);
 						break;
@@ -184,136 +195,136 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 							Spectator.stopSpectatingUser(PacketUser);
 						break;
 
-						case Packets.Client_sendPrivateMessage:
+						case Packets.Client_SendPrivateMessage:
 							SendPrivateMessage(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_joinLobby:
-							global.MultiplayerManager.userEnterLobby(PacketUser);
+						case Packets.Client_JoinLobby:
+							multiplayerManager.userEnterLobby(PacketUser);
 						break;
 
-						case Packets.Client_partLobby:
-							global.MultiplayerManager.userLeaveLobby(PacketUser);
+						case Packets.Client_PartLobby:
+							multiplayerManager.userLeaveLobby(PacketUser);
 						break;
 
-						case Packets.Client_createMatch:
-							await global.MultiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
+						case Packets.Client_CreateMatch:
+							await multiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_joinMatch:
-							global.MultiplayerManager.joinMultiplayerMatch(PacketUser, CurrentPacket.data);
+						case Packets.Client_JoinMatch:
+							multiplayerManager.joinMultiplayerMatch(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_matchChangeSlot:
+						case Packets.Client_MatchChangeSlot:
 							PacketUser.currentMatch.moveToSlot(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_matchReady:
+						case Packets.Client_MatchReady:
 							PacketUser.currentMatch.setStateReady(PacketUser);
 						break;
 
-						case Packets.Client_matchChangeSettings:
+						case Packets.Client_MatchChangeSettings:
 							await PacketUser.currentMatch.updateMatch(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_matchNotReady:
+						case Packets.Client_MatchNotReady:
 							PacketUser.currentMatch.setStateNotReady(PacketUser);
 						break;
 
-						case Packets.Client_partMatch:
-							await global.MultiplayerManager.leaveMultiplayerMatch(PacketUser);
+						case Packets.Client_PartMatch:
+							await multiplayerManager.leaveMultiplayerMatch(PacketUser);
 						break;
 
 						// Also handles user kick if the slot has a user
-						case Packets.Client_matchLock:
+						case Packets.Client_MatchLock:
 							PacketUser.currentMatch.lockMatchSlot(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_matchNoBeatmap:
+						case Packets.Client_MatchNoBeatmap:
 							PacketUser.currentMatch.missingBeatmap(PacketUser);
 						break;
 
-						case Packets.Client_matchSkipRequest:
+						case Packets.Client_MatchSkipRequest:
 							PacketUser.currentMatch.matchSkip(PacketUser);
 						break;
 						
-						case Packets.Client_matchHasBeatmap:
+						case Packets.Client_MatchHasBeatmap:
 							PacketUser.currentMatch.notMissingBeatmap(PacketUser);
 						break;
 
-						case Packets.Client_matchTransferHost:
+						case Packets.Client_MatchTransferHost:
 							PacketUser.currentMatch.transferHost(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_matchChangeMods:
+						case Packets.Client_MatchChangeMods:
 							PacketUser.currentMatch.updateMods(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_matchStart:
+						case Packets.Client_MatchStart:
 							PacketUser.currentMatch.startMatch();
 						break;
 
-						case Packets.Client_matchLoadComplete:
+						case Packets.Client_MatchLoadComplete:
 							PacketUser.currentMatch.matchPlayerLoaded(PacketUser);
 						break;
 
-						case Packets.Client_matchComplete:
+						case Packets.Client_MatchComplete:
 							await PacketUser.currentMatch.onPlayerFinishMatch(PacketUser);
 						break;
 
-						case Packets.Client_matchScoreUpdate:
+						case Packets.Client_MatchScoreUpdate:
 							PacketUser.currentMatch.updatePlayerScore(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_matchFailed:
+						case Packets.Client_MatchFailed:
 							PacketUser.currentMatch.matchFailed(PacketUser);
 						break;
 
-						case Packets.Client_matchChangeTeam:
+						case Packets.Client_MatchChangeTeam:
 							PacketUser.currentMatch.changeTeam(PacketUser);
 						break;
 
-						case Packets.Client_channelJoin:
+						case Packets.Client_ChannelJoin:
 							ChannelJoin(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_channelPart:
+						case Packets.Client_ChannelPart:
 							ChannelPart(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_setAwayMessage:
+						case Packets.Client_SetAwayMessage:
 							SetAwayMessage(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_friendAdd:
+						case Packets.Client_FriendAdd:
 							AddFriend(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_friendRemove:
+						case Packets.Client_FriendRemove:
 							RemoveFriend(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_userStatsRequest:
+						case Packets.Client_UserStatsRequest:
 							UserStatsRequest(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_specialMatchInfoRequest:
+						case Packets.Client_SpecialMatchInfoRequest:
 							TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_specialJoinMatchChannel:
+						case Packets.Client_SpecialJoinMatchChannel:
 							TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_specialLeaveMatchChannel:
+						case Packets.Client_SpecialLeaveMatchChannel:
 							TourneyMatchLeaveChannel(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_invite:
+						case Packets.Client_Invite:
 							MultiplayerInvite(PacketUser, CurrentPacket.data);
 						break;
 
-						case Packets.Client_userPresenceRequest:
+						case Packets.Client_UserPresenceRequest:
 							UserPresence(PacketUser, PacketUser.id); // Can't really think of a way to generalize this?
 						break;
 
@@ -323,22 +334,22 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 							// Print out unimplemented packet
 							console.dir(CurrentPacket);
 						break;
-					}
+					}*/
 				}
 
 				responseData = PacketUser.queue;
 				PacketUser.clearQueue();
 			} else {
-				// User's token is invlid, force a reconnect
-				consoleHelper.printBancho(`Forced client re-login (Token is invalid)`);
-				responseData = bakedResponses("reconnect");
+				// Only do this if we're absolutely sure that we're connected to the DB
+				if (DB.connected) {
+					// User's token is invlid, force a reconnect
+					ConsoleHelper.printBancho(`Forced client re-login (Token is invalid)`);
+					responseData = "\u0005\u0000\u0000\u0004\u0000\u0000\u0000����\u0018\u0000\u0000\u0011\u0000\u0000\u0000\u000b\u000fReconnecting...";
+				}
 			}
 		} catch (e) {
 			console.error(e);
 		} finally {
-			// Only send the headers that we absolutely have to
-			res.removeHeader('X-Powered-By');
-			res.removeHeader('Date');
 			res.writeHead(200, {
 				"Connection": "keep-alive",
 				"Keep-Alive": "timeout=5, max=100",
@@ -347,4 +358,4 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 			res.end(responseData);
 		}
 	}
-};
+}

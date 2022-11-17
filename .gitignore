@@ -1,4 +1,6 @@
 node_modules/
+build/
+bundle/
 tHMM.ds
 server-stats.log
 config.json

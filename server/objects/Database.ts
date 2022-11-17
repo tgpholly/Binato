@@ -5,6 +5,8 @@ export class Database {
 	private connectionPool:Pool;
 	private static readonly CONNECTION_LIMIT = 128;
 
+	public connected:boolean = false;
+
 	public constructor(databaseAddress:string, databasePort:number = 3306, databaseUsername:string, databasePassword:string, databaseName:string, connectedCallback:Function) {
 		this.connectionPool = createPool({
 			connectionLimit: Database.CONNECTION_LIMIT,
@@ -16,22 +18,32 @@ export class Database {
 		});
 
 		const classCreationTime:number = Date.now();
+		let lastQueryFinished = true;
 		const connectionCheckInterval = setInterval(() => {
-			this.query("SELECT name FROM osu_info LIMIT 1")
+			if (lastQueryFinished) {
+				lastQueryFinished = false;
+				this.query("SELECT name FROM osu_info LIMIT 1")
 				.then(data => {
-					ConsoleHelper.printBancho(`Connected to database. Took ${Date.now() - classCreationTime}ms`);
-					clearInterval(connectionCheckInterval);
+					if (!this.connected) {
+						this.connected = true;
+						ConsoleHelper.printBancho(`Connected to database. Took ${Date.now() - classCreationTime}ms`);
+						clearInterval(connectionCheckInterval);
+						lastQueryFinished = true;
 
-					connectedCallback();
+						connectedCallback();
+					}
 				})
-				.catch(err => {});
-		}, 17); // Roughly 6 times per sec
+				.catch(err => {
+					lastQueryFinished = true;
+				});
+			}
+		}, 16);
 	}
 
 	public query(query = "", data?:Array<any>) {
 		const limited = query.includes("LIMIT 1");
 
-		return new Promise((resolve, reject) => {
+		return new Promise<any>((resolve, reject) => {
 			this.connectionPool.getConnection((err, connection) => {
 				if (err) {
 					reject(err);

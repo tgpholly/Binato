@@ -6,3 +6,21 @@ function escapeRegExp(string:string) {
 export function replaceAll(inputString:string, toReplace:string, toReplaceWith:string) {
 	return inputString.replace(`/:${escapeRegExp(toReplace)}:/g`, toReplaceWith);
 }
+
+import { randomBytes } from "crypto";
+
+export function generateSession() : Promise<string> {
+	return new Promise<string>((resolve, reject) => {
+		randomBytes(12, (err, buf) => {
+			if (err) {
+				return reject(err);
+			}
+
+			resolve(buf.toString("hex"));
+		});
+	});
+}
+
+export function generateSessionSync() : string {
+	return randomBytes(12).toString("hex");
+}

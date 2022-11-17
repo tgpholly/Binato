@@ -4,25 +4,36 @@
 	"description": "",
 	"main": "Binato.ts",
 	"scripts": {
-		"dev:run": "nodemon --watch './**/*.ts' Binato.ts"
+		"dev:run": "nodemon --watch './**/*.ts' Binato.ts",
+		"pack": "webpack",
+		"build": "tsc --build",
+		"_clean": "tsc --build --clean"
 	},
 	"keywords": [],
 	"author": "",
 	"license": "MIT",
 	"dependencies": {
-		"@types/compression": "^1.7.2",
-		"@types/express": "^4.17.14",
-		"@types/node": "^18.11.9",
+		"aes256": "^1.1.0",
 		"chalk": "^4.1.0",
 		"compression": "^1.7.4",
 		"express": "^4.18.2",
 		"mysql2": "^2.3.3",
+		"node-fetch": "^2.6.7",
 		"osu-packet": "^4.1.2",
 		"prom-client": "^14.1.0",
 		"redis": "^4.5.0"
 	},
 	"devDependencies": {
+		"@types/compression": "^1.7.2",
+		"@types/express": "^4.17.14",
+		"@types/node": "^18.11.9",
+		"@types/node-fetch": "^2.6.2",
 		"nodemon": "^2.0.20",
-		"ts-node": "^10.9.1"
+		"ts-loader": "^9.4.1",
+		"ts-node": "^10.9.1",
+		"typescript": "^4.9.3",
+		"webpack": "^5.75.0",
+		"webpack-cli": "^4.10.0",
+		"webpack-node-externals": "^3.0.0"
 	}
 }
