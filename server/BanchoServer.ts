@@ -17,29 +17,43 @@ const config:any = JSON.parse(readFileSync("./config.json").toString());
 // TODO: Port osu-packet to TypeScript
 const osu = require("osu-packet");
 
-const DB:Database = new Database(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name, async () => {
+export interface SharedContent {
+	chatManager:ChatManager,
+	database:Database,
+	mutiplayerManager:MultiplayerManager,
+	streams:DataStreamArray,
+	users:UserArray,
+}
+
+const sharedContent:any = {};
+// NOTE: This function should only be used externaly in Binato.ts and in this file.
+export function GetSharedContent() : SharedContent {
+	return sharedContent;
+}
+
+const DB:Database = sharedContent.database = new Database(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name, async () => {
 	// Close any unclosed db matches on startup
 	DB.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
 	DB.query("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
 });
 
 // User session storage
-const users:UserArray = new UserArray();
+const users:UserArray = sharedContent.users = new UserArray();
 
 // DataStream storage
-const streams:DataStreamArray = new DataStreamArray();
+const streams:DataStreamArray = sharedContent.streams = new DataStreamArray();
 
 // ChatManager
-const chatManager:ChatManager = new ChatManager(streams);
+const chatManager:ChatManager = sharedContent.chatManager = new ChatManager(streams);
 chatManager.AddChatChannel("osu", "The main channel", true);
 chatManager.AddChatChannel("lobby", "Talk about multiplayer stuff");
 chatManager.AddChatChannel("english", "Talk in exclusively English");
 chatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
 
-const multiplayerManager:MultiplayerManager = new MultiplayerManager(streams);
+const multiplayerManager:MultiplayerManager = sharedContent.mutiplayerManager = new MultiplayerManager(streams);
 
 // Add the bot user
-const botUser:User = users.add("bot", new User(3, "SillyBot", "bot", DB, users, streams, chatManager));
+const botUser:User = users.add("bot", new User(3, "SillyBot", "bot", GetSharedContent()));
 // Set the bot's position on the map
 botUser.location = new LatLng(50, -32);
 
@@ -116,7 +130,7 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 		if (DB.connected) {
 			// Client doesn't have a token yet, let's auth them!
 			
-			await LoginProcess(req, res, packet, DB, users, streams, chatManager);
+			await LoginProcess(req, res, packet, GetSharedContent());
 			DB.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [users.getLength() - 1]);
 		}
 	} else {

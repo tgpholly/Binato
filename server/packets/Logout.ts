@@ -8,12 +8,12 @@ export async function Logout(user:User) {
 
 	const logoutStartTime = Date.now();
 
-	user.streams.RemoveUserFromAllStreams(user);
+	user.sharedContent.streams.RemoveUserFromAllStreams(user);
 
 	// Remove user from user list
-	user.users.remove(user.uuid);
+	user.sharedContent.users.remove(user.uuid);
 
-	await user.dbConnection.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [user.users.getLength() - 1]);
+	await user.sharedContent.database.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [user.sharedContent.users.getLength() - 1]);
 
 	ConsoleHelper.printBancho(`User logged out, took ${Date.now() - logoutStartTime}ms. [User: ${user.username}]`);
 }

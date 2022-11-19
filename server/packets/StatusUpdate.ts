@@ -9,7 +9,7 @@ export function StatusUpdate(user:User, id:number, sendImmidiate:boolean = false
 	const osuPacketWriter = new osu.Bancho.Writer;
 
 	// Get user's class
-	const userData = user.users.getById(id);
+	const userData = user.sharedContent.users.getById(id);
 
 	if (userData == null) return;
 

@@ -6,7 +6,7 @@ export function UserPresenceBundle(user:User, sendImmidiate:boolean = true) {
 
 	let userIds:Array<number> = new Array<number>();
 
-	for (let userData of user.users.getIterableItems()) {
+	for (let userData of user.sharedContent.users.getIterableItems()) {
 		userIds.push(userData.id);
 	}
 

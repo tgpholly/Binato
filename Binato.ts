@@ -11,13 +11,13 @@ if (!existsSync("./config.json")) {
 import { ChatHistory } from "./server/ChatHistory";
 import compression from "compression";
 import express from "express";
-import { HandleRequest } from "./server/BanchoServer";
+import { HandleRequest, GetSharedContent, SharedContent } from "./server/BanchoServer";
 import { Registry, collectDefaultMetrics } from "prom-client";
 const config:any = JSON.parse(readFileSync(__dirname + "/config.json").toString());
+// Pull out shared data from BanchoServer
+const sharedContent:SharedContent = GetSharedContent();
 
 const binatoApp:express.Application = express();
-
-ConsoleHelper.printInfo("Starting Binato...");
 
 if (config["prometheus"]["enabled"]) {
 	const register:Registry = new Registry();

@@ -16,6 +16,7 @@ import { ChatManager } from "./ChatManager";
 import { UserPresenceBundle } from "./packets/UserPresenceBundle";
 import { UserPresence } from "./packets/UserPresence";
 import { StatusUpdate } from "./packets/StatusUpdate";
+import { SharedContent } from "./BanchoServer";
 const config:any = JSON.parse(readFileSync("./config.json").toString());
 const { decrypt: aesDecrypt } = require("aes256");
 const osu = require("osu-packet");
@@ -95,11 +96,11 @@ function TestLogin(loginInfo:LoginInfo | undefined, database:Database) {
 	});
 }
 
-export async function LoginProcess(req:Request, res:Response, packet:Buffer, database:Database, users:UserArray, streams:DataStreamArray, chatManager:ChatManager) {
+export async function LoginProcess(req:Request, res:Response, packet:Buffer, sharedContent:SharedContent) {
 	const loginInfo = LoginInfo.From(packet);
 	const loginStartTime = Date.now();
 
-	const loginCheck:any = await TestLogin(loginInfo, database);
+	const loginCheck:any = await TestLogin(loginInfo, sharedContent.database);
 	if (loginCheck != null) {
 		res.writeHead(200, loginCheck[1]);
 		return res.end(loginCheck[0]);
@@ -143,20 +144,20 @@ export async function LoginProcess(req:Request, res:Response, packet:Buffer, dat
 	}
 
 	// Get information about the user from the database
-	const userDB = await database.query("SELECT id FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
+	const userDB = await sharedContent.database.query("SELECT id FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
 
 	// Create a token for the client
 	const newClientToken:string = await generateSession();
 	const isTourneyClient = loginInfo.version.includes("tourney");
 
 	// Make sure user is not already connected, kick off if so.
-	const connectedUser = users.getByUsername(loginInfo.username);
+	const connectedUser = sharedContent.users.getByUsername(loginInfo.username);
 	if (connectedUser != null && !isTourneyClient && !connectedUser.isTourneyUser) {
 		Logout(connectedUser);
 	}
 
 	// Retreive the newly created user
-	const newUser:User = users.add(newClientToken, new User(userDB.id, loginInfo.username, newClientToken, database, users, streams, chatManager));
+	const newUser:User = sharedContent.users.add(newClientToken, new User(userDB.id, loginInfo.username, newClientToken, sharedContent));
 	// Set tourney client flag
 	newUser.isTourneyUser = isTourneyClient;
 	newUser.location = userLocation;
@@ -193,11 +194,11 @@ export async function LoginProcess(req:Request, res:Response, packet:Buffer, dat
 		osuPacketWriter.ChannelListingComplete();
 
 		// Setup chat
-		chatManager.ForceJoinChannels(newUser);
-		chatManager.SendChannelListing(newUser);
+		sharedContent.chatManager.ForceJoinChannels(newUser);
+		sharedContent.chatManager.SendChannelListing(newUser);
 
 		// Construct user's friends list
-		const userFriends = await database.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
+		const userFriends = await sharedContent.database.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
 		const friendsArray:Array<number> = new Array<number>();
 		for (let i = 0; i < userFriends.length; i++) {
 			friendsArray.push(userFriends[i].friendsWith);

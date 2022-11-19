@@ -4,7 +4,7 @@ const osu = require("osu-packet");
 export function UserPresence(user:User, id:number, sendImmidiate:boolean = true) {
 	const osuPacketWriter = new osu.Bancho.Writer;
 
-	const userData = user.users.getById(id);
+	const userData = user.sharedContent.users.getById(id);
 
 	if (userData == null) return;
 
