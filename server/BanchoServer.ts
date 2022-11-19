@@ -1,4 +1,5 @@
 import { ConsoleHelper } from "../ConsoleHelper";
+import { Channel } from "./objects/Channel";
 import { ChatManager } from "./ChatManager";
 import { Database } from "./objects/Database";
 import { LatLng } from "./objects/LatLng";
@@ -16,8 +17,6 @@ const config:any = JSON.parse(readFileSync("./config.json").toString());
 // TODO: Port osu-packet to TypeScript
 const osu = require("osu-packet");
 
-/*Streams = require("./Streams.js");*/
-
 const DB:Database = new Database(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name, async () => {
 	// Close any unclosed db matches on startup
 	DB.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
@@ -32,7 +31,7 @@ const streams:DataStreamArray = new DataStreamArray();
 
 // ChatManager
 const chatManager:ChatManager = new ChatManager(streams);
-chatManager.AddChatChannel("osu", "The main channel");
+chatManager.AddChatChannel("osu", "The main channel", true);
 chatManager.AddChatChannel("lobby", "Talk about multiplayer stuff");
 chatManager.AddChatChannel("english", "Talk in exclusively English");
 chatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
@@ -82,41 +81,24 @@ if (config.redis.enabled) {
 	})();
 } else ConsoleHelper.printWarn("Redis is disabled!");
 
+// Import packets
+import { ChangeAction } from "./packets/ChangeAction";
+import { Logout } from "./packets/Logout";
+import { UserPresence } from "./packets/UserPresence";
+import { UserStatsRequest } from "./packets/UserStatsRequest";
+import { UserPresenceBundle } from "./packets/UserPresenceBundle";
+
 // User timeout interval
 setInterval(() => {
 	for (let User of users.getIterableItems()) {
 		if (User.uuid == "bot") continue; // Ignore the bot
 
 		// Logout this user, they're clearly gone.
-		// if (Date.now() >= User.timeoutTime)
-		// 	Logout(User);
+		if (Date.now() >= User.timeoutTime) {
+			Logout(User);
+		}
 	}
 }, 10000);
-
-// Include packets
-/*const ChangeAction = require("./Packets/ChangeAction.js"),
-	  SendPublicMessage = require("./Packets/SendPublicMessage.js"),
-	  Logout = require("./Packets/Logout.js"),
-	  Spectator = require("./Spectator.js"),
-	  SendPrivateMessage = require("./Packets/SendPrivateMessage.js"),
-	  MultiplayerManager = require("./MultiplayerManager.js"),
-	  SetAwayMessage = require("./Packets/SetAwayMessage.js"),
-	  ChannelJoin = require("./Packets/ChannelJoin.js"),
-	  ChannelPart = require("./Packets/ChannelPart.js"),
-	  AddFriend = require("./Packets/AddFriend.js"),
-	  RemoveFriend = require("./Packets/RemoveFriend.js"),
-	  UserPresenceBundle = require("./Packets/UserPresenceBundle.js"),
-	  UserPresence = require("./Packets/UserPresence.js"),
-	  UserStatsRequest = require("./Packets/UserStatsRequest.js"),
-	  MultiplayerInvite = require("./Packets/MultiplayerInvite.js"),
-	  TourneyMatchSpecialInfo = require("./Packets/TourneyMatchSpecialInfo.js"),
-	  TourneyMatchJoinChannel = require("./Packets/TourneyMatchSpecialInfo.js"),
-	  TourneyMatchLeaveChannel = require("./Packets/TourneyLeaveMatchChannel.js");*/
-import { ChangeAction } from "./packets/ChangeAction";
-import { Logout } from "./packets/Logout";
-import { UserPresence } from "./packets/UserPresence";
-import { UserStatsRequest } from "./packets/UserStatsRequest";
-import { UserPresenceBundle } from "./packets/UserPresenceBundle";
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -163,7 +145,10 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_SendPublicMessage:
-							//SendPublicMessage(PacketUser, CurrentPacket.data);
+							let channel = chatManager.GetChannelByName(CurrentPacket.data.target);
+							if (channel instanceof Channel) {
+								channel.SendMessage(PacketUser, CurrentPacket.data.message);
+							}
 						break;
 
 						case Packets.Client_Logout:

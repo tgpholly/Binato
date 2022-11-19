@@ -24,3 +24,17 @@ export function generateSession() : Promise<string> {
 export function generateSessionSync() : string {
 	return randomBytes(12).toString("hex");
 }
+
+export function hexlify(data:Buffer) : string {
+	let out:string = "";
+	for (let i = 0; i < data.length; i++) {
+		const hex = data[i].toString(16);
+		if (hex.length === 1) {
+			out += `0${hex.toUpperCase()},`;
+		} else {
+			out += `${hex.toUpperCase()},`;
+		}
+	}
+
+	return out.slice(0, out.length - 1);
+}

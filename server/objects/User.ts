@@ -6,6 +6,7 @@ import { DataStream } from "./DataStream";
 import { UserArray } from "./UserArray";
 import { DataStreamArray } from "./DataStreamArray";
 import { ChatManager } from "../ChatManager";
+import { StatusUpdate } from "../packets/StatusUpdate";
 //const StatusUpdate = require("./Packets/StatusUpdate.js");
 
 const rankingModes = [
@@ -146,7 +147,7 @@ export class User {
 		else this.pp = 0;
 
 		if (userScoreUpdate || forceUpdate) {
-			//StatusUpdate(this, this.id);
+			StatusUpdate(this, this.id);
 		}
 	}
 }

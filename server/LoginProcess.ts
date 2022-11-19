@@ -192,23 +192,13 @@ export async function LoginProcess(req:Request, res:Response, packet:Buffer, dat
 		// peppy pls, why
 		osuPacketWriter.ChannelListingComplete();
 
-		// Add user to #osu
-		osuPacketWriter.ChannelJoinSuccess("#osu");
-		//if (!Streams.isUserInStream("#osu", newUser.uuid))
-		//	Streams.addUserToStream("#osu", newUser.uuid);
-
-		// List all channels out to the client
-		/*for (let i = 0; i < global.channels.length; i++) {
-			osuPacketWriter.ChannelAvailable({
-				channelName: global.channels[i].channelName,
-				channelTopic: global.channels[i].channelTopic,
-				channelUserCount: global.channels[i].channelUserCount
-			});
-		}*/
+		// Setup chat
+		chatManager.ForceJoinChannels(newUser);
+		chatManager.SendChannelListing(newUser);
 
 		// Construct user's friends list
 		const userFriends = await database.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
-		let friendsArray = new Array<number>;
+		const friendsArray:Array<number> = new Array<number>();
 		for (let i = 0; i < userFriends.length; i++) {
 			friendsArray.push(userFriends[i].friendsWith);
 		}
