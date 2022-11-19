@@ -1,4 +1,5 @@
 import { ConsoleHelper } from "../ConsoleHelper";
+import { ChatManager } from "./ChatManager";
 import { Database } from "./objects/Database";
 import { LatLng } from "./objects/LatLng";
 import { LoginProcess } from "./LoginProcess";
@@ -9,17 +10,13 @@ import { RedisClientType, createClient } from "redis";
 import { Request, Response } from "express";
 import { UserArray } from "./objects/UserArray";
 import { User } from "./objects/User";
-const config:any = JSON.parse(readFileSync(__dirname + "/config.json").toString());
+import { DataStreamArray } from "./objects/DataStreamArray";
+import { MultiplayerManager } from "./MultiplayerManager";
+const config:any = JSON.parse(readFileSync("./config.json").toString());
 // TODO: Port osu-packet to TypeScript
 const osu = require("osu-packet");
 
-/*const 
-	  loginHandler = require("./loginHandler.js"),
-	  parseUserData = require("./util/parseUserData.js"),
-	  getUserFromToken = require("./util/getUserByToken.js"),
-	  getUserById = require("./util/getUserById.js"),
-	  bakedResponses = require("./bakedResponses.js"),
-	  Streams = require("./Streams.js");*/
+/*Streams = require("./Streams.js");*/
 
 const DB:Database = new Database(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name, async () => {
 	// Close any unclosed db matches on startup
@@ -27,11 +24,23 @@ const DB:Database = new Database(config.database.address, config.database.port, 
 	DB.query("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
 });
 
-// Users funkyArray for session storage
-const users = new UserArray();
+// User session storage
+const users:UserArray = new UserArray();
+
+// DataStream storage
+const streams:DataStreamArray = new DataStreamArray();
+
+// ChatManager
+const chatManager:ChatManager = new ChatManager(streams);
+chatManager.AddChatChannel("osu", "The main channel");
+chatManager.AddChatChannel("lobby", "Talk about multiplayer stuff");
+chatManager.AddChatChannel("english", "Talk in exclusively English");
+chatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
+
+const multiplayerManager:MultiplayerManager = new MultiplayerManager(streams);
 
 // Add the bot user
-const botUser:User = users.add("bot", new User(3, "SillyBot", "bot", DB));
+const botUser:User = users.add("bot", new User(3, "SillyBot", "bot", DB, users, streams, chatManager));
 // Set the bot's position on the map
 botUser.location = new LatLng(50, -32);
 
@@ -84,26 +93,6 @@ setInterval(() => {
 	}
 }, 10000);
 
-// Init stream class
-//Streams.init();
-
-// An array containing all chat channels
-/*global.channels = [
-	{ channelName:"#osu", channelTopic:"The main channel", channelUserCount: 0, locked: false },
-	{ channelName:"#userlog", channelTopic:"Log about stuff doing go on yes very", channelUserCount: 0, locked: false },
-	{ channelName:"#lobby", channelTopic:"Talk about multiplayer stuff", channelUserCount: 0, locked: false },
-	{ channelName:"#english", channelTopic:"Talk in exclusively English", channelUserCount: 0, locked: false },
-	{ channelName:"#japanese", channelTopic:"Talk in exclusively Japanese", channelUserCount: 0, locked: false },
-];*/
-
-// Create a stream for each chat channel
-/*for (let i = 0; i < global.channels.length; i++) {
-	Streams.addStream(global.channels[i].channelName, false);
-}*/
-
-// Add a stream for the multiplayer lobby
-//Streams.addStream("multiplayer_lobby", false);
-
 // Include packets
 /*const ChangeAction = require("./Packets/ChangeAction.js"),
 	  SendPublicMessage = require("./Packets/SendPublicMessage.js"),
@@ -123,9 +112,11 @@ setInterval(() => {
 	  TourneyMatchSpecialInfo = require("./Packets/TourneyMatchSpecialInfo.js"),
 	  TourneyMatchJoinChannel = require("./Packets/TourneyMatchSpecialInfo.js"),
 	  TourneyMatchLeaveChannel = require("./Packets/TourneyLeaveMatchChannel.js");*/
-
-// A class for managing everything multiplayer
-//const multiplayerManager:MultiplayerManager = new MultiplayerManager();
+import { ChangeAction } from "./packets/ChangeAction";
+import { Logout } from "./packets/Logout";
+import { UserPresence } from "./packets/UserPresence";
+import { UserStatsRequest } from "./packets/UserStatsRequest";
+import { UserPresenceBundle } from "./packets/UserPresenceBundle";
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -143,7 +134,7 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 		if (DB.connected) {
 			// Client doesn't have a token yet, let's auth them!
 			
-			await LoginProcess(req, res, packet, DB, users);
+			await LoginProcess(req, res, packet, DB, users, streams, chatManager);
 			DB.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [users.getLength() - 1]);
 		}
 	} else {
@@ -166,13 +157,13 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 
 				// Go through each packet sent by the client
 				for (let CurrentPacket of PacketData) {
-					/*switch (CurrentPacket.id) {
+					switch (CurrentPacket.id) {
 						case Packets.Client_ChangeAction:
 							ChangeAction(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_SendPublicMessage:
-							SendPublicMessage(PacketUser, CurrentPacket.data);
+							//SendPublicMessage(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_Logout:
@@ -184,124 +175,124 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_StartSpectating:
-							Spectator.startSpectatingUser(PacketUser, CurrentPacket.data);
+							//Spectator.startSpectatingUser(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_SpectateFrames:
-							Spectator.sendSpectatorFrames(PacketUser, CurrentPacket.data);
+							//Spectator.sendSpectatorFrames(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_StopSpectating:
-							Spectator.stopSpectatingUser(PacketUser);
+							//Spectator.stopSpectatingUser(PacketUser);
 						break;
 
 						case Packets.Client_SendPrivateMessage:
-							SendPrivateMessage(PacketUser, CurrentPacket.data);
+							//SendPrivateMessage(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_JoinLobby:
-							multiplayerManager.userEnterLobby(PacketUser);
+							//multiplayerManager.userEnterLobby(PacketUser);
 						break;
 
 						case Packets.Client_PartLobby:
-							multiplayerManager.userLeaveLobby(PacketUser);
+							//multiplayerManager.userLeaveLobby(PacketUser);
 						break;
 
 						case Packets.Client_CreateMatch:
-							await multiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
+							//await multiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_JoinMatch:
-							multiplayerManager.joinMultiplayerMatch(PacketUser, CurrentPacket.data);
+							//multiplayerManager.joinMultiplayerMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchChangeSlot:
-							PacketUser.currentMatch.moveToSlot(PacketUser, CurrentPacket.data);
+							//PacketUser.currentMatch.moveToSlot(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchReady:
-							PacketUser.currentMatch.setStateReady(PacketUser);
+							//PacketUser.currentMatch.setStateReady(PacketUser);
 						break;
 
 						case Packets.Client_MatchChangeSettings:
-							await PacketUser.currentMatch.updateMatch(PacketUser, CurrentPacket.data);
+							//await PacketUser.currentMatch.updateMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchNotReady:
-							PacketUser.currentMatch.setStateNotReady(PacketUser);
+							//PacketUser.currentMatch.setStateNotReady(PacketUser);
 						break;
 
 						case Packets.Client_PartMatch:
-							await multiplayerManager.leaveMultiplayerMatch(PacketUser);
+							//await multiplayerManager.leaveMultiplayerMatch(PacketUser);
 						break;
 
 						// Also handles user kick if the slot has a user
 						case Packets.Client_MatchLock:
-							PacketUser.currentMatch.lockMatchSlot(PacketUser, CurrentPacket.data);
+							//PacketUser.currentMatch.lockMatchSlot(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchNoBeatmap:
-							PacketUser.currentMatch.missingBeatmap(PacketUser);
+							//PacketUser.currentMatch.missingBeatmap(PacketUser);
 						break;
 
 						case Packets.Client_MatchSkipRequest:
-							PacketUser.currentMatch.matchSkip(PacketUser);
+							//PacketUser.currentMatch.matchSkip(PacketUser);
 						break;
 						
 						case Packets.Client_MatchHasBeatmap:
-							PacketUser.currentMatch.notMissingBeatmap(PacketUser);
+							//PacketUser.currentMatch.notMissingBeatmap(PacketUser);
 						break;
 
 						case Packets.Client_MatchTransferHost:
-							PacketUser.currentMatch.transferHost(PacketUser, CurrentPacket.data);
+							//PacketUser.currentMatch.transferHost(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchChangeMods:
-							PacketUser.currentMatch.updateMods(PacketUser, CurrentPacket.data);
+							//PacketUser.currentMatch.updateMods(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchStart:
-							PacketUser.currentMatch.startMatch();
+							//PacketUser.currentMatch.startMatch();
 						break;
 
 						case Packets.Client_MatchLoadComplete:
-							PacketUser.currentMatch.matchPlayerLoaded(PacketUser);
+							//PacketUser.currentMatch.matchPlayerLoaded(PacketUser);
 						break;
 
 						case Packets.Client_MatchComplete:
-							await PacketUser.currentMatch.onPlayerFinishMatch(PacketUser);
+							//await PacketUser.currentMatch.onPlayerFinishMatch(PacketUser);
 						break;
 
 						case Packets.Client_MatchScoreUpdate:
-							PacketUser.currentMatch.updatePlayerScore(PacketUser, CurrentPacket.data);
+							//PacketUser.currentMatch.updatePlayerScore(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchFailed:
-							PacketUser.currentMatch.matchFailed(PacketUser);
+							//PacketUser.currentMatch.matchFailed(PacketUser);
 						break;
 
 						case Packets.Client_MatchChangeTeam:
-							PacketUser.currentMatch.changeTeam(PacketUser);
+							//PacketUser.currentMatch.changeTeam(PacketUser);
 						break;
 
 						case Packets.Client_ChannelJoin:
-							ChannelJoin(PacketUser, CurrentPacket.data);
+							//ChannelJoin(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_ChannelPart:
-							ChannelPart(PacketUser, CurrentPacket.data);
+							//ChannelPart(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_SetAwayMessage:
-							SetAwayMessage(PacketUser, CurrentPacket.data);
+							//SetAwayMessage(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_FriendAdd:
-							AddFriend(PacketUser, CurrentPacket.data);
+							//AddFriend(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_FriendRemove:
-							RemoveFriend(PacketUser, CurrentPacket.data);
+							//RemoveFriend(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_UserStatsRequest:
@@ -309,19 +300,19 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_SpecialMatchInfoRequest:
-							TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
+							//TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_SpecialJoinMatchChannel:
-							TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
+							//TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_SpecialLeaveMatchChannel:
-							TourneyMatchLeaveChannel(PacketUser, CurrentPacket.data);
+							//TourneyMatchLeaveChannel(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_Invite:
-							MultiplayerInvite(PacketUser, CurrentPacket.data);
+							//MultiplayerInvite(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_UserPresenceRequest:
@@ -334,7 +325,7 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 							// Print out unimplemented packet
 							console.dir(CurrentPacket);
 						break;
-					}*/
+					}
 				}
 
 				responseData = PacketUser.queue;

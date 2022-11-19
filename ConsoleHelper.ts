@@ -7,12 +7,14 @@ enum LogType {
 };
 
 const LogTags = {
-	BANCHO: chalk.bgMagenta(chalk.black(" BCHO ")),
-	WEBREQ: chalk.bgGreen(chalk.black(" WEBR ")),
-	CHAT: chalk.bgCyan(chalk.black(" CHAT ")),
-	WARN: chalk.bgYellow(chalk.black(" WARN ")),
-	ERROR: chalk.bgRed(" ERRR "),
-	REDIS: chalk.bgRed(chalk.white(" RDIS "))
+	INFO: chalk.bgGreen(chalk.black("  INFO  ")),
+	BANCHO: chalk.bgMagenta(chalk.black(" BANCHO ")),
+	WEBREQ: chalk.bgGreen(chalk.black(" WEBREQ ")),
+	CHAT: chalk.bgCyan(chalk.black("  CHAT  ")),
+	WARN: chalk.bgYellow(chalk.black("  WARN  ")),
+	ERROR: chalk.bgRed("  ERRR  "),
+	REDIS: chalk.bgRed(chalk.white(" bREDIS ")),
+	STREAM: chalk.bgBlue(chalk.black(" STREAM "))
 } as const;
 
 function correctValue(i:number) : string {
@@ -39,6 +41,14 @@ function log(tag:string, log:string, logType:LogType = LogType.INFO) : void {
 export class ConsoleHelper {
 	public static printWebReq(s:string) : void {
 		log(LogTags.WEBREQ, s);
+	}
+
+	public static printStream(s:string) : void {
+		log(LogTags.STREAM, s);
+	}
+
+	public static printInfo(s:string) : void {
+		log(LogTags.INFO, s);
 	}
 
 	public static printBancho(s:string) : void {

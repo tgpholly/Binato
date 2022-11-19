@@ -1,6 +1,11 @@
 import { Database } from "./Database";
 import { LatLng } from "./LatLng";
 import { RankingModes } from "../enums/RankingModes";
+import { Match } from "./Match";
+import { DataStream } from "./DataStream";
+import { UserArray } from "./UserArray";
+import { DataStreamArray } from "./DataStreamArray";
+import { ChatManager } from "../ChatManager";
 //const StatusUpdate = require("./Packets/StatusUpdate.js");
 
 const rankingModes = [
@@ -12,6 +17,10 @@ const rankingModes = [
 export class User {
 	private static readonly EMPTY_BUFFER = Buffer.alloc(0);
 
+	public users:UserArray;
+	public streams:DataStreamArray;
+	public chatManager:ChatManager;
+
 	public id:number;
 	public username:string;
 	public uuid:string;
@@ -21,6 +30,7 @@ export class User {
 	
 	// Binato data
 	public rankingMode:RankingModes = RankingModes.PP;
+	public spectatorStream:DataStream | null = null;
 
 	// osu! data
 	public playMode:number = 0;
@@ -47,7 +57,7 @@ export class User {
 	public pp:number = 0;
 
 	// Multiplayer data
-	public currentMatch = null;
+	public currentMatch:Match | null = null;
 	public matchSlotId:number = -1;
 	public inMatch:boolean = false;
 
@@ -56,12 +66,16 @@ export class User {
 
 	public dbConnection:Database;
 
-	public constructor(id:number, username:string, uuid:string, dbConnection:Database) {
+	public constructor(id:number, username:string, uuid:string, dbConnection:Database, users:UserArray, streams:DataStreamArray, chatManager:ChatManager) {
 		this.id = id;
 		this.username = username;
 		this.uuid = uuid;
 
 		this.dbConnection = dbConnection;
+
+		this.users = users;
+		this.streams = streams;
+		this.chatManager = chatManager;
 	}
 
 	// Concats new actions to the user's queue

@@ -11,7 +11,12 @@ import { readFileSync } from "fs";
 import { Request, Response } from "express";
 import { UserArray } from "./objects/UserArray";
 import { User } from "./objects/User";
-const config:any = JSON.parse(readFileSync(__dirname + "/config.json").toString());
+import { DataStreamArray } from "./objects/DataStreamArray";
+import { ChatManager } from "./ChatManager";
+import { UserPresenceBundle } from "./packets/UserPresenceBundle";
+import { UserPresence } from "./packets/UserPresence";
+import { StatusUpdate } from "./packets/StatusUpdate";
+const config:any = JSON.parse(readFileSync("./config.json").toString());
 const { decrypt: aesDecrypt } = require("aes256");
 const osu = require("osu-packet");
 
@@ -88,7 +93,7 @@ function TestLogin(loginInfo:LoginInfo | undefined, database:Database) {
 	});
 }
 
-export async function LoginProcess(req:Request, res:Response, packet:Buffer, database:Database, users:UserArray) {
+export async function LoginProcess(req:Request, res:Response, packet:Buffer, database:Database, users:UserArray, streams:DataStreamArray, chatManager:ChatManager) {
 	const loginInfo = LoginInfo.From(packet);
 	const loginStartTime = Date.now();
 
@@ -145,11 +150,11 @@ export async function LoginProcess(req:Request, res:Response, packet:Buffer, dat
 	// Make sure user is not already connected, kick off if so.
 	const connectedUser = users.getByUsername(loginInfo.username);
 	if (connectedUser != null && !isTourneyClient && !connectedUser.isTourneyUser) {
-		Logout(connectedUser, database);
+		Logout(connectedUser);
 	}
 
 	// Retreive the newly created user
-	const newUser:User = users.add(newClientToken, new User(userDB.id, loginInfo.username, newClientToken, database));
+	const newUser:User = users.add(newClientToken, new User(userDB.id, loginInfo.username, newClientToken, database, users, streams, chatManager));
 	// Set tourney client flag
 	newUser.isTourneyUser = isTourneyClient;
 	newUser.location = userLocation;
@@ -173,14 +178,14 @@ export async function LoginProcess(req:Request, res:Response, packet:Buffer, dat
 		osuPacketWriter.LoginPermissions(4);
 
 		// After sending the user their friends list send them the online users
-		//UserPresenceBundle(newUser);
+		UserPresenceBundle(newUser);
 
 		// Set title screen image
 		//osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
 
 		// Add user panel data packets
-		//UserPresence(newUser, newUser.id);
-		//StatusUpdate(newUser, newUser.id);
+		UserPresence(newUser, newUser.id);
+		StatusUpdate(newUser, newUser.id);
 
 		// peppy pls, why
 		osuPacketWriter.ChannelListingComplete();
@@ -201,7 +206,7 @@ export async function LoginProcess(req:Request, res:Response, packet:Buffer, dat
 
 		// Construct user's friends list
 		const userFriends = await database.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
-		let friendsArray = [];
+		let friendsArray = new Array<number>;
 		for (let i = 0; i < userFriends.length; i++) {
 			friendsArray.push(userFriends[i].friendsWith);
 		}

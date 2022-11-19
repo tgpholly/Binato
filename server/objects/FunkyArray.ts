@@ -3,19 +3,19 @@ export class FunkyArray<T> {
 	private itemKeys:Array<string> = Object.keys(this.items);
 	private iterableArray:Array<T> = new Array<T>();
 
-	public add(uuid:string, item:T, regenerate:boolean = true) : T {
-		this.items[uuid] = item;
+	public add(key:string, item:T, regenerate:boolean = true) : T {
+		this.items[key] = item;
 
 		if (regenerate) {
 			this.itemKeys = Object.keys(this.items);
 			this.regenerateIterableArray();
 		}
 
-		return this.items[uuid];
+		return this.items[key];
 	}
 
-	public remove(uuid:string, regenerate:boolean = true) {
-		delete this.items[uuid];
+	public remove(key:string, regenerate:boolean = true) {
+		delete this.items[key];
 		if (regenerate) {
 			this.itemKeys = Object.keys(this.items);
 			this.regenerateIterableArray();

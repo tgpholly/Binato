@@ -26,7 +26,7 @@ export class Database {
 				.then(data => {
 					if (!this.connected) {
 						this.connected = true;
-						ConsoleHelper.printBancho(`Connected to database. Took ${Date.now() - classCreationTime}ms`);
+						ConsoleHelper.printInfo(`Connected to database. Took ${Date.now() - classCreationTime}ms`);
 						clearInterval(connectionCheckInterval);
 						lastQueryFinished = true;
 

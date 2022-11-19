@@ -1,13 +1,23 @@
+console.clear();
+
+import { ConsoleHelper } from "./ConsoleHelper";
+import { readFileSync, existsSync } from "fs";
+if (!existsSync("./config.json")) {
+	ConsoleHelper.printError("You must have a config file in the root of Binato's folder structure.");
+	ConsoleHelper.printError("Check the GitHub for an example file");
+	process.exit(1);
+}
+
 import { ChatHistory } from "./server/ChatHistory";
 import compression from "compression";
-import { ConsoleHelper } from "./ConsoleHelper";
 import express from "express";
 import { HandleRequest } from "./server/BanchoServer";
-import { readFileSync } from "fs";
 import { Registry, collectDefaultMetrics } from "prom-client";
 const config:any = JSON.parse(readFileSync(__dirname + "/config.json").toString());
 
 const binatoApp:express.Application = express();
+
+ConsoleHelper.printInfo("Starting Binato...");
 
 if (config["prometheus"]["enabled"]) {
 	const register:Registry = new Registry();
@@ -20,14 +30,14 @@ if (config["prometheus"]["enabled"]) {
 		res.end(await register.metrics());
 	});
 
-	prometheusApp.listen(config["prometheus"]["port"], () => ConsoleHelper.printBancho(`Prometheus metrics listening at port ${config["prometheus"]["port"]}`));
+	prometheusApp.listen(config["prometheus"]["port"], () => ConsoleHelper.printInfo(`Prometheus metrics listening at port ${config["prometheus"]["port"]}`));
 } else {
 	ConsoleHelper.printWarn("Prometheus is disabled!");
 }
 
 if (config["express"]["compression"]) {
 	binatoApp.use(compression());
-	ConsoleHelper.printBancho("Compression is enabled");
+	ConsoleHelper.printInfo("Compression is enabled");
 } else {
 	ConsoleHelper.printWarn("Compression is disabled");	
 }
@@ -58,4 +68,4 @@ binatoApp.use((req, res) => {
 	});
 });
 
-binatoApp.listen(config.express.port, () => ConsoleHelper.printBancho(`Binato is up! Listening at port ${config.express.port}`));
+binatoApp.listen(config.express.port, () => ConsoleHelper.printInfo(`Binato is up! Listening at port ${config.express.port}`));
