@@ -68,27 +68,29 @@ function TestLogin(loginInfo:LoginInfo | undefined, database:Database) {
 			1: Old MD5 password
 			2: Old AES password
 		*/
-		if (userDBData.has_old_password === LoginTypes.OLD_MD5) {
-			if (userDBData.password_hash !== loginInfo.password)
-				return resolve(incorrectLoginResponse());
-			
-			return resolve(requiredPWChangeResponse());
-		} else if (userDBData.has_old_password === LoginTypes.OLD_AES) {
-			if (aesDecrypt(config.database.key, userDBData.password_hash) !== loginInfo.password)
-				return resolve(resolve(incorrectLoginResponse()));
-
-			return resolve(requiredPWChangeResponse());
-		} else {
-			pbkdf2(loginInfo.password, userDBData.password_salt, config.database.pbkdf2.itterations, config.database.pbkdf2.keylength, "sha512", (err, derivedKey) => {
-				if (err) {
-					return reject(err);
-				} else {
-					if (derivedKey.toString("hex") !== userDBData.password_hash)
-						return resolve(incorrectLoginResponse());
-
-					return resolve(undefined); // We good
+		switch (userDBData.has_old_password) {
+			case LoginTypes.CURRENT:
+				pbkdf2(loginInfo.password, userDBData.password_salt, config.database.pbkdf2.itterations, config.database.pbkdf2.keylength, "sha512", (err, derivedKey) => {
+					if (err) {
+						return reject(err);
+					} else {
+						if (derivedKey.toString("hex") !== userDBData.password_hash)
+							return resolve(incorrectLoginResponse());
+	
+						return resolve(undefined); // We good
+					}
+				});
+				break;
+			case LoginTypes.OLD_AES:
+				if (aesDecrypt(config.database.key, userDBData.password_hash) !== loginInfo.password) {
+					return resolve(resolve(incorrectLoginResponse()));
 				}
-			});
+				return resolve(requiredPWChangeResponse());
+			case LoginTypes.OLD_MD5:
+				if (userDBData.password_hash !== loginInfo.password) {
+					return resolve(incorrectLoginResponse());
+				}
+				return resolve(requiredPWChangeResponse());
 		}
 	});
 }
