@@ -14,7 +14,7 @@ export class ChatManager {
 		this.streams = streams;
 	}
 
-	public AddChatChannel(name:string, description:string, forceJoin:boolean = false) {
+	public AddChatChannel(name:string, description:string, forceJoin:boolean = false) : Channel {
 		const stream = this.streams.CreateStream(`chat_channel:${name}`, false);
 		const channel = new Channel(`#${name}`, description, stream);
 		this.chatChannels.add(channel.name, channel);
@@ -22,6 +22,18 @@ export class ChatManager {
 			this.forceJoinChannels.add(name, channel);
 		}
 		ConsoleHelper.printChat(`Created chat channel [${name}]`);
+		return channel;
+	}
+
+	public AddSpecialChatChannel(name:string, streamName:string, forceJoin:boolean = false) : Channel {
+		const stream = this.streams.CreateStream(`chat_channel:${streamName}`, false);
+		const channel = new Channel(`#${name}`, "", stream);
+		this.chatChannels.add(channel.name, channel);
+		if (forceJoin) {
+			this.forceJoinChannels.add(name, channel);
+		}
+		ConsoleHelper.printChat(`Created chat channel [${name}]`);
+		return channel;
 	}
 
 	public RemoveChatChannel(channel:Channel | string) {
@@ -52,6 +64,10 @@ export class ChatManager {
 	public SendChannelListing(user:User) {
 		const osuPacketWriter = new osu.Bancho.Writer;
 		for (let channel of this.chatChannels.getIterableItems()) {
+			if (channel.isSpecial) {
+				continue;
+			}
+
 			osuPacketWriter.ChannelAvailable({
 				channelName: channel.name,
 				channelTopic: channel.description,

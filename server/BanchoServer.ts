@@ -50,7 +50,7 @@ chatManager.AddChatChannel("lobby", "Talk about multiplayer stuff");
 chatManager.AddChatChannel("english", "Talk in exclusively English");
 chatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
 
-const multiplayerManager:MultiplayerManager = sharedContent.mutiplayerManager = new MultiplayerManager(streams);
+const multiplayerManager:MultiplayerManager = sharedContent.mutiplayerManager = new MultiplayerManager(GetSharedContent());
 
 // Add the bot user
 const botUser:User = users.add("bot", new User(3, "SillyBot", "bot", GetSharedContent()));
@@ -198,7 +198,7 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_CreateMatch:
-							//await multiplayerManager.createMultiplayerMatch(PacketUser, CurrentPacket.data);
+							await multiplayerManager.CreateMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_JoinMatch:

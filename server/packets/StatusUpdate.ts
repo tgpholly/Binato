@@ -2,7 +2,7 @@ import { RankingModes } from "../enums/RankingModes";
 import { User } from "../objects/User";
 const osu = require("osu-packet");
 
-export function StatusUpdate(user:User, id:number, sendImmidiate:boolean = false) {
+export function StatusUpdate(user:User, id:number, sendImmidiate:boolean = true) {
 	if (id == 3) return; // Ignore Bot
 
 	// Create new osu packet writer

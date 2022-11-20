@@ -7,11 +7,17 @@ export class Channel {
 	public description:string;
 	public stream:DataStream;
 	private isLocked:boolean = false;
+	private _isSpecial:boolean = false;
 
-	public constructor(name:string, description:string, stream:DataStream) {
+	public constructor(name:string, description:string, stream:DataStream, isSpecial:boolean = false) {
 		this.name = name;
 		this.description = description;
 		this.stream = stream;
+		this._isSpecial = isSpecial;
+	}
+
+	public get isSpecial() {
+		return this._isSpecial;
 	}
 
 	public get userCount() {

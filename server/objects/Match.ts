@@ -1,103 +1,135 @@
+import { Channel } from "./Channel";
+import { SharedContent } from "../BanchoServer";
+import { DataStream } from "./DataStream";
+import { Slot } from "./Slot";
+import { User } from "./User";
+import { StatusUpdate } from "../packets/StatusUpdate";
+
 const osu = require("osu-packet");
 
+export interface MatchData {
+	matchId:number,
+	matchType:number,
+	activeMods:number,
+	gameName:string,
+	gamePassword:string,
+	inProgress:boolean,
+	beatmapName:string,
+	beatmapId:number,
+	beatmapChecksum:string,
+	slots:Array<any>,
+	host:number,
+	playMode:number,
+	matchScoringType:number,
+	matchTeamType:number,
+	specialModes:number,
+	seed:number
+}
+
 export class Match {
-	/*public matchId:number = -1;
+	// osu! Data
+	public matchId:number = -1;
 	public inProgress:boolean = false;
-	public matchType: 0;
-	public activeMods: 0;
-	public gameName: "";
-	public gamePassword: '';
-	public beatmapName: '';
-	public beatmapId: 0;
-	public beatmapChecksum: '';
-	public slots: [];
+	public matchType:number = 0;
+	public activeMods:number = 0;
+	public gameName:string = "";
+	public gamePassword:string | undefined = '';
+	public beatmapName:string = '';
+	public beatmapId:number = 0;
+	public beatmapChecksum:string = '';
+	public slots:Array<Slot> = new Array<Slot>();
 	public host:number = 0;
 	public playMode:number = 0;
 	public matchScoringType:number = 0;
 	public matchTeamType:number = 0;
 	public specialModes:number = 0;
-	public seed:number =  0;
+	public seed:number = 0;
 
-	constructor(MatchData = {}) {
-		this.matchId = MatchData.matchId;
+	// Binato data
+	public roundId:number = 0;
+	public matchStartCountdownActive:boolean = false;
+	public matchStream:DataStream;
+	public matchChatChannel:Channel;
 
-		this.roundId = 0;
+	private constructor(matchData:MatchData, sharedContent:SharedContent) {
+		console.log(matchData);
+		this.matchId = matchData.matchId;
 
-		this.inProgress = MatchData.inProgress;
-		this.matchStartCountdownActive = false;
+		this.inProgress = matchData.inProgress;
 
-		this.matchType = MatchData.matchType;
+		this.matchType = matchData.matchType;
 
-		this.activeMods = MatchData.activeMods;
+		this.activeMods = matchData.activeMods;
 
-		this.gameName = MatchData.gameName;
-		if (MatchData.gamePassword == '') MatchData.gamePassword == null;
-		this.gamePassword = MatchData.gamePassword;
+		this.gameName = matchData.gameName;
+		if (matchData.gamePassword == '') matchData.gamePassword == null;
+		this.gamePassword = matchData.gamePassword;
 
-		this.beatmapName = MatchData.beatmapName;
-		this.beatmapId = MatchData.beatmapId;
-		this.beatmapChecksum = MatchData.beatmapChecksum;
+		this.beatmapName = matchData.beatmapName;
+		this.beatmapId = matchData.beatmapId;
+		this.beatmapChecksum = matchData.beatmapChecksum;
 
-		this.slots = MatchData.slots;
+		this.slots = matchData.slots;
 		for (let i = 0; i < this.slots.length; i++) {
-			this.slots[i].mods = 0;
+			//this.slots[i].mods = 0;
 		}
 
-		this.host = MatchData.host;
+		this.host = matchData.host;
 
-		this.playMode = MatchData.playMode;
+		this.playMode = matchData.playMode;
 
-		this.matchScoringType = MatchData.matchScoringType;
-		this.matchTeamType = MatchData.matchTeamType;
-		this.specialModes = MatchData.specialModes;
+		this.matchScoringType = matchData.matchScoringType;
+		this.matchTeamType = matchData.matchTeamType;
+		this.specialModes = matchData.specialModes;
 
-		this.seed = MatchData.seed;
+		this.seed = matchData.seed;
 
-		this.matchStreamName = `mp_${this.matchId}`;
-		this.matchChatStreamName = `mp_chat_${this.matchId}`;
+		this.matchStream = sharedContent.streams.CreateStream(`multiplayer:match_${this.matchId}`);
+		this.matchChatChannel = sharedContent.chatManager.AddSpecialChatChannel("multiplayer", `mp_${this.matchId}`);
 
-		this.matchLoadSlots = null;
-		this.matchSkippedSlots = null;
+		//this.matchLoadSlots = null;
+		//this.matchSkippedSlots = null;
 
-		this.playerScores = null;
+		//this.playerScores = null;
 
-		this.multiplayerExtras = null;
+		//this.multiplayerExtras = null;
 
-		this.isTourneyMatch = false;
-		this.tourneyClientUsers = [];
+		//this.isTourneyMatch = false;
+		//this.tourneyClientUsers = [];
 	}
 
-	static createMatch(MatchHost = new User, MatchData = {matchId: -1,inProgress: false,matchType: 0,activeMods: 0,gameName: "",gamePassword: '',beatmapName: '',beatmapId: 0,beatmapChecksum: '',slots: [],host: 0,playMode: 0,matchScoringType: 0,matchTeamType: 0,specialModes: 0,seed: 0}) {
-		return new Promise(async (resolve, reject) => {
-			MatchData.matchId = (await global.DatabaseHelper.query(
-				"INSERT INTO mp_matches (id, name, open_time, close_time, seed) VALUES (NULL, ?, UNIX_TIMESTAMP(), NULL, ?) RETURNING id;",
-				[MatchData.gameName, MatchData.seed]
-			))[0]["id"];
-
-			const matchInstance = new MultiplayerMatch(MatchData);
-
-			console.log(matchInstance.matchId);
-
-			// Update the status of the current user
-			StatusUpdate(MatchHost, MatchHost.id);
-
-			const osuPacketWriter = new osu.Bancho.Writer;
-
-			osuPacketWriter.MatchNew(matchInstance.createOsuMatchJSON());
-
-			MatchHost.addActionToQueue(osuPacketWriter.toBuffer);
-
-			Streams.addStream(matchInstance.matchStreamName, true, matchInstance.matchId);
-			Streams.addStream(matchInstance.matchChatStreamName, true, matchInstance.matchId);
-
-			// Update the match listing for users in the multiplayer lobby
-			global.MultiplayerManager.updateMatchListing();
-
-			resolve(matchInstance);
+	public static createMatch(matchHost:User, matchData:MatchData, sharedContent:SharedContent) : Promise<Match> {
+		return new Promise<Match>(async (resolve, reject) => {
+			try {
+				matchData.matchId = (await sharedContent.database.query(
+					"INSERT INTO mp_matches (id, name, open_time, close_time, seed) VALUES (NULL, ?, UNIX_TIMESTAMP(), NULL, ?) RETURNING id;",
+					[matchData.gameName, matchData.seed]
+				))[0]["id"];
+	
+				const matchInstance = new Match(matchData, sharedContent);
+	
+				console.log(matchInstance.matchId);
+	
+				// Update the status of the current user
+				StatusUpdate(matchHost, matchHost.id);
+	
+				const osuPacketWriter = new osu.Bancho.Writer;
+	
+				//osuPacketWriter.MatchNew(matchInstance.createOsuMatchJSON());
+	
+				matchHost.addActionToQueue(osuPacketWriter.toBuffer);
+	
+				// Update the match listing for users in the multiplayer lobby
+				//global.MultiplayerManager.updateMatchListing();
+	
+				resolve(matchInstance);
+			} catch (e) {
+				reject(e);
+			}
 		});
 	}
 
-	getSlotIdByPlayerId(playerId = 0) {
+	/*getSlotIdByPlayerId(playerId = 0) {
 		const player = getUserById(playerId);
 
 		if (player != null) return player.matchSlotId;

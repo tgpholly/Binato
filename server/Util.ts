@@ -38,3 +38,11 @@ export function hexlify(data:Buffer) : string {
 
 	return out.slice(0, out.length - 1);
 }
+
+export function isNullOrEmpty(str:string | undefined | null) {
+	if (typeof(str) === "string") {
+		return str !== "";
+	}
+
+	return false;
+}
