@@ -1,15 +1,22 @@
+import { SharedContent } from "../BanchoServer";
 import { RankingModes } from "../enums/RankingModes";
 import { User } from "../objects/User";
 const osu = require("osu-packet");
 
-export function StatusUpdate(user:User, id:number, sendImmidiate:boolean = true) {
+export function StatusUpdate(arg0:User | SharedContent, id:number) {
 	if (id == 3) return; // Ignore Bot
 
 	// Create new osu packet writer
 	const osuPacketWriter = new osu.Bancho.Writer;
+	let sharedContent:SharedContent;
+	if (arg0 instanceof User) {
+		sharedContent = arg0.sharedContent;
+	} else {
+		sharedContent = arg0;
+	}
 
 	// Get user's class
-	const userData = user.sharedContent.users.getById(id);
+	const userData = sharedContent.users.getById(id);
 
 	if (userData == null) return;
 
@@ -32,6 +39,9 @@ export function StatusUpdate(user:User, id:number, sendImmidiate:boolean = true)
 	osuPacketWriter.HandleOsuUpdate(UserStatusObject);
 
 	// Send data to user's queue
-	if (sendImmidiate) user.addActionToQueue(osuPacketWriter.toBuffer);
-	else return osuPacketWriter.toBuffer;
+	if (arg0 instanceof User) {
+		arg0.addActionToQueue(osuPacketWriter.toBuffer);
+	}
+	
+	return osuPacketWriter.toBuffer;
 }

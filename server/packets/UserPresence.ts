@@ -1,10 +1,17 @@
+import { SharedContent } from "../BanchoServer";
 import { User } from "../objects/User";
 const osu = require("osu-packet");
 
-export function UserPresence(user:User, id:number, sendImmidiate:boolean = true) {
+export function UserPresence(arg0:User | SharedContent, id:number) {
 	const osuPacketWriter = new osu.Bancho.Writer;
+	let sharedContent:SharedContent;
+	if (arg0 instanceof User) {
+		sharedContent = arg0.sharedContent;
+	} else {
+		sharedContent = arg0;
+	}
 
-	const userData = user.sharedContent.users.getById(id);
+	const userData = sharedContent.users.getById(id);
 
 	if (userData == null) return;
 
@@ -19,6 +26,9 @@ export function UserPresence(user:User, id:number, sendImmidiate:boolean = true)
 		rank: userData.rank
 	});
 
-	if (sendImmidiate) userData.addActionToQueue(osuPacketWriter.toBuffer);
-	else return osuPacketWriter.toBuffer;
+	if (arg0 instanceof User) {
+		arg0.addActionToQueue(osuPacketWriter.toBuffer);
+	}
+	
+	return osuPacketWriter.toBuffer;
 }

@@ -1,13 +1,16 @@
+import { SlotStatus } from "../enums/SlotStatus";
+import { User } from "./User";
+
 export class Slot {
-	public status:number;
+	public status:SlotStatus;
 	public team:number;
-	public player:number; // playerId
+	public player?:User; // playerId
 	public mods:number;
 
-	public constructor() {
-		this.status = 0;
-		this.team = 0;
-		this.player = 0;
-		this.mods = 0;
+	public constructor(status:SlotStatus, team:number, player?:User, mods:number = 0) {
+		this.status = status;
+		this.team = team;
+		this.player = player;
+		this.mods = mods;
 	}
 }

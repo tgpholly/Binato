@@ -1,17 +1,27 @@
+import { SharedContent } from "../BanchoServer";
 import { User } from "../objects/User";
 const osu = require("osu-packet");
 
-export function UserPresenceBundle(user:User, sendImmidiate:boolean = true) {
+export function UserPresenceBundle(arg0:User | SharedContent) : Buffer {
 	const osuPacketWriter = new osu.Bancho.Writer;
+	let sharedContent:SharedContent;
+	if (arg0 instanceof User) {
+		sharedContent = arg0.sharedContent;
+	} else {
+		sharedContent = arg0;
+	}
 
 	let userIds:Array<number> = new Array<number>();
 
-	for (let userData of user.sharedContent.users.getIterableItems()) {
+	for (let userData of sharedContent.users.getIterableItems()) {
 		userIds.push(userData.id);
 	}
 
 	osuPacketWriter.UserPresenceBundle(userIds);
 
-	if (sendImmidiate) user.addActionToQueue(osuPacketWriter.toBuffer);
-	else return osuPacketWriter.toBuffer;
+	if (arg0 instanceof User) {
+		arg0.addActionToQueue(osuPacketWriter.toBuffer);
+	}
+
+	return osuPacketWriter.toBuffer;
 }

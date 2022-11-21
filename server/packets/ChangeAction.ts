@@ -5,7 +5,7 @@ export function ChangeAction(user:User, data:any) {
 	user.updatePresence(data);
 
 	if (user.spectatorStream != null) {
-		const statusUpdate = StatusUpdate(user, user.id, false);
+		const statusUpdate = StatusUpdate(user.sharedContent, user.id);
 		user.spectatorStream.Send(statusUpdate);
 	}
 }
