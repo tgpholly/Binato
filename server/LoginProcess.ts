@@ -16,7 +16,7 @@ import { ChatManager } from "./ChatManager";
 import { UserPresenceBundle } from "./packets/UserPresenceBundle";
 import { UserPresence } from "./packets/UserPresence";
 import { StatusUpdate } from "./packets/StatusUpdate";
-import { SharedContent } from "./BanchoServer";
+import { SharedContent } from "./interfaces/SharedContent";
 const config:any = JSON.parse(readFileSync("./config.json").toString());
 const { decrypt: aesDecrypt } = require("aes256");
 const osu = require("osu-packet");

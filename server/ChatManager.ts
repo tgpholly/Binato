@@ -1,22 +1,22 @@
 import { Channel } from "./objects/Channel";
 import { ConsoleHelper } from "../ConsoleHelper";
 import { FunkyArray } from "./objects/FunkyArray";
-import { DataStreamArray } from "./objects/DataStreamArray";
 import { User } from "./objects/User";
+import { SharedContent } from "./interfaces/SharedContent";
 const osu = require("osu-packet");
 
 export class ChatManager {
 	public chatChannels:FunkyArray<Channel> = new FunkyArray<Channel>();
 	public forceJoinChannels:FunkyArray<Channel> = new FunkyArray<Channel>();
-	public streams:DataStreamArray;
+	private readonly sharedContent:SharedContent;
 
-	public constructor(streams:DataStreamArray) {
-		this.streams = streams;
+	public constructor(sharedContent:SharedContent) {
+		this.sharedContent = sharedContent;
 	}
 
 	public AddChatChannel(name:string, description:string, forceJoin:boolean = false) : Channel {
-		const stream = this.streams.CreateStream(`chat_channel:${name}`, false);
-		const channel = new Channel(`#${name}`, description, stream);
+		const stream = this.sharedContent.streams.CreateStream(`chat_channel:${name}`, false);
+		const channel = new Channel(this.sharedContent, `#${name}`, description, stream);
 		this.chatChannels.add(channel.name, channel);
 		if (forceJoin) {
 			this.forceJoinChannels.add(name, channel);
@@ -26,8 +26,8 @@ export class ChatManager {
 	}
 
 	public AddSpecialChatChannel(name:string, streamName:string, forceJoin:boolean = false) : Channel {
-		const stream = this.streams.CreateStream(`chat_channel:${streamName}`, false);
-		const channel = new Channel(`#${name}`, "", stream);
+		const stream = this.sharedContent.streams.CreateStream(`chat_channel:${streamName}`, false);
+		const channel = new Channel(this.sharedContent, `#${name}`, "", stream);
 		this.chatChannels.add(channel.name, channel);
 		if (forceJoin) {
 			this.forceJoinChannels.add(name, channel);

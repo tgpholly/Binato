@@ -1,4 +1,4 @@
-import { SharedContent } from "../BanchoServer";
+import { SharedContent } from "../interfaces/SharedContent";
 import { User } from "../objects/User";
 const osu = require("osu-packet");
 

@@ -3,7 +3,8 @@ import { RankingModes } from "../enums/RankingModes";
 import { Match } from "./Match";
 import { DataStream } from "./DataStream";
 import { StatusUpdate } from "../packets/StatusUpdate";
-import { SharedContent } from "../BanchoServer";
+import { SharedContent } from "../interfaces/SharedContent";
+import { Slot } from "./Slot";
 
 const rankingModes = [
 	"pp_raw",
@@ -52,12 +53,18 @@ export class User {
 	public pp:number = 0;
 
 	// Multiplayer data
-	public currentMatch:Match | null = null;
-	public matchSlotId:number = -1;
-	public inMatch:boolean = false;
+	public match?:Match;
+	public matchSlot?:Slot;
+	public get inMatch() {
+		return this.match instanceof Match;
+	}
 
 	// Tournament client flag
 	public isTourneyUser:boolean = false;
+
+	static Equals(user0:User, user1:User) {
+		return user0.uuid === user1.uuid;
+	}
 
 	public constructor(id:number, username:string, uuid:string, sharedContent:SharedContent) {
 		this.id = id;

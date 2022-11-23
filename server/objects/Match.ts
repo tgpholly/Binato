@@ -1,37 +1,17 @@
 import { Channel } from "./Channel";
-import { SharedContent } from "../BanchoServer";
+import { SharedContent } from "../interfaces/SharedContent";
 import { DataStream } from "./DataStream";
 import { Slot } from "./Slot";
 import { User } from "./User";
 import { StatusUpdate } from "../packets/StatusUpdate";
+import { SlotStatus } from "../enums/SlotStatus";
+import { MatchData } from "../interfaces/MatchData";
+import { Team } from "../enums/Team";
+import { MatchStartSkipData } from "../interfaces/MatchStartSkipData";
+import { Mods } from "../enums/Mods";
+import { PlayerScore } from "../interfaces/PlayerScore";
 
 const osu = require("osu-packet");
-
-export interface MatchData {
-	matchId:number,
-	matchType:number,
-	activeMods:number,
-	gameName:string,
-	gamePassword:string,
-	inProgress:boolean,
-	beatmapName:string,
-	beatmapId:number,
-	beatmapChecksum:string,
-	slots:Array<MatchDataSlot>,
-	host:number,
-	playMode:number,
-	matchScoringType:number,
-	matchTeamType:number,
-	specialModes:number,
-	seed:number
-}
-
-export interface MatchDataSlot {
-	status:number,
-	team:number,
-	playerId:number,
-	mods:number | undefined,
-}
 
 export class Match {
 	// osu! Data
@@ -58,12 +38,16 @@ export class Match {
 	public matchStream:DataStream;
 	public matchChatChannel:Channel;
 
+	public matchLoadSlots?:Array<MatchStartSkipData>;
+	public matchSkippedSlots?:Array<MatchStartSkipData>;
+
+	public playerScores?:Array<PlayerScore>;
+
 	private cachedMatchJSON:MatchData;
 	private readonly sharedContent:SharedContent;
 
 	private constructor(matchData:MatchData, sharedContent:SharedContent) {
 		this.sharedContent = sharedContent;
-		console.log(matchData);
 		this.matchId = matchData.matchId;
 
 		this.inProgress = matchData.inProgress;
@@ -80,11 +64,12 @@ export class Match {
 		this.beatmapId = matchData.beatmapId;
 		this.beatmapChecksum = matchData.beatmapChecksum;
 
-		for (let slot of matchData.slots) {
+		for (let i = 0; i < matchData.slots.length; i++) {
+			const slot = matchData.slots[i];
 			if (slot.playerId === -1) {
-				this.slots.push(new Slot(slot.status, slot.team, undefined, slot.mods));
+				this.slots.push(new Slot(i, slot.status, slot.team, undefined, slot.mods));
 			} else {
-				this.slots.push(new Slot(slot.status, slot.team, sharedContent.users.getById(slot.playerId), slot.mods));
+				this.slots.push(new Slot(i, slot.status, slot.team, sharedContent.users.getById(slot.playerId), slot.mods));
 			}
 		}
 
@@ -104,13 +89,10 @@ export class Match {
 
 		this.seed = matchData.seed;
 
-		this.matchStream = sharedContent.streams.CreateStream(`multiplayer:match_${this.matchId}`);
+		this.matchStream = sharedContent.streams.CreateStream(`multiplayer:match_${this.matchId}`, false);
 		this.matchChatChannel = sharedContent.chatManager.AddSpecialChatChannel("multiplayer", `mp_${this.matchId}`);
 
 		this.cachedMatchJSON = matchData;
-
-		//this.matchLoadSlots = null;
-		//this.matchSkippedSlots = null;
 
 		//this.playerScores = null;
 
@@ -130,8 +112,6 @@ export class Match {
 	
 				const matchInstance = new Match(matchData, sharedContent);
 	
-				console.log(matchInstance.matchId);
-	
 				// Update the status of the current user
 				StatusUpdate(matchHost, matchHost.id);
 	
@@ -141,8 +121,7 @@ export class Match {
 	
 				matchHost.addActionToQueue(osuPacketWriter.toBuffer);
 	
-				// Update the match listing for users in the multiplayer lobby
-				//global.MultiplayerManager.updateMatchListing();
+				sharedContent.mutiplayerManager.UpdateLobbyListing();
 	
 				resolve(matchInstance);
 			} catch (e) {
@@ -151,15 +130,8 @@ export class Match {
 		});
 	}
 
-	/*getSlotIdByPlayerId(playerId = 0) {
-		const player = getUserById(playerId);
-
-		if (player != null) return player.matchSlotId;
-		else return null;
-	}*/
-
 	// Convert class data back to a format that osu-packet can understand
-	generateMatchJSON() : MatchData {
+	public generateMatchJSON() : MatchData {
 		for (let i = 0; i < this.slots.length; i++) {
 			const slot = this.slots[i];
 			const osuSlot = this.cachedMatchJSON.slots[i];
@@ -177,33 +149,27 @@ export class Match {
 		return this.cachedMatchJSON;
 	}
 
-	/*leaveMatch(MatchUser = new User) {
+	public leaveMatch(user:User) {
 		// Make sure this leave call is valid
-		if (!MatchUser.inMatch) return;
-		
-		// Get the user's slot
-		const slot = this.slots[MatchUser.matchSlotId];
+		if (!user.inMatch || user.matchSlot === undefined) {
+			return;
+		}
 
 		// Set the slot's status to avaliable
-		slot.playerId = -1;
-		slot.status = 1;
+		user.matchSlot.status = SlotStatus.Empty;
+		user.matchSlot.team = 0;
+		user.matchSlot.player = undefined;
+		user.matchSlot.mods = 0;
 
 		// Remove the leaving user from the match's stream
-		Streams.removeUserFromStream(this.matchStreamName, MatchUser.uuid);
-		Streams.removeUserFromStream(this.matchChatStreamName, MatchUser.uuid);
+		this.matchStream.RemoveUser(user);
+		this.matchChatChannel.Leave(user);
 
 		// Send this after removing the user from match streams to avoid a leave notification for self
 		this.sendMatchUpdate();
+	}
 
-		const osuPacketWriter = new osu.Bancho.Writer;
-
-		// Remove user from the multiplayer channel for the match
-		osuPacketWriter.ChannelRevoked("#multiplayer");
-
-		MatchUser.addActionToQueue(osuPacketWriter.toBuffer);
-	}*/
-
-	async updateMatch(user:User, matchData:MatchData) {
+	public async updateMatch(user:User, matchData:MatchData) {
 		// Update match with new data
 		this.inProgress = matchData.inProgress;
 
@@ -228,21 +194,20 @@ export class Match {
 			const hostUser = this.sharedContent.users.getById(matchData.host);
 			if (hostUser === undefined) {
 				// NOTE: This should never be possible to hit
-				//       since this user JUST made the match.
 				throw "Host User of match was undefined";
 			}
 			this.host = hostUser;
 			this.cachedMatchJSON.host = this.host.id;
 		}
 
-		this.playMode = matchData.playMode;
+		this.playMode = this.cachedMatchJSON.playMode = matchData.playMode;
 
-		this.matchScoringType = matchData.matchScoringType;
-		this.matchTeamType = matchData.matchTeamType;
-		this.specialModes = matchData.specialModes;
+		this.matchScoringType = this.cachedMatchJSON.matchScoringType = matchData.matchScoringType;
+		this.matchTeamType = this.cachedMatchJSON.matchTeamType = matchData.matchTeamType;
+		this.specialModes = this.cachedMatchJSON.specialModes = matchData.specialModes;
 
 		const gameSeedChanged = this.seed !== matchData.seed;
-		this.seed = matchData.seed;
+		this.seed = this.cachedMatchJSON.seed = matchData.seed;
 
 		if (gameNameChanged || gameSeedChanged) {
 			const queryData = [];
@@ -260,7 +225,7 @@ export class Match {
 		this.sendMatchUpdate();
 
 		// Update the match listing in the lobby to reflect these changes
-		//global.MultiplayerManager.updateMatchListing();
+		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
 	}
 
 	public sendMatchUpdate() {
@@ -272,126 +237,144 @@ export class Match {
 		this.matchStream.Send(osuPacketWriter.toBuffer);
 	}
 
-	/*moveToSlot(MatchUser = new User, SlotToMoveTo) {
-		const oldSlot = this.slots[MatchUser.matchSlotId];
+	public moveToSlot(user:User, slotToMoveTo:number) {
+		if (slotToMoveTo < 0 || slotToMoveTo >= this.slots.length) {
+			return;
+		}
 
-		// Set the new slot's data to the user's old slot data
-		this.slots[SlotToMoveTo].playerId = MatchUser.id;
-		MatchUser.matchSlotId = SlotToMoveTo;
-		this.slots[SlotToMoveTo].status = 4;
+		const newSlot = this.slots[slotToMoveTo];
+		if (newSlot.status === SlotStatus.Locked || !(user.matchSlot instanceof Slot)) {
+			return;
+		}
 
-		// Set the old slot's data to open
-		oldSlot.playerId = -1;
-		oldSlot.status = 1;
-
-		this.sendMatchUpdate();
-
-		// Update the match listing in the lobby to reflect this change
-		global.MultiplayerManager.updateMatchListing();
-	}
-
-	changeTeam(MatchUser = new User) {
-		const slot = this.slots[MatchUser.matchSlotId];
-		slot.team = slot.team == 0 ? 1 : 0;
+		user.matchSlot = newSlot.transferFrom(user.matchSlot);
 
 		this.sendMatchUpdate();
+
+		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
 	}
 
-	setStateReady(MatchUser = new User) {
-		if (!MatchUser.inMatch) return;
-			
-		// Set the user's ready state to ready
-		this.slots[MatchUser.matchSlotId].status = 8;
+	public changeTeam(user:User) {
+		if (!(user.matchSlot instanceof Slot)) {
+			return;
+		}
+
+		user.matchSlot.team = user.matchSlot.team === Team.Red ? Team.Blue : Team.Red;
 
 		this.sendMatchUpdate();
 	}
 
-	setStateNotReady(MatchUser = new User) {
-		if (!MatchUser.inMatch) return;
-			
-		// Set the user's ready state to not ready
-		this.slots[MatchUser.matchSlotId].status = 4;
+	public setStateReady(user:User) {
+		if (!(user.matchSlot instanceof Slot)) {
+			return; 
+		}
+
+		user.matchSlot.status = SlotStatus.Ready;
 
 		this.sendMatchUpdate();
 	}
 
-	lockMatchSlot(MatchUser = new User, MatchUserToKick) {
+	public setStateNotReady(user:User) {
+		if (!(user.matchSlot instanceof Slot)) {
+			return;
+		}
+
+		user.matchSlot.status = SlotStatus.NotReady;
+
+		this.sendMatchUpdate();
+	}
+
+	public lockOrKick(user:User, slotToActionOn:number) {
+		if (slotToActionOn < 0 || slotToActionOn >= 16) {
+			return;
+		}
+
 		// Make sure the user attempting to kick / lock is the host of the match
-		if (this.host != MatchUser.id) return;
-
-		// Make sure the user that is attempting to be kicked is not the host
-		if (this.slots[MatchUserToKick].playerId === this.host) return;
-
-		// Get the data of the slot at the index sent by the client
-		const slot = this.slots[MatchUserToKick];
-
-		let isSlotEmpty = true;
-
-		// If the slot is empty lock/unlock instead of kicking
-		if (slot.playerId === -1)
-			slot.status = slot.status === 1 ? 2 : 1;
-			
-		// The slot isn't empty, kick the player
-		else {
-			const kickedPlayer = getUserById(slot.playerId);
-			kickedPlayer.matchSlotId = -1;
-			slot.playerId = -1;
-			slot.status = 1;
-			isSlotEmpty = false;
+		if (User.Equals(user, this.host)) {
+			return;
 		}
 
-		this.sendMatchUpdate();
-
-		// Update the match listing in the lobby listing to reflect this change
-		global.MultiplayerManager.updateMatchListing();
-
-		if (!isSlotEmpty) {
-			let cachedPlayerToken = getUserById(slot.playerId).uuid;
-
-			if (cachedPlayerToken !== null && cachedPlayerToken !== "") {
-				// Remove the kicked user from the match stream
-				Streams.removeUserFromStream(this.matchStreamName, cachedPlayerToken);
+		const slot = this.slots[slotToActionOn];
+		if (slot.player instanceof Slot) {
+			// Kick
+			if (User.Equals(user, slot.player)) {
+				return;
 			}
+
+			const kickedPlayer = slot.player;
+
+			// Remove player's refs to the match & slot
+			kickedPlayer.match = undefined;
+			kickedPlayer.matchSlot = undefined;
+
+			// Nuke all slot properties
+			slot.reset();
+
+			// Send update before removing the user from the stream so they know
+			// they got kicked
+			this.sendMatchUpdate();
+
+			// Remove player from stream and chat
+			this.matchStream.RemoveUser(kickedPlayer);
+			this.matchChatChannel.Leave(kickedPlayer);
+		} else {
+			// Lock / Unlock
+			slot.status = slot.status === SlotStatus.Empty ? SlotStatus.Locked : SlotStatus.Empty;
+
+			this.sendMatchUpdate();
 		}
+
+		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
 	}
 
-	missingBeatmap(MatchUser = new User) {
-		// User is missing the beatmap set the status to reflect it
-		this.slots[MatchUser.matchSlotId].status = 16;
+	public missingBeatmap(user:User) {
+		const slot = user.matchSlot;
+		if (!(slot instanceof Slot)) {
+			return;
+		}
+
+		slot.status = SlotStatus.MissingBeatmap;
 
 		this.sendMatchUpdate();
 	}
 
-	notMissingBeatmap(MatchUser = new User) {
-		// The user is not missing the beatmap, set the status to normal
-		this.slots[MatchUser.matchSlotId].status = 4;
+	public notMissingBeatmap(user:User) {
+		const slot = user.matchSlot;
+		if (!(slot instanceof Slot)) {
+			return;
+		}
+
+		slot.status = SlotStatus.NotReady;
 
 		this.sendMatchUpdate();
 	}
 
-	matchSkip(MatchUser = new User) {
-		if (this.matchSkippedSlots == null) {
-			this.matchSkippedSlots = [];
-
-			const skippedSlots = this.matchSkippedSlots;
+	public matchSkip(user:User) {
+		if (this.matchSkippedSlots === undefined) {
+			this.matchSkippedSlots = new Array<MatchStartSkipData>();
 
 			for (let slot of this.slots) {
 				// Make sure the slot has a user in it
-				if (slot.playerId === -1 || slot.status === 1 || slot.status === 2) continue;
+				if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
+					continue;
+				}
 	
 				// Add the slot's user to the loaded checking array
-				skippedSlots.push({playerId: slot.playerId, skipped: false}); 
+				this.matchSkippedSlots.push({
+					playerId: slot.player?.id,
+					flag: false
+				}); 
 			}
 		}
 
 		let allSkipped = true;
 		for (let skippedSlot of this.matchSkippedSlots) {
 			// If loadslot belongs to this user then set loaded to true
-			if (skippedSlot.playerId == MatchUser.id) {
-				skippedSlot.skipped = true;
+			if (skippedSlot.playerId === user.id) {
+				skippedSlot.flag = true;
 			}
 
-			if (skippedSlot.skipped) continue;
+			if (skippedSlot.flag) continue;
 
 			// A user hasn't skipped
 			allSkipped = false;
@@ -401,66 +384,77 @@ export class Match {
 		if (allSkipped) {
 			const osuPacketWriter = new osu.Bancho.Writer;
 
-			osuPacketWriter.MatchPlayerSkipped(MatchUser.id);
+			osuPacketWriter.MatchPlayerSkipped(user.id);
 			osuPacketWriter.MatchSkip();
 
-			Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+			this.matchStream.Send(osuPacketWriter.toBuffer);
 
-			this.matchSkippedSlots = null;
+			this.matchSkippedSlots = undefined;
 		} else {
 			const osuPacketWriter = new osu.Bancho.Writer;
 			
-			osuPacketWriter.MatchPlayerSkipped(MatchUser.id);
+			osuPacketWriter.MatchPlayerSkipped(user.id);
 
-			Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+			this.matchStream.Send(osuPacketWriter.toBuffer);
 		}
 	}
 
-	transferHost(MatchUser = new User, SlotIDToTransferTo) {
+	public transferHost(user:User, slotIDToTransferTo:number) {
 		// Set the lobby's host to the new user
-		this.host = this.slots[SlotIDToTransferTo].playerId;
+		const newHost = this.slots[slotIDToTransferTo].player;
+		if (newHost instanceof Slot) {
+			this.host = newHost;
+			this.cachedMatchJSON.host = this.host.id;
 
-		this.sendMatchUpdate();
+			this.sendMatchUpdate();
+		}
 	}
 
 	// TODO: Fix not being able to add DT when freemod is active
-	updateMods(MatchUser = new User, MatchMods) {
-		// Check if freemod is enabled
+	public updateMods(user:User, mods:Mods) {
+		const slot = user.matchSlot;
+		if (!(slot instanceof Slot)) {
+			return;
+		}
+
+		// Check if freemod is enabled or not
 		if (this.specialModes === 1) {
-			this.slots[MatchUser.matchSlotId].mods = MatchMods;
+			slot.mods = mods;
 
 			this.sendMatchUpdate();
 		} else {
-			// Make sure the person updating mods is the host of the match
-			if (this.host !== MatchUser.id) return;
+			if (!User.Equals(this.host, user)) {
+				return;
+			} 
 
-			// Change the matches mods to these new mods
-			// TODO: Do this per user if freemod is enabled
-			this.activeMods = MatchMods;
+			this.activeMods = mods;
 
 			this.sendMatchUpdate();
 		}
 
-		// Update match listing in the lobby to reflect this change
-		global.MultiplayerManager.updateMatchListing();
+		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
 	}
 
 	startMatch() {
 		// Make sure the match is not already in progress
 		// The client sometimes double fires the start packet
-		if (this.inProgress) return;
+		if (this.inProgress) {
+			return;
+		}
 		this.inProgress = true;
-		// Create array for monitoring users until they are ready to play
-		this.matchLoadSlots = [];
+		
+		this.matchLoadSlots = new Array<MatchStartSkipData>();
 		// Loop through all slots in the match
 		for (let slot of this.slots) {
 			// Make sure the slot has a user in it
-			if (slot.playerId === -1 || slot.status === 1 || slot.status === 2) continue;
+			if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
+				continue;
+			}
 
 			// Add the slot's user to the loaded checking array
 			this.matchLoadSlots.push({
-				playerId: slot.playerId,
-				loaded: false
+				playerId: slot.player?.id,
+				flag: false
 			});
 
 			// Set the user's status to playing
@@ -469,28 +463,30 @@ export class Match {
 
 		const osuPacketWriter = new osu.Bancho.Writer;
 
-		osuPacketWriter.MatchStart(this.createOsuMatchJSON());
+		osuPacketWriter.MatchStart(this.generateMatchJSON());
 
 		// Inform all users in the match that it has started
-		Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+		this.matchStream.Send(osuPacketWriter.toBuffer);
 
 		// Update all users in the match with new info
 		this.sendMatchUpdate();
 
 		// Update match listing in lobby to show the game is in progress
-		global.MultiplayerManager.updateMatchListing();
+		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
 	}
 
-	matchPlayerLoaded(MatchUser = new User) {
-		// Loop through all user load check items and check if all users are loaded
+	public matchPlayerLoaded(user:User) {
+		if (this.matchLoadSlots === undefined) {
+			return;
+		}
+
 		let allLoaded = true;
 		for (let loadedSlot of this.matchLoadSlots) {
-			// If loadslot belongs to this user then set loaded to true
-			if (loadedSlot.playerId == MatchUser.id) {
-				loadedSlot.loaded = true;
+			if (loadedSlot.playerId === user.id) {
+				loadedSlot.flag = true;
 			}
 
-			if (loadedSlot.loaded) continue;
+			if (loadedSlot.flag) continue;
 
 			allLoaded = false;
 		}
@@ -499,46 +495,54 @@ export class Match {
 		if (allLoaded) {
 			let osuPacketWriter = new osu.Bancho.Writer;
 			osuPacketWriter.MatchAllPlayersLoaded();
-			Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+			this.matchStream.Send(osuPacketWriter.toBuffer);
 
 			// Blank out user loading array
-			this.matchLoadSlots = null;
+			this.matchLoadSlots = undefined;
 
-			this.playerScores = [];
-			for (let i = 0; i < this.slots.length; i++) {
-				const slot = this.slots[i];
-				if (slot.playerId === -1 || slot.status === 1 || slot.status === 2) continue;
+			this.playerScores = new Array<PlayerScore>();
+			for (let slot of this.slots) {
+				if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
+					continue;
+				}
 
-				this.playerScores.push({playerId: slot.playerId, slotId: i, score: 0, isCurrentlyFailed: false});
+				this.playerScores.push({
+					player: slot.player,
+					slot: slot,
+					score: 0,
+					isCurrentlyFailed: false,
+					hasFailed: false,
+					_raw: {}
+				});
 			}
 		}
 	}
 
-	async onPlayerFinishMatch(MatchUser = new User) {
-		if (this.matchLoadSlots == null) {
+	public async onPlayerFinishMatch(user:User) {
+		if (this.matchLoadSlots === undefined) {
 			// Repopulate user loading slots again
 			this.matchLoadSlots = [];
 			for (let slot of this.slots) {
 				// Make sure the slot has a user
-				if (slot.playerId === -1 || slot.status === 1 || slot.status === 2) continue;
+				if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
+					continue;
+				}
 	
 				// Populate user loading slots with this user's id and load status
 				this.matchLoadSlots.push({
-					playerId: slot.playerId,
-					loaded: false
+					playerId: slot.player?.id,
+					flag: false
 				}); 
 			}
 		}
 
 		let allLoaded = true;
-
-		// Loop through all loaded slots to make sure all users have finished playing
 		for (let loadedSlot of this.matchLoadSlots) {
-			if (loadedSlot.playerId == MatchUser.id) {
-				loadedSlot.loaded = true;
+			if (loadedSlot.playerId == user.id) {
+				loadedSlot.flag = true;
 			}
 
-			if (loadedSlot.loaded) continue;
+			if (loadedSlot.flag) continue;
 
 			// A user hasn't finished playing
 			allLoaded = false;
@@ -548,89 +552,108 @@ export class Match {
 		if (allLoaded) await this.finishMatch();
 	}
 
-	async finishMatch() {
-		if (!this.inProgress) return;
-		this.matchLoadSlots = null;
+	public finishMatch() {
+		if (!this.inProgress) {
+			return;
+		}
+
+		this.matchLoadSlots = undefined;
 		this.inProgress = false;
+
 		let osuPacketWriter = new osu.Bancho.Writer;
 
-		let queryData = [this.matchId, this.roundId++, this.playMode, this.matchType, this.matchScoringType, this.matchTeamType, this.activeMods, this.beatmapChecksum, (this.specialModes === 1) ? 1 : 0];
+		let queryData:Array<any> = [
+			this.matchId,
+			this.roundId++,
+			this.playMode,
+			this.matchType,
+			this.matchScoringType,
+			this.matchTeamType,
+			this.activeMods,
+			this.beatmapChecksum,
+			(this.specialModes === 1) ? 1 : 0
+		];
 
-		// Loop through all slots in the match
+		if (this.playerScores === undefined) {
+			throw "playerScores was null in a place it really shouldn't have been!";
+		}
+
 		for (let slot of this.slots) {
-			// Make sure the slot has a user
-			if (slot.playerId === -1 || slot.status === 1 || slot.status === 2) {
+			// For every empty / locked slot push a null to the data array
+			if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
 				queryData.push(null);
 				continue;
 			}
 
-			let score = null;
 			for (let _playerScore of this.playerScores) {
-				if (_playerScore.playerId === slot.playerId) {
-					score = _playerScore._raw;
+				if (_playerScore.player?.id === slot.player?.id) {
+					const score = _playerScore._raw;
+					queryData.push(`${slot.player?.id}|${score.totalScore}|${score.maxCombo}|${score.count300}|${score.count100}|${score.count50}|${score.countGeki}|${score.countKatu}|${score.countMiss}|${(score.currentHp == 254) ? 1 : 0}${(this.specialModes === 1) ? `|${slot.mods}` : ""}|${score.usingScoreV2 ? 1 : 0}${score.usingScoreV2 ? `|${score.comboPortion}|${score.bonusPortion}` : ""}`);
 					break;
 				}
 			}
 
-			queryData.push(`${slot.playerId}|${score.totalScore}|${score.maxCombo}|${score.count300}|${score.count100}|${score.count50}|${score.countGeki}|${score.countKatu}|${score.countMiss}|${(score.currentHp == 254) ? 1 : 0}${(this.specialModes === 1) ? `|${slot.mods}` : ""}|${score.usingScoreV2 ? 1 : 0}${score.usingScoreV2 ? `|${score.comboPortion}|${score.bonusPortion}` : ""}`);
-
-			// Set the user's status back to normal from playing
-			slot.status = 4;
+			slot.status = SlotStatus.NotReady;
 		}
-
-		console.log(queryData);
 
 		osuPacketWriter.MatchComplete();
 
 		// Inform all users in the match that it is complete
-		Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
-
+		this.matchStream.Send(osuPacketWriter.toBuffer);
 		// Update all users in the match with new info
 		this.sendMatchUpdate();
 
-		// Update match info in the lobby to reflect that the match has finished
-		global.MultiplayerManager.updateMatchListing();
+		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
 
-		if (this.multiplayerExtras != null) this.multiplayerExtras.onMatchFinished(JSON.parse(JSON.stringify(this.playerScores)));
+		// TODO: Re-implement multiplayer extras
+		//if (this.multiplayerExtras != null) this.multiplayerExtras.onMatchFinished(JSON.parse(JSON.stringify(this.playerScores)));
 
-		await global.DatabaseHelper.query("INSERT INTO mp_match_rounds (id, match_id, round_id, round_mode, match_type, round_scoring_type, round_team_type, round_mods, beatmap_md5, freemod, player0, player1, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player12, player13, player14, player15) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", queryData);
+		this.sharedContent.database.query("INSERT INTO mp_match_rounds (id, match_id, round_id, round_mode, match_type, round_scoring_type, round_team_type, round_mods, beatmap_md5, freemod, player0, player1, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player12, player13, player14, player15) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", queryData);
 
-		this.playerScores = null;
+		this.playerScores = undefined;
 	}
 
-	updatePlayerScore(MatchPlayer = new User, MatchScoreData) {
+	// TODO: Interface type for matchScoreData
+	updatePlayerScore(user:User, matchScoreData:any) {
 		const osuPacketWriter = new osu.Bancho.Writer;
 
-		// Make sure the user's slot ID is not invalid
-		if (this.matchSlotId == -1) return;
+		if (user.matchSlot === undefined || this.playerScores === undefined) {
+			return;
+		}
 
-		// Get the user's current slotID and append it to the givien data, just incase.
-		MatchScoreData.id = MatchPlayer.matchSlotId;
+		matchScoreData.id = user.matchSlot;
 
-		// Update the playerScores array accordingly
+		// Update playerScores
 		for (let playerScore of this.playerScores) {
-			if (playerScore.playerId == MatchPlayer.id) {
-				playerScore.score = MatchScoreData.totalScore;
-				playerScore.isCurrentlyFailed = MatchScoreData.currentHp == 254;
-				playerScore._raw = MatchScoreData;
+			if (playerScore.player?.id == user.id) {
+				playerScore.score = matchScoreData.totalScore;
+				const isCurrentlyFailed = matchScoreData.currentHp == 254;
+				playerScore.isCurrentlyFailed = isCurrentlyFailed;
+				if (!playerScore.hasFailed && isCurrentlyFailed) {
+					playerScore.hasFailed = true;
+				}
+				playerScore._raw = matchScoreData;
+
 				break;
 			}
 		}
 		
-		osuPacketWriter.MatchScoreUpdate(MatchScoreData);
+		osuPacketWriter.MatchScoreUpdate(matchScoreData);
 
 		// Send the newly updated score to all users in the match
-		Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
+		this.matchStream.Send(osuPacketWriter.toBuffer);
 	}
 
-	matchFailed(MatchUser = new User) {
+	matchFailed(user:User) {
 		const osuPacketWriter = new osu.Bancho.Writer;
 
-		// Make sure the user's slot ID is not invalid
-		if (MatchUser.matchSlotId == -1) return;
+		// Make sure the user is in the match in a valid slot
+		if (user.matchSlot === undefined) {
+			return;
+		}
 
-		osuPacketWriter.MatchPlayerFailed(MatchUser.id);
+		osuPacketWriter.MatchPlayerFailed(user.id);
 
-		Streams.sendToStream(this.matchStreamName, osuPacketWriter.toBuffer, null);
-	}*/
+		this.matchStream.Send(osuPacketWriter.toBuffer);
+	}
 }

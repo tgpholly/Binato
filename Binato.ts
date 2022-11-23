@@ -11,7 +11,8 @@ if (!existsSync("./config.json")) {
 import { ChatHistory } from "./server/ChatHistory";
 import compression from "compression";
 import express from "express";
-import { HandleRequest, GetSharedContent, SharedContent } from "./server/BanchoServer";
+import { HandleRequest, GetSharedContent } from "./server/BanchoServer";
+import { SharedContent } from "./server/interfaces/SharedContent";
 import { Registry, collectDefaultMetrics } from "prom-client";
 const config:any = JSON.parse(readFileSync(__dirname + "/config.json").toString());
 // Pull out shared data from BanchoServer

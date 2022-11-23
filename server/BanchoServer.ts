@@ -13,17 +13,12 @@ import { UserArray } from "./objects/UserArray";
 import { User } from "./objects/User";
 import { DataStreamArray } from "./objects/DataStreamArray";
 import { MultiplayerManager } from "./MultiplayerManager";
+import { SharedContent } from "./interfaces/SharedContent";
 const config:any = JSON.parse(readFileSync("./config.json").toString());
 // TODO: Port osu-packet to TypeScript
 const osu = require("osu-packet");
 
-export interface SharedContent {
-	chatManager:ChatManager,
-	database:Database,
-	mutiplayerManager:MultiplayerManager,
-	streams:DataStreamArray,
-	users:UserArray,
-}
+
 
 const sharedContent:any = {};
 // NOTE: This function should only be used externaly in Binato.ts and in this file.
@@ -40,22 +35,22 @@ const DB:Database = sharedContent.database = new Database(config.database.addres
 // User session storage
 const users:UserArray = sharedContent.users = new UserArray();
 
+// Add the bot user
+const botUser:User = users.add("bot", new User(3, "SillyBot", "bot", GetSharedContent()));
+// Set the bot's position on the map
+botUser.location = new LatLng(50, -32);
+
 // DataStream storage
 const streams:DataStreamArray = sharedContent.streams = new DataStreamArray();
 
 // ChatManager
-const chatManager:ChatManager = sharedContent.chatManager = new ChatManager(streams);
+const chatManager:ChatManager = sharedContent.chatManager = new ChatManager(GetSharedContent());
 chatManager.AddChatChannel("osu", "The main channel", true);
 chatManager.AddChatChannel("lobby", "Talk about multiplayer stuff");
 chatManager.AddChatChannel("english", "Talk in exclusively English");
 chatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
 
 const multiplayerManager:MultiplayerManager = sharedContent.mutiplayerManager = new MultiplayerManager(GetSharedContent());
-
-// Add the bot user
-const botUser:User = users.add("bot", new User(3, "SillyBot", "bot", GetSharedContent()));
-// Set the bot's position on the map
-botUser.location = new LatLng(50, -32);
 
 let redisClient:RedisClientType;
 
@@ -101,6 +96,7 @@ import { Logout } from "./packets/Logout";
 import { UserPresence } from "./packets/UserPresence";
 import { UserStatsRequest } from "./packets/UserStatsRequest";
 import { UserPresenceBundle } from "./packets/UserPresenceBundle";
+import { Match } from "./objects/Match";
 
 // User timeout interval
 setInterval(() => {
@@ -190,11 +186,11 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_JoinLobby:
-							//multiplayerManager.userEnterLobby(PacketUser);
+							multiplayerManager.JoinLobby(PacketUser);
 						break;
 
 						case Packets.Client_PartLobby:
-							//multiplayerManager.userLeaveLobby(PacketUser);
+							multiplayerManager.LeaveLobby(PacketUser);
 						break;
 
 						case Packets.Client_CreateMatch:
@@ -202,76 +198,76 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_JoinMatch:
-							//multiplayerManager.joinMultiplayerMatch(PacketUser, CurrentPacket.data);
+							multiplayerManager.JoinMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchChangeSlot:
-							//PacketUser.currentMatch.moveToSlot(PacketUser, CurrentPacket.data);
+							PacketUser.match?.moveToSlot(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchReady:
-							//PacketUser.currentMatch.setStateReady(PacketUser);
+							PacketUser.match?.setStateReady(PacketUser);
 						break;
 
 						case Packets.Client_MatchChangeSettings:
-							//await PacketUser.currentMatch.updateMatch(PacketUser, CurrentPacket.data);
+							await PacketUser.match?.updateMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchNotReady:
-							//PacketUser.currentMatch.setStateNotReady(PacketUser);
+							PacketUser.match?.setStateNotReady(PacketUser);
 						break;
 
+						// TODO: Match leave so the matches actually close
 						case Packets.Client_PartMatch:
 							//await multiplayerManager.leaveMultiplayerMatch(PacketUser);
 						break;
 
-						// Also handles user kick if the slot has a user
 						case Packets.Client_MatchLock:
-							//PacketUser.currentMatch.lockMatchSlot(PacketUser, CurrentPacket.data);
+							PacketUser.match?.lockOrKick(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchNoBeatmap:
-							//PacketUser.currentMatch.missingBeatmap(PacketUser);
+							PacketUser.match?.missingBeatmap(PacketUser);
 						break;
 
 						case Packets.Client_MatchSkipRequest:
-							//PacketUser.currentMatch.matchSkip(PacketUser);
+							PacketUser.match?.matchSkip(PacketUser);
 						break;
 						
 						case Packets.Client_MatchHasBeatmap:
-							//PacketUser.currentMatch.notMissingBeatmap(PacketUser);
+							PacketUser.match?.notMissingBeatmap(PacketUser);
 						break;
 
 						case Packets.Client_MatchTransferHost:
-							//PacketUser.currentMatch.transferHost(PacketUser, CurrentPacket.data);
+							PacketUser.match?.transferHost(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchChangeMods:
-							//PacketUser.currentMatch.updateMods(PacketUser, CurrentPacket.data);
+							PacketUser.match?.updateMods(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchStart:
-							//PacketUser.currentMatch.startMatch();
+							PacketUser.match?.startMatch();
 						break;
 
 						case Packets.Client_MatchLoadComplete:
-							//PacketUser.currentMatch.matchPlayerLoaded(PacketUser);
+							PacketUser.match?.matchPlayerLoaded(PacketUser);
 						break;
 
 						case Packets.Client_MatchComplete:
-							//await PacketUser.currentMatch.onPlayerFinishMatch(PacketUser);
+							await PacketUser.match?.onPlayerFinishMatch(PacketUser);
 						break;
 
 						case Packets.Client_MatchScoreUpdate:
-							//PacketUser.currentMatch.updatePlayerScore(PacketUser, CurrentPacket.data);
+							PacketUser.match?.updatePlayerScore(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchFailed:
-							//PacketUser.currentMatch.matchFailed(PacketUser);
+							PacketUser.match?.matchFailed(PacketUser);
 						break;
 
 						case Packets.Client_MatchChangeTeam:
-							//PacketUser.currentMatch.changeTeam(PacketUser);
+							PacketUser.match?.changeTeam(PacketUser);
 						break;
 
 						case Packets.Client_ChannelJoin:

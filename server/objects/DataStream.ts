@@ -64,7 +64,7 @@ export class DataStream {
 			user.addActionToQueue(data);
 		}
 		if (Constants.DEBUG) {
-			ConsoleHelper.printStream(`Sent [${data.toString()}] to all users in stream [${this.name}]`);
+			ConsoleHelper.printStream(`Sent Buffer<${hexlify(data)}> to all users in stream [${this.name}]`);
 		}
 	}
 
