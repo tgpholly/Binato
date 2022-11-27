@@ -1,3 +1,4 @@
+import { Config } from "./interfaces/Config";
 import { ConsoleHelper } from "../ConsoleHelper";
 import { Channel } from "./objects/Channel";
 import { ChatManager } from "./ChatManager";
@@ -14,7 +15,7 @@ import { User } from "./objects/User";
 import { DataStreamArray } from "./objects/DataStreamArray";
 import { MultiplayerManager } from "./MultiplayerManager";
 import { SharedContent } from "./interfaces/SharedContent";
-const config:any = JSON.parse(readFileSync("./config.json").toString());
+const config:Config = JSON.parse(readFileSync("./config.json").toString()) as Config;
 // TODO: Port osu-packet to TypeScript
 const osu = require("osu-packet");
 
