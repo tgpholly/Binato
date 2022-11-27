@@ -220,7 +220,7 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 
 						// TODO: Match leave so the matches actually close
 						case Packets.Client_PartMatch:
-							//await multiplayerManager.leaveMultiplayerMatch(PacketUser);
+							await PacketUser.match?.leaveMatch(PacketUser);
 						break;
 
 						case Packets.Client_MatchLock:
