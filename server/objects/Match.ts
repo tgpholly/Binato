@@ -10,6 +10,7 @@ import { Team } from "../enums/Team";
 import { MatchStartSkipData } from "../interfaces/MatchStartSkipData";
 import { Mods } from "../enums/Mods";
 import { PlayerScore } from "../interfaces/PlayerScore";
+import { MatchScoreData } from "../interfaces/MatchScoreData";
 
 const osu = require("osu-packet");
 
@@ -512,7 +513,7 @@ export class Match {
 					score: 0,
 					isCurrentlyFailed: false,
 					hasFailed: false,
-					_raw: {}
+					_raw: undefined,
 				});
 			}
 		}
@@ -586,7 +587,7 @@ export class Match {
 			}
 
 			for (let _playerScore of this.playerScores) {
-				if (_playerScore.player?.id === slot.player?.id) {
+				if (_playerScore.player?.id === slot.player?.id && _playerScore._raw !== undefined) {
 					const score = _playerScore._raw;
 					queryData.push(`${slot.player?.id}|${score.totalScore}|${score.maxCombo}|${score.count300}|${score.count100}|${score.count50}|${score.countGeki}|${score.countKatu}|${score.countMiss}|${(score.currentHp == 254) ? 1 : 0}${(this.specialModes === 1) ? `|${slot.mods}` : ""}|${score.usingScoreV2 ? 1 : 0}${score.usingScoreV2 ? `|${score.comboPortion}|${score.bonusPortion}` : ""}`);
 					break;
@@ -613,15 +614,14 @@ export class Match {
 		this.playerScores = undefined;
 	}
 
-	// TODO: Interface type for matchScoreData
-	updatePlayerScore(user:User, matchScoreData:any) {
+	updatePlayerScore(user:User, matchScoreData:MatchScoreData) {
 		const osuPacketWriter = new osu.Bancho.Writer;
 
-		if (user.matchSlot === undefined || this.playerScores === undefined) {
+		if (user.matchSlot === undefined || user.matchSlot.player === undefined || this.playerScores === undefined) {
 			return;
 		}
 
-		matchScoreData.id = user.matchSlot;
+		matchScoreData.id = user.matchSlot.player.id;
 
 		// Update playerScores
 		for (let playerScore of this.playerScores) {

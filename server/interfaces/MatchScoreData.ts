@@ -1,0 +1,19 @@
+export interface MatchScoreData {
+	time:number,
+	id:number,
+	count300:number,
+	count100:number,
+	count50:number,
+	countGeki:number,
+	countKatu:number,
+	countMiss:number,
+	totalScore:number,
+	maxCombo:number,
+	currentCombo:number,
+	perfect:boolean,
+	currentHp:number,
+	tagByte:number,
+	usingScoreV2:boolean,
+	comboPortion:number,
+	bonusPortion:number
+}

@@ -1,5 +1,6 @@
 import { Slot } from "../objects/Slot";
 import { User } from "../objects/User";
+import { MatchScoreData } from "./MatchScoreData";
 
 export interface PlayerScore {
 	player:User,
@@ -7,5 +8,5 @@ export interface PlayerScore {
 	score:number,
 	isCurrentlyFailed:boolean,
 	hasFailed:boolean,
-	_raw:any
+	_raw?:MatchScoreData
 }
