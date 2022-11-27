@@ -26,13 +26,12 @@ export class User {
 	
 	// Binato data
 	public rankingMode:RankingModes = RankingModes.PP;
-	public spectatorStream:DataStream | null = null;
+	public spectatorStream?:DataStream;
+	public spectatingUser?:User;
 
 	// osu! data
 	public playMode:number = 0;
 	public countryID:number = 0;
-	//public spectators:Array; // TODO: Figure out if this was ever needed
-	public spectating:number = -1;
 	public location:LatLng = new LatLng(0, 0);
 	public joinedChannels:Array<string> = new Array<string>();
 

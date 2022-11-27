@@ -18,6 +18,10 @@ export class DataStream {
 		this.removeWhenEmpty = removeWhenEmpty;
 	}
 
+	public get IsActive() : boolean {
+		return this.inactive;
+	}
+
 	private checkInactive() {
 		if (this.inactive) {
 			throw `Stream ${this.name} is inactive (deleted) and cannot be used here.`;

@@ -3,6 +3,7 @@ import { ConsoleHelper } from "../ConsoleHelper";
 import { Channel } from "./objects/Channel";
 import { ChatManager } from "./ChatManager";
 import { Database } from "./objects/Database";
+import { DataStreamArray } from "./objects/DataStreamArray";
 import { LatLng } from "./objects/LatLng";
 import { LoginProcess } from "./LoginProcess";
 import { Packets } from "./enums/Packets";
@@ -10,16 +11,14 @@ import { replaceAll } from "./Util";
 import { readFileSync } from "fs";
 import { RedisClientType, createClient } from "redis";
 import { Request, Response } from "express";
+import { SpectatorManager } from "./SpectatorManager";
 import { UserArray } from "./objects/UserArray";
 import { User } from "./objects/User";
-import { DataStreamArray } from "./objects/DataStreamArray";
 import { MultiplayerManager } from "./MultiplayerManager";
 import { SharedContent } from "./interfaces/SharedContent";
 const config:Config = JSON.parse(readFileSync("./config.json").toString()) as Config;
 // TODO: Port osu-packet to TypeScript
 const osu = require("osu-packet");
-
-
 
 const sharedContent:any = {};
 // NOTE: This function should only be used externaly in Binato.ts and in this file.
@@ -52,6 +51,8 @@ chatManager.AddChatChannel("english", "Talk in exclusively English");
 chatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
 
 const multiplayerManager:MultiplayerManager = sharedContent.mutiplayerManager = new MultiplayerManager(GetSharedContent());
+
+const spectatorManager:SpectatorManager = new SpectatorManager(GetSharedContent());
 
 let redisClient:RedisClientType;
 
@@ -97,7 +98,6 @@ import { Logout } from "./packets/Logout";
 import { UserPresence } from "./packets/UserPresence";
 import { UserStatsRequest } from "./packets/UserStatsRequest";
 import { UserPresenceBundle } from "./packets/UserPresenceBundle";
-import { Match } from "./objects/Match";
 
 // User timeout interval
 setInterval(() => {
@@ -171,15 +171,15 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_StartSpectating:
-							//Spectator.startSpectatingUser(PacketUser, CurrentPacket.data);
+							spectatorManager.startSpectating(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_SpectateFrames:
-							//Spectator.sendSpectatorFrames(PacketUser, CurrentPacket.data);
+							spectatorManager.spectatorFrames(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_StopSpectating:
-							//Spectator.stopSpectatingUser(PacketUser);
+							spectatorManager.stopSpectating(PacketUser);
 						break;
 
 						case Packets.Client_SendPrivateMessage:
