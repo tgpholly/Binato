@@ -2,21 +2,22 @@ import { Channel } from "./objects/Channel";
 import { ConsoleHelper } from "../ConsoleHelper";
 import { FunkyArray } from "./objects/FunkyArray";
 import { User } from "./objects/User";
-import { SharedContent } from "./interfaces/SharedContent";
-const osu = require("osu-packet");
+import { Shared } from "./objects/Shared";
+import { osu } from "../osuTyping";
+import { PrivateChannel } from "./objects/PrivateChannel";
 
 export class ChatManager {
 	public chatChannels:FunkyArray<Channel> = new FunkyArray<Channel>();
 	public forceJoinChannels:FunkyArray<Channel> = new FunkyArray<Channel>();
-	private readonly sharedContent:SharedContent;
+	private readonly shared:Shared;
 
-	public constructor(sharedContent:SharedContent) {
-		this.sharedContent = sharedContent;
+	public constructor(shared:Shared) {
+		this.shared = shared;
 	}
 
 	public AddChatChannel(name:string, description:string, forceJoin:boolean = false) : Channel {
-		const stream = this.sharedContent.streams.CreateStream(`chat_channel:${name}`, false);
-		const channel = new Channel(this.sharedContent, `#${name}`, description, stream);
+		const stream = this.shared.streams.CreateStream(`chat_channel:${name}`, false);
+		const channel = new Channel(this.shared, `#${name}`, description, stream);
 		this.chatChannels.add(channel.name, channel);
 		if (forceJoin) {
 			this.forceJoinChannels.add(name, channel);
@@ -26,8 +27,8 @@ export class ChatManager {
 	}
 
 	public AddSpecialChatChannel(name:string, streamName:string, forceJoin:boolean = false) : Channel {
-		const stream = this.sharedContent.streams.CreateStream(`chat_channel:${streamName}`, false);
-		const channel = new Channel(this.sharedContent, `#${name}`, "", stream);
+		const stream = this.shared.streams.CreateStream(`chat_channel:${streamName}`, false);
+		const channel = new Channel(this.shared, `#${name}`, "", stream);
 		this.chatChannels.add(channel.name, channel);
 		if (forceJoin) {
 			this.forceJoinChannels.add(name, channel);
@@ -51,7 +52,19 @@ export class ChatManager {
 		}
 	}
 
+	public AddPrivateChatChannel(user0:User, user1:User) {
+		const stream = this.shared.streams.CreateStream(`private_channel:${user0.username},${user1.username}`, true);
+		const channel = new PrivateChannel(user0, user1, stream);
+		this.chatChannels.add(channel.name, channel);
+		ConsoleHelper.printChat(`Created private chat channel [${channel.name}]`);
+		return channel;
+	}
+
 	public GetChannelByName(channelName:string) : Channel | undefined {
+		return this.chatChannels.getByKey(channelName);
+	}
+
+	public GetPrivateChannelByName(channelName:string) : Channel | undefined {
 		return this.chatChannels.getByKey(channelName);
 	}
 
@@ -60,9 +73,10 @@ export class ChatManager {
 			channel.Join(user);
 		}
 	}
+	
 
 	public SendChannelListing(user:User) {
-		const osuPacketWriter = new osu.Bancho.Writer;
+		const osuPacketWriter = osu.Bancho.Writer();
 		for (let channel of this.chatChannels.getIterableItems()) {
 			if (channel.isSpecial) {
 				continue;

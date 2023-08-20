@@ -3,7 +3,7 @@ import { RankingModes } from "../enums/RankingModes";
 import { Match } from "./Match";
 import { DataStream } from "./DataStream";
 import { StatusUpdate } from "../packets/StatusUpdate";
-import { SharedContent } from "../interfaces/SharedContent";
+import { Shared } from "../objects/Shared";
 import { Slot } from "./Slot";
 
 const rankingModes = [
@@ -15,7 +15,7 @@ const rankingModes = [
 export class User {
 	private static readonly EMPTY_BUFFER = Buffer.alloc(0);
 
-	public sharedContent:SharedContent;
+	public shared:Shared;
 
 	public id:number;
 	public username:string;
@@ -65,12 +65,12 @@ export class User {
 		return user0.uuid === user1.uuid;
 	}
 
-	public constructor(id:number, username:string, uuid:string, sharedContent:SharedContent) {
+	public constructor(id:number, username:string, uuid:string, shared:Shared) {
 		this.id = id;
 		this.username = username;
 		this.uuid = uuid;
 
-		this.sharedContent = sharedContent;
+		this.shared = shared;
 	}
 
 	// Concats new actions to the user's queue
@@ -83,7 +83,7 @@ export class User {
 	}
 
 	// Updates the user's current action
-	updatePresence(action:any) : void {
+	updatePresence(action:any) {
 		this.actionID = action.status;
 		this.actionText = action.statusText;
 		this.beatmapChecksum = action.beatmapChecksum;
@@ -97,10 +97,10 @@ export class User {
 	}
 
 	// Gets the user's score information from the database and caches it
-	async updateUserInfo(forceUpdate:boolean = false) : Promise<void> {
-		const userScoreDB = await this.sharedContent.database.query("SELECT * FROM users_modes_info WHERE user_id = ? AND mode_id = ? LIMIT 1", [this.id, this.playMode]);
+	async updateUserInfo(forceUpdate:boolean = false) {
+		const userScoreDB = await this.shared.database.query("SELECT * FROM users_modes_info WHERE user_id = ? AND mode_id = ? LIMIT 1", [this.id, this.playMode]);
 		const mappedRankingMode = rankingModes[this.rankingMode];
-		const userRankDB = await this.sharedContent.database.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ? ORDER BY ${mappedRankingMode} DESC`, [this.playMode]);
+		const userRankDB = await this.shared.database.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ? ORDER BY ${mappedRankingMode} DESC`, [this.playMode]);
 
 		if (userScoreDB == null || userRankDB == null) throw "fuck";
 

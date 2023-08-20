@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as dyetty from "dyetty";
 
 enum LogType {
 	INFO,
@@ -7,14 +7,14 @@ enum LogType {
 };
 
 const LogTags = {
-	INFO: chalk.bgGreen(chalk.black("  INFO  ")),
-	BANCHO: chalk.bgMagenta(chalk.black(" BANCHO ")),
-	WEBREQ: chalk.bgGreen(chalk.black(" WEBREQ ")),
-	CHAT: chalk.bgCyan(chalk.black("  CHAT  ")),
-	WARN: chalk.bgYellow(chalk.black("  WARN  ")),
-	ERROR: chalk.bgRed("  ERRR  "),
-	REDIS: chalk.bgRed(chalk.white(" bREDIS ")),
-	STREAM: chalk.bgBlue(chalk.black(" STREAM "))
+	INFO: dyetty.bgGreen(dyetty.black("  INFO  ")),
+	BANCHO: dyetty.bgMagenta(dyetty.black(" BANCHO ")),
+	WEBREQ: dyetty.bgGreen(dyetty.black(" WEBREQ ")),
+	CHAT: dyetty.bgCyan(dyetty.black("  CHAT  ")),
+	WARN: dyetty.bgYellow(dyetty.black("  WARN  ")),
+	ERROR: dyetty.bgRed("  ERRR  "),
+	REDIS: dyetty.bgRed(dyetty.white(" bREDIS ")),
+	STREAM: dyetty.bgBlue(dyetty.black(" STREAM "))
 } as const;
 
 function correctValue(i:number) : string {
@@ -24,7 +24,7 @@ function correctValue(i:number) : string {
 
 function getTime() : string {
 	const time = new Date();
-	return chalk.green(`[${correctValue(time.getHours())}:${correctValue(time.getMinutes())}:${correctValue(time.getSeconds())}]`);
+	return dyetty.green(`[${correctValue(time.getHours())}:${correctValue(time.getMinutes())}:${correctValue(time.getSeconds())}]`);
 }
 
 function log(tag:string, log:string, logType:LogType = LogType.INFO) : void {

@@ -1,5 +1,4 @@
 import { ConsoleHelper } from "../ConsoleHelper";
-import { Database } from "./objects/Database";
 import fetch from "node-fetch";
 import { getCountryID } from "./Country";
 import { generateSession } from "./Util";
@@ -7,46 +6,21 @@ import { LatLng } from "./objects/LatLng";
 import { LoginInfo } from "./objects/LoginInfo";
 import { Logout } from "./packets/Logout";
 import { pbkdf2 } from "crypto";
-import { readFileSync } from "fs";
 import { Request, Response } from "express";
-import { UserArray } from "./objects/UserArray";
 import { User } from "./objects/User";
-import { DataStreamArray } from "./objects/DataStreamArray";
-import { ChatManager } from "./ChatManager";
 import { UserPresenceBundle } from "./packets/UserPresenceBundle";
 import { UserPresence } from "./packets/UserPresence";
 import { StatusUpdate } from "./packets/StatusUpdate";
-import { SharedContent } from "./interfaces/SharedContent";
-const config:any = JSON.parse(readFileSync("./config.json").toString());
+import { Shared } from "./objects/Shared";
+import { osu } from "../osuTyping";
+import { IpZxqResponse } from "./interfaces/IpZxqResponse";
 const { decrypt: aesDecrypt } = require("aes256");
-const osu = require("osu-packet");
 
-function incorrectLoginResponse() {
-	const osuPacketWriter = new osu.Bancho.Writer;
-	osuPacketWriter.LoginReply(-1);
-	return [
-		osuPacketWriter.toBuffer,
-		{
-			'cho-protocol': 19,
-			'Connection': 'keep-alive',
-			'Keep-Alive': 'timeout=5, max=100',
-		}
-	];
-}
+const incorrectLoginResponse:Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
 
-function requiredPWChangeResponse() {
-	const osuPacketWriter = new osu.Bancho.Writer;
-	osuPacketWriter.Announce("As part of migration to a new password system you are required to change your password. Please log in on the website and change your password.");
-	osuPacketWriter.LoginReply(-1);
-	return [
-		osuPacketWriter.toBuffer,
-		{
-			'cho-protocol': 19,
-			'Connection': 'keep-alive',
-			'Keep-Alive': 'timeout=5, max=100',
-		}
-	];
-}
+const requiredPWChangeResponse:Buffer = osu.Bancho.Writer()
+	.LoginReply(-1)
+	.Announce("As part of migration to a new password system you are required to change your password. Please logon to the website and change your password.").toBuffer;
 
 enum LoginTypes {
 	CURRENT,
@@ -54,172 +28,210 @@ enum LoginTypes {
 	OLD_AES
 }
 
-function TestLogin(loginInfo:LoginInfo | undefined, database:Database) {
-	return new Promise(async (resolve, reject) => {
-		// Check if there is any login information provided
-		if (loginInfo == null) return resolve(incorrectLoginResponse());
+enum LoginResult {
+	VALID,
+	MIGRATION,
+	INCORRECT,
+}
 
-		const userDBData:any = await database.query("SELECT * FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
+function TestLogin(loginInfo:LoginInfo, shared:Shared) {
+	return new Promise<LoginResult>(async (resolve, reject) => {
+		const userDBData:any = await shared.database.query("SELECT * FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
 
 		// Make sure a user was found in the database
-		if (userDBData == null) return resolve(incorrectLoginResponse());
+		if (userDBData == null) return resolve(LoginResult.INCORRECT);
 		// Make sure the username is the same as the login info
-		if (userDBData.username !== loginInfo.username) return resolve(incorrectLoginResponse());
-		/*
-			1: Old MD5 password
-			2: Old AES password
-		*/
+		if (userDBData.username !== loginInfo.username) return resolve(LoginResult.INCORRECT);
+
+		console.log(userDBData.has_old_password);
 		switch (userDBData.has_old_password) {
 			case LoginTypes.CURRENT:
-				pbkdf2(loginInfo.password, userDBData.password_salt, config.database.pbkdf2.itterations, config.database.pbkdf2.keylength, "sha512", (err, derivedKey) => {
+				pbkdf2(loginInfo.password, userDBData.password_salt, shared.config.database.pbkdf2.itterations, shared.config.database.pbkdf2.keylength, "sha512", (err, derivedKey) => {
 					if (err) {
 						return reject(err);
 					} else {
 						if (derivedKey.toString("hex") !== userDBData.password_hash)
-							return resolve(incorrectLoginResponse());
+							return resolve(LoginResult.INCORRECT);
 	
-						return resolve(undefined); // We good
+						return resolve(LoginResult.VALID); // We good
 					}
 				});
 				break;
 			case LoginTypes.OLD_AES:
-				if (aesDecrypt(config.database.key, userDBData.password_hash) !== loginInfo.password) {
-					return resolve(resolve(incorrectLoginResponse()));
+				console.log("OLD AES");
+				if (aesDecrypt(shared.config.database.key, userDBData.password_hash) !== loginInfo.password) {
+					return resolve(LoginResult.INCORRECT);
 				}
-				return resolve(requiredPWChangeResponse());
+				console.log("correct password");
+				return resolve(LoginResult.MIGRATION);
 			case LoginTypes.OLD_MD5:
 				if (userDBData.password_hash !== loginInfo.password) {
-					return resolve(incorrectLoginResponse());
+					return resolve(LoginResult.INCORRECT);
 				}
-				return resolve(requiredPWChangeResponse());
+				return resolve(LoginResult.MIGRATION);
 		}
 	});
 }
 
-export async function LoginProcess(req:Request, res:Response, packet:Buffer, sharedContent:SharedContent) {
-	const loginInfo = LoginInfo.From(packet);
+export async function LoginProcess(req:Request, res:Response, packet:Buffer, shared:Shared) {
 	const loginStartTime = Date.now();
+	const loginInfo = LoginInfo.From(packet);
 
-	const loginCheck:any = await TestLogin(loginInfo, sharedContent.database);
-	if (loginCheck != null) {
-		res.writeHead(200, loginCheck[1]);
-		return res.end(loginCheck[0]);
+	// Send back no data if there's no loginInfo
+	// Somebody is doing something funky
+	if (loginInfo === undefined) {
+		return res.end("");
 	}
 
-	if (loginInfo == null)
-		return;
+	const loginResult:LoginResult = await TestLogin(loginInfo, shared);
+	let osuPacketWriter = osu.Bancho.Writer();
+	let newUser:User | undefined;
+	let friendsPresence:Buffer = Buffer.alloc(0);
 
-	ConsoleHelper.printBancho(`New client connection. [User: ${loginInfo.username}]`);
+	if (loginResult === LoginResult.VALID && loginInfo !== undefined) {
+		ConsoleHelper.printBancho(`New client connection. [User: ${loginInfo.username}]`);
 
-	// Get users IP for getting location
-	// Get cloudflare requestee IP first
-	let requestIP = req.get("cf-connecting-ip");
+		// Get users IP for getting location
+		// Get cloudflare requestee IP first
+		let requestIP = req.get("cf-connecting-ip");
 
-	// Get IP of requestee since we are probably behind a reverse proxy
-	if (requestIP == null)
-		requestIP = req.get("X-Real-IP");
-
-	// Just get the requestee IP (we are not behind a reverse proxy)
-	// if (requestIP == null)
-	// 	requestIP = req.remote_addr;
-
-	// Make sure requestIP is never null
-	if (requestIP == null)
-		requestIP = "";
-
-	
-	let userCountryCode:string, userLocation:LatLng;
-	// Check if it is a local or null IP
-	if (!requestIP.includes("192.168.") && !requestIP.includes("127.0.") && requestIP != "") {
-		// Set location to null island
-		userCountryCode = "XX";
-		userLocation = new LatLng(0, 0);
-	} else {
-		// Get user's location using zxq
-		const userLocationRequest = await fetch(`https://ip.zxq.co/${requestIP}`);
-		const userLocationData:any = await userLocationRequest.json();
-		const userLatLng:Array<string> = userLocationData.loc.split(",");
-		userCountryCode = userLocationData.country;
-		userLocation = new LatLng(parseFloat(userLatLng[0]), parseFloat(userLatLng[1]));
-	}
-
-	// Get information about the user from the database
-	const userDB = await sharedContent.database.query("SELECT id FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
-
-	// Create a token for the client
-	const newClientToken:string = await generateSession();
-	const isTourneyClient = loginInfo.version.includes("tourney");
-
-	// Make sure user is not already connected, kick off if so.
-	const connectedUser = sharedContent.users.getByUsername(loginInfo.username);
-	if (connectedUser != null && !isTourneyClient && !connectedUser.isTourneyUser) {
-		Logout(connectedUser);
-	}
-
-	// Retreive the newly created user
-	const newUser:User = sharedContent.users.add(newClientToken, new User(userDB.id, loginInfo.username, newClientToken, sharedContent));
-	// Set tourney client flag
-	newUser.isTourneyUser = isTourneyClient;
-	newUser.location = userLocation;
-
-	// Get user's data from the database
-	newUser.updateUserInfo();
-
-	try {
-		// Save the country id for the same reason as above
-		newUser.countryID = getCountryID(userCountryCode);
-
-		// We're ready to start putting together a login packet
-		// Create an osu! Packet writer
-		let osuPacketWriter = new osu.Bancho.Writer;
-
-		// The reply id is the user's id in any other case than an error in which case negative numbers are used
-		osuPacketWriter.LoginReply(newUser.id);
-		// Current bancho protocol version. Defined in Binato.js
-		osuPacketWriter.ProtocolNegotiation(19);
-		// Permission level 4 is osu!supporter
-		osuPacketWriter.LoginPermissions(4);
-
-		// After sending the user their friends list send them the online users
-		UserPresenceBundle(newUser);
-
-		// Set title screen image
-		//osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
-
-		// Add user panel data packets
-		UserPresence(newUser, newUser.id);
-		StatusUpdate(newUser, newUser.id);
-
-		// peppy pls, why
-		osuPacketWriter.ChannelListingComplete();
-
-		// Setup chat
-		sharedContent.chatManager.ForceJoinChannels(newUser);
-		sharedContent.chatManager.SendChannelListing(newUser);
-
-		// Construct user's friends list
-		const userFriends = await sharedContent.database.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
-		const friendsArray:Array<number> = new Array<number>();
-		for (let i = 0; i < userFriends.length; i++) {
-			friendsArray.push(userFriends[i].friendsWith);
+		// Get IP of requestee since we are probably behind a reverse proxy
+		if (requestIP === undefined) {
+			requestIP = req.get("X-Real-IP");
 		}
-		// Send user's friends list
-		osuPacketWriter.FriendsList(friendsArray);
 
-		osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
+		// Just get the requestee IP (we are not behind a reverse proxy)
+		// if (requestIP == null)
+		// 	requestIP = req.remote_addr;
 
-		res.removeHeader('X-Powered-By');
-		res.removeHeader('Date');
-		// Complete login
+		// Make sure requestIP is never undefined
+		if (requestIP === undefined) {
+			requestIP = "";
+		}
+		
+		let userCountryCode:string, userLocation:LatLng;
+		// Check if it is a local or null IP
+		if (requestIP.includes("192.168.") || requestIP.includes("127.0.") || requestIP === "") {
+			// Set location to null island
+			userCountryCode = "XX";
+			userLocation = new LatLng(0, 0);
+		} else {
+			// Get user's location using zxq
+			const userLocationRequest = await fetch(`https://ip.zxq.co/${requestIP}`);
+			const userLocationData:IpZxqResponse = await userLocationRequest.json();
+			const userLatLng = userLocationData.loc.split(",");
+			userCountryCode = userLocationData.country;
+			userLocation = new LatLng(parseFloat(userLatLng[0]), parseFloat(userLatLng[1]));
+		}
+
+		// Get information about the user from the database
+		const userDB = await shared.database.query("SELECT id FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
+
+		// Create a token for the client
+		const newClientToken:string = await generateSession();
+		const isTourneyClient = loginInfo.version.includes("tourney");
+
+		// Make sure user is not already connected, kick off if so.
+		const connectedUser = shared.users.getByUsername(loginInfo.username);
+		if (connectedUser != null && !isTourneyClient && !connectedUser.isTourneyUser) {
+			Logout(connectedUser);
+		}
+
+		// Retreive the newly created user
+		newUser = shared.users.add(newClientToken, new User(userDB.id, loginInfo.username, newClientToken, shared));
+		// Set tourney client flag
+		newUser.isTourneyUser = isTourneyClient;
+		newUser.location = userLocation;
+
+		// Get user's data from the database
+		newUser.updateUserInfo();
+
+		try {
+			newUser.countryID = getCountryID(userCountryCode);
+
+			// We're ready to start putting together a login response
+
+			// The reply id is the user's id in any other case than an error in which case negative numbers are used
+			osuPacketWriter.LoginReply(newUser.id);
+			osuPacketWriter.ProtocolNegotiation(19);
+			// Permission level 4 is osu!supporter
+			osuPacketWriter.LoginPermissions(4);
+
+			// Set title screen image
+			//osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
+
+			// Add user panel data packets
+			UserPresence(newUser, newUser.id);
+			StatusUpdate(newUser, newUser.id);
+
+			// peppy pls, why
+			osuPacketWriter.ChannelListingComplete();
+
+			// Setup chat
+			shared.chatManager.ForceJoinChannels(newUser);
+			shared.chatManager.SendChannelListing(newUser);
+
+			// Construct & send user's friends list
+			const userFriends = await shared.database.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
+			const friendsArray:Array<number> = new Array<number>();
+			for (let useFriend of userFriends) {
+				const friendId:number = useFriend.friendsWith;
+				friendsArray.push(friendId);
+
+				// Also fetch presence for friend if they are online
+				if (shared.users.getById(friendId) === undefined) { continue; }
+
+				const friendPresence = UserPresence(shared, friendId);
+				if (friendPresence === undefined) { continue; }
+
+				friendsPresence = Buffer.concat([
+					friendsPresence,
+					friendPresence
+				], friendsPresence.length + friendPresence.length);
+			}
+			osuPacketWriter.FriendsList(friendsArray);
+
+			// After sending the user their friends list send them the online users
+			UserPresenceBundle(newUser);
+
+			osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
+			// TODO: Remove once merged into master
+			osuPacketWriter.Announce("WARNING\nThis is a development test server made for the TypeScript rewrite.\nAnything could happen be it data loss, catastrophic crashes or otherwise.\nHere be dragons.");
+		} catch (err) {
+			console.error(err);
+		}
+	}
+
+	res.removeHeader('X-Powered-By');
+	res.removeHeader('Date');
+	// Complete / Fail login
+	const writerBuffer:Buffer = osuPacketWriter.toBuffer;
+	if (newUser === undefined) {
+		res.writeHead(200, {
+			"Connection": "keep-alive",
+			"Keep-Alive": "timeout=5, max=100"
+		});
+		console.log(res.headersSent);
+		switch (loginResult) {
+			case LoginResult.INCORRECT:
+				res.end(incorrectLoginResponse, () => {
+					ConsoleHelper.printBancho(`User login failed (Incorrect Password) took ${Date.now() - loginStartTime}ms. [User: ${loginInfo.username}]`);
+				});
+				break;
+			case LoginResult.MIGRATION:
+				res.end(requiredPWChangeResponse, () => {
+					ConsoleHelper.printBancho(`User login failed (Migration Required) took ${Date.now() - loginStartTime}ms. [User: ${loginInfo.username}]`);
+				});
+				break;
+		}
+	} else {
 		res.writeHead(200, {
 			"cho-token": newUser.uuid,
 			"Connection": "keep-alive",
 			"Keep-Alive": "timeout=5, max=100",
 		});
-		res.end(osuPacketWriter.toBuffer, () => {
+		res.end(writerBuffer, () => {
 			ConsoleHelper.printBancho(`User login finished, took ${Date.now() - loginStartTime}ms. [User: ${loginInfo.username}]`);
 		});
-	} catch (err) {
-		console.error(err);
 	}
 }

@@ -19,6 +19,8 @@ export class LoginInfo {
 			data = data.toString();
 		}
 
+		console.log(data);
+
 		const loginData:Array<string> = data.split("\n");
 		const extraData:Array<string> = loginData[2].split("|");
 

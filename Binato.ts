@@ -12,12 +12,10 @@ import { ChatHistory } from "./server/ChatHistory";
 import { Config } from "./server/interfaces/Config";
 import compression from "compression";
 import express from "express";
-import { HandleRequest, GetSharedContent } from "./server/BanchoServer";
-import { SharedContent } from "./server/interfaces/SharedContent";
+import { HandleRequest } from "./server/BanchoServer";
+import { Shared } from "./server/objects/Shared";
 import { Registry, collectDefaultMetrics } from "prom-client";
 const config:Config = JSON.parse(readFileSync(__dirname + "/config.json").toString()) as Config;
-// Pull out shared data from BanchoServer
-const sharedContent:SharedContent = GetSharedContent();
 
 const binatoApp:express.Application = express();
 
@@ -55,6 +53,7 @@ binatoApp.use((req, res) => {
 				if (req.url == "/" || req.url == "/index.html" || req.url == "/index") {
 					res.send(INDEX_PAGE);
 				} else if (req.url == "/chat") {
+					// I don't think this works??
 					res.send(ChatHistory.GenerateForWeb());
 				}
 			break;

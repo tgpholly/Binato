@@ -1,19 +1,19 @@
-import { SharedContent } from "../interfaces/SharedContent";
+import { osu } from "../../osuTyping";
+import { Shared } from "../objects/Shared";
 import { User } from "../objects/User";
-const osu = require("osu-packet");
 
-export function UserPresenceBundle(arg0:User | SharedContent) : Buffer {
-	const osuPacketWriter = new osu.Bancho.Writer;
-	let sharedContent:SharedContent;
+export function UserPresenceBundle(arg0:User | Shared) : Buffer {
+	const osuPacketWriter = osu.Bancho.Writer();
+	let shared:Shared;
 	if (arg0 instanceof User) {
-		sharedContent = arg0.sharedContent;
+		shared = arg0.shared;
 	} else {
-		sharedContent = arg0;
+		shared = arg0;
 	}
 
 	let userIds:Array<number> = new Array<number>();
 
-	for (let userData of sharedContent.users.getIterableItems()) {
+	for (let userData of shared.users.getIterableItems()) {
 		userIds.push(userData.id);
 	}
 

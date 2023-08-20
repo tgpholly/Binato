@@ -7,7 +7,7 @@ export class Database {
 
 	public connected:boolean = false;
 
-	public constructor(databaseAddress:string, databasePort:number = 3306, databaseUsername:string, databasePassword:string, databaseName:string, connectedCallback:Function) {
+	public constructor(databaseAddress:string, databasePort:number = 3306, databaseUsername:string, databasePassword:string, databaseName:string) {
 		this.connectionPool = createPool({
 			connectionLimit: Database.CONNECTION_LIMIT,
 			host: databaseAddress,
@@ -17,27 +17,7 @@ export class Database {
 			database: databaseName
 		});
 
-		const classCreationTime:number = Date.now();
-		let lastQueryFinished = true;
-		const connectionCheckInterval = setInterval(() => {
-			if (lastQueryFinished) {
-				lastQueryFinished = false;
-				this.query("SELECT name FROM osu_info LIMIT 1")
-				.then(data => {
-					if (!this.connected) {
-						this.connected = true;
-						ConsoleHelper.printInfo(`Connected to database. Took ${Date.now() - classCreationTime}ms`);
-						clearInterval(connectionCheckInterval);
-						lastQueryFinished = true;
-
-						connectedCallback();
-					}
-				})
-				.catch(err => {
-					lastQueryFinished = true;
-				});
-			}
-		}, 16);
+		ConsoleHelper.printInfo(`Connected DB connection pool. MAX_CONNECTIONS = ${Database.CONNECTION_LIMIT}`);
 	}
 
 	public query(query = "", data?:Array<any>) {

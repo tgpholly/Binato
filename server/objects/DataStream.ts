@@ -5,12 +5,15 @@ import { User } from "./User";
 import { UserArray } from "./UserArray";
 import { hexlify } from "../Util";
 
+type DeleteFunction = (dataStream:DataStream) => void;
+
 export class DataStream {
 	private users:UserArray = new UserArray();
 	public readonly name:string;
 	private readonly parent:DataStreamArray;
 	private readonly removeWhenEmpty:boolean;
 	private inactive:boolean = false;
+	public onDelete?:DeleteFunction;
 
 	public constructor(name:string, parent:DataStreamArray, removeWhenEmpty:boolean) {
 		this.name = name;
@@ -30,6 +33,10 @@ export class DataStream {
 
 	public get userCount() : number {
 		return this.users.getLength();
+	}
+
+	public HasUser(user:User) : boolean {
+		return this.users.getByKey(user.uuid) !== undefined;
 	}
 
 	public AddUser(user:User) : void {
@@ -54,6 +61,9 @@ export class DataStream {
 	}
 
 	public Delete() {
+		if (typeof(this.onDelete) === "function") {
+			this.onDelete(this);
+		}
 		this.parent.DeleteStream(this);
 	}
 

@@ -1,58 +1,22 @@
-import { Config } from "./interfaces/Config";
 import { ConsoleHelper } from "../ConsoleHelper";
 import { Channel } from "./objects/Channel";
-import { ChatManager } from "./ChatManager";
-import { Database } from "./objects/Database";
-import { DataStreamArray } from "./objects/DataStreamArray";
 import { LatLng } from "./objects/LatLng";
 import { LoginProcess } from "./LoginProcess";
 import { Packets } from "./enums/Packets";
-import { replaceAll } from "./Util";
-import { readFileSync } from "fs";
 import { RedisClientType, createClient } from "redis";
 import { Request, Response } from "express";
 import { SpectatorManager } from "./SpectatorManager";
-import { UserArray } from "./objects/UserArray";
 import { User } from "./objects/User";
-import { MultiplayerManager } from "./MultiplayerManager";
-import { SharedContent } from "./interfaces/SharedContent";
-const config:Config = JSON.parse(readFileSync("./config.json").toString()) as Config;
-// TODO: Port osu-packet to TypeScript
-const osu = require("osu-packet");
+import { PrivateMessage } from "./packets/PrivateMessage";
+import { MessageData } from "./interfaces/MessageData";
+import { Shared } from "./objects/Shared";
 
-const sharedContent:any = {};
-// NOTE: This function should only be used externaly in Binato.ts and in this file.
-export function GetSharedContent() : SharedContent {
-	return sharedContent;
-}
+const shared:Shared = new Shared();
+shared.database.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
+shared.database.query("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
 
-const DB:Database = sharedContent.database = new Database(config.database.address, config.database.port, config.database.username, config.database.password, config.database.name, async () => {
-	// Close any unclosed db matches on startup
-	DB.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
-	DB.query("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
-});
-
-// User session storage
-const users:UserArray = sharedContent.users = new UserArray();
-
-// Add the bot user
-const botUser:User = users.add("bot", new User(3, "SillyBot", "bot", GetSharedContent()));
-// Set the bot's position on the map
-botUser.location = new LatLng(50, -32);
-
-// DataStream storage
-const streams:DataStreamArray = sharedContent.streams = new DataStreamArray();
-
-// ChatManager
-const chatManager:ChatManager = sharedContent.chatManager = new ChatManager(GetSharedContent());
-chatManager.AddChatChannel("osu", "The main channel", true);
-chatManager.AddChatChannel("lobby", "Talk about multiplayer stuff");
-chatManager.AddChatChannel("english", "Talk in exclusively English");
-chatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
-
-const multiplayerManager:MultiplayerManager = sharedContent.mutiplayerManager = new MultiplayerManager(GetSharedContent());
-
-const spectatorManager:SpectatorManager = new SpectatorManager(GetSharedContent());
+// Server Setup
+const spectatorManager:SpectatorManager = new SpectatorManager(shared);
 
 let redisClient:RedisClientType;
 
@@ -65,10 +29,10 @@ async function subscribeToChannel(channelName:string, callback:(message:string) 
 	ConsoleHelper.printRedis(`Subscribed to ${channelName} channel`);
 }
 
-if (config.redis.enabled) {
+if (shared.config.redis.enabled) {
 	(async () => {
 		redisClient = createClient({
-			url: `redis://${replaceAll(config.redis.password, " ", "") == "" ? "" : `${config.redis.password}@`}${config.redis.address}:${config.redis.port}/${config.redis.database}`
+			url: `redis://${shared.config.redis.password.replaceAll(" ", "") == "" ? "" : `${shared.config.redis.password}@`}${shared.config.redis.address}:${shared.config.redis.port}/${shared.config.redis.database}`
 		});
 
 		redisClient.on('error', e => ConsoleHelper.printRedis(e));
@@ -79,14 +43,12 @@ if (config.redis.enabled) {
 
 		// Score submit update channel
 		subscribeToChannel("binato:update_user_stats", (message) => {
-			if (typeof(message) === "string") {
-				const user = users.getById(parseInt(message));
-				if (user != null) {
-					// Update user info
-					user.updateUserInfo(true);
+			const user = shared.users.getById(parseInt(message));
+			if (user != null) {
+				// Update user info
+				user.updateUserInfo(true);
 
-					ConsoleHelper.printRedis(`Score submission stats update request received for ${user.username}`);
-				}
+				ConsoleHelper.printRedis(`Score submission stats update request received for ${user.username}`);
 			}
 		});
 	})();
@@ -98,10 +60,18 @@ import { Logout } from "./packets/Logout";
 import { UserPresence } from "./packets/UserPresence";
 import { UserStatsRequest } from "./packets/UserStatsRequest";
 import { UserPresenceBundle } from "./packets/UserPresenceBundle";
+import { TourneyMatchSpecialInfo } from "./packets/TourneyMatchSpecialInfo";
+import { osu } from "../osuTyping";
+import { TourneyMatchJoinChannel } from "./packets/TourneyJoinMatchChannel";
+import { TourneyMatchLeaveChannel } from "./packets/TourneyMatchLeaveChannel";
+import { AddFriend } from "./packets/AddFriend";
+import { RemoveFriend } from "./packets/RemoveFriend";
+import { PrivateChannel } from "./objects/PrivateChannel";
+import { Constants } from "../Constants";
 
 // User timeout interval
 setInterval(() => {
-	for (let User of users.getIterableItems()) {
+	for (let User of shared.users.getIterableItems()) {
 		if (User.uuid == "bot") continue; // Ignore the bot
 
 		// Logout this user, they're clearly gone.
@@ -114,29 +84,29 @@ setInterval(() => {
 const EMPTY_BUFFER = Buffer.alloc(0);
 
 export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
-	// Remove headers we don't need for Bancho
-	res.removeHeader('X-Powered-By');
-	res.removeHeader('Date');
-
 	// Get the client's token string and request data
 	const requestTokenString:string | undefined = req.header("osu-token");
 
 	// Check if the user is logged in
 	if (requestTokenString == null) {
 		// Only do this if we're absolutely sure that we're connected to the DB
-		if (DB.connected) {
+		if (shared.database.connected) {
 			// Client doesn't have a token yet, let's auth them!
 			
-			await LoginProcess(req, res, packet, GetSharedContent());
-			DB.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [users.getLength() - 1]);
+			await LoginProcess(req, res, packet, shared);
+			shared.database.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [shared.users.getLength() - 1]);
 		}
 	} else {
 		let responseData:Buffer | string = EMPTY_BUFFER;
 
+		// Remove headers we don't need for Bancho
+		res.removeHeader('X-Powered-By');
+		res.removeHeader('Date'); // This is not spec compilant
+
 		// Client has a token, let's see what they want.
 		try {
 			// Get the current user
-			const PacketUser:User | undefined = users.getByToken(requestTokenString);
+			const PacketUser:User | undefined = shared.users.getByToken(requestTokenString);
 
 			// Make sure the client's token isn't invalid
 			if (PacketUser != null) {
@@ -144,7 +114,7 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 				PacketUser.timeoutTime = Date.now() + 60000;
 
 				// Create a new osu! packet reader
-				const osuPacketReader = new osu.Client.Reader(packet);
+				const osuPacketReader = osu.Client.Reader(packet);
 				// Parse current bancho packet
 				const PacketData = osuPacketReader.Parse();
 
@@ -156,7 +126,8 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_SendPublicMessage:
-							let channel = chatManager.GetChannelByName(CurrentPacket.data.target);
+							const message:MessageData = CurrentPacket.data;
+							let channel = shared.chatManager.GetChannelByName(message.target);
 							if (channel instanceof Channel) {
 								channel.SendMessage(PacketUser, CurrentPacket.data.message);
 							}
@@ -183,23 +154,23 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_SendPrivateMessage:
-							//SendPrivateMessage(PacketUser, CurrentPacket.data);
+							PrivateMessage(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_JoinLobby:
-							multiplayerManager.JoinLobby(PacketUser);
+							shared.multiplayerManager.JoinLobby(PacketUser);
 						break;
 
 						case Packets.Client_PartLobby:
-							multiplayerManager.LeaveLobby(PacketUser);
+							shared.multiplayerManager.LeaveLobby(PacketUser);
 						break;
 
 						case Packets.Client_CreateMatch:
-							await multiplayerManager.CreateMatch(PacketUser, CurrentPacket.data);
+							await shared.multiplayerManager.CreateMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_JoinMatch:
-							multiplayerManager.JoinMatch(PacketUser, CurrentPacket.data);
+							shared.multiplayerManager.JoinMatch(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_MatchChangeSlot:
@@ -284,11 +255,11 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_FriendAdd:
-							//AddFriend(PacketUser, CurrentPacket.data);
+							AddFriend(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_FriendRemove:
-							//RemoveFriend(PacketUser, CurrentPacket.data);
+							RemoveFriend(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_UserStatsRequest:
@@ -296,15 +267,15 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 						break;
 
 						case Packets.Client_SpecialMatchInfoRequest:
-							//TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
+							TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_SpecialJoinMatchChannel:
-							//TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
+							TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_SpecialLeaveMatchChannel:
-							//TourneyMatchLeaveChannel(PacketUser, CurrentPacket.data);
+							TourneyMatchLeaveChannel(PacketUser, CurrentPacket.data);
 						break;
 
 						case Packets.Client_Invite:
@@ -328,14 +299,18 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 				PacketUser.clearQueue();
 			} else {
 				// Only do this if we're absolutely sure that we're connected to the DB
-				if (DB.connected) {
+				if (shared.database.connected) {
 					// User's token is invlid, force a reconnect
 					ConsoleHelper.printBancho(`Forced client re-login (Token is invalid)`);
 					responseData = "\u0005\u0000\u0000\u0004\u0000\u0000\u0000����\u0018\u0000\u0000\u0011\u0000\u0000\u0000\u000b\u000fReconnecting...";
 				}
 			}
 		} catch (e) {
-			console.error(e);
+			if (Constants.DEBUG) {
+				throw e;
+			}
+
+			ConsoleHelper.printError(`${e}`);
 		} finally {
 			res.writeHead(200, {
 				"Connection": "keep-alive",

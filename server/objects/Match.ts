@@ -1,5 +1,5 @@
 import { Channel } from "./Channel";
-import { SharedContent } from "../interfaces/SharedContent";
+import { Shared } from "../objects/Shared";
 import { DataStream } from "./DataStream";
 import { Slot } from "./Slot";
 import { User } from "./User";
@@ -11,8 +11,7 @@ import { MatchStartSkipData } from "../interfaces/MatchStartSkipData";
 import { Mods } from "../enums/Mods";
 import { PlayerScore } from "../interfaces/PlayerScore";
 import { MatchScoreData } from "../interfaces/MatchScoreData";
-
-const osu = require("osu-packet");
+import { osu } from "../../osuTyping";
 
 export class Match {
 	// osu! Data
@@ -44,11 +43,14 @@ export class Match {
 
 	public playerScores?:Array<PlayerScore>;
 
-	private cachedMatchJSON:MatchData;
-	private readonly sharedContent:SharedContent;
+	public countdownTime:number = 0;
+	public countdownTimer?:NodeJS.Timeout;
 
-	private constructor(matchData:MatchData, sharedContent:SharedContent) {
-		this.sharedContent = sharedContent;
+	private cachedMatchJSON:MatchData;
+	private readonly shared:Shared;
+
+	private constructor(matchData:MatchData, shared:Shared) {
+		this.shared = shared;
 		this.matchId = matchData.matchId;
 
 		this.inProgress = matchData.inProgress;
@@ -70,11 +72,11 @@ export class Match {
 			if (slot.playerId === -1) {
 				this.slots.push(new Slot(i, slot.status, slot.team, undefined, slot.mods));
 			} else {
-				this.slots.push(new Slot(i, slot.status, slot.team, sharedContent.users.getById(slot.playerId), slot.mods));
+				this.slots.push(new Slot(i, slot.status, slot.team, shared.users.getById(slot.playerId), slot.mods));
 			}
 		}
 
-		const hostUser = sharedContent.users.getById(matchData.host);
+		const hostUser = shared.users.getById(matchData.host);
 		if (hostUser === undefined) {
 			// NOTE: This should never be possible to hit
 			//       since this user JUST made the match.
@@ -90,12 +92,10 @@ export class Match {
 
 		this.seed = matchData.seed;
 
-		this.matchStream = sharedContent.streams.CreateStream(`multiplayer:match_${this.matchId}`, false);
-		this.matchChatChannel = sharedContent.chatManager.AddSpecialChatChannel("multiplayer", `mp_${this.matchId}`);
+		this.matchStream = shared.streams.CreateStream(`multiplayer:match_${this.matchId}`, false);
+		this.matchChatChannel = shared.chatManager.AddSpecialChatChannel("multiplayer", `mp_${this.matchId}`);
 
 		this.cachedMatchJSON = matchData;
-
-		//this.playerScores = null;
 
 		//this.multiplayerExtras = null;
 
@@ -103,26 +103,26 @@ export class Match {
 		//this.tourneyClientUsers = [];
 	}
 
-	public static createMatch(matchHost:User, matchData:MatchData, sharedContent:SharedContent) : Promise<Match> {
+	public static createMatch(matchHost:User, matchData:MatchData, shared:Shared) : Promise<Match> {
 		return new Promise<Match>(async (resolve, reject) => {
 			try {
-				matchData.matchId = (await sharedContent.database.query(
+				matchData.matchId = (await shared.database.query(
 					"INSERT INTO mp_matches (id, name, open_time, close_time, seed) VALUES (NULL, ?, UNIX_TIMESTAMP(), NULL, ?) RETURNING id;",
 					[matchData.gameName, matchData.seed]
 				))[0]["id"];
 	
-				const matchInstance = new Match(matchData, sharedContent);
+				const matchInstance = new Match(matchData, shared);
 	
 				// Update the status of the current user
 				StatusUpdate(matchHost, matchHost.id);
 	
-				const osuPacketWriter = new osu.Bancho.Writer;
+				const osuPacketWriter = osu.Bancho.Writer();
 	
 				osuPacketWriter.MatchNew(matchInstance.generateMatchJSON());
 	
 				matchHost.addActionToQueue(osuPacketWriter.toBuffer);
 	
-				sharedContent.mutiplayerManager.UpdateLobbyListing();
+				shared.multiplayerManager.UpdateLobbyListing();
 	
 				resolve(matchInstance);
 			} catch (e) {
@@ -166,7 +166,7 @@ export class Match {
 		this.matchStream.RemoveUser(user);
 		this.matchChatChannel.Leave(user);
 
-		// Send this after removing the user from match streams to avoid a leave notification for self
+		// Send this after removing the user from match streams to avoid a leave notification for self?
 		this.sendMatchUpdate();
 	}
 
@@ -192,7 +192,7 @@ export class Match {
 		this.beatmapChecksum = this.cachedMatchJSON.beatmapChecksum = matchData.beatmapChecksum;
 
 		if (matchData.host !== this.host.id) {
-			const hostUser = this.sharedContent.users.getById(matchData.host);
+			const hostUser = this.shared.users.getById(matchData.host);
 			if (hostUser === undefined) {
 				// NOTE: This should never be possible to hit
 				throw "Host User of match was undefined";
@@ -220,22 +220,24 @@ export class Match {
 			}
 			queryData.push(this.matchId);
 
-			await this.sharedContent.database.query(`UPDATE mp_matches SET ${gameNameChanged ? `name = ?${gameSeedChanged ? ", " : ""}` : ""}${gameSeedChanged ? `seed = ?` : ""} WHERE id = ?`, queryData);
+			await this.shared.database.query(`UPDATE mp_matches SET ${gameNameChanged ? `name = ?${gameSeedChanged ? ", " : ""}` : ""}${gameSeedChanged ? `seed = ?` : ""} WHERE id = ?`, queryData);
 		}
 
 		this.sendMatchUpdate();
 
 		// Update the match listing in the lobby to reflect these changes
-		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
+		this.shared.multiplayerManager.UpdateLobbyListing();
 	}
 
 	public sendMatchUpdate() {
-		const osuPacketWriter = new osu.Bancho.Writer;
+		const osuPacketWriter = osu.Bancho.Writer();
 
 		osuPacketWriter.MatchUpdate(this.generateMatchJSON());
 
 		// Update all users in the match with new match information
 		this.matchStream.Send(osuPacketWriter.toBuffer);
+
+		console.log(this.slots);
 	}
 
 	public moveToSlot(user:User, slotToMoveTo:number) {
@@ -252,7 +254,7 @@ export class Match {
 
 		this.sendMatchUpdate();
 
-		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
+		this.shared.multiplayerManager.UpdateLobbyListing();
 	}
 
 	public changeTeam(user:User) {
@@ -325,7 +327,7 @@ export class Match {
 			this.sendMatchUpdate();
 		}
 
-		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
+		this.shared.multiplayerManager.UpdateLobbyListing();
 	}
 
 	public missingBeatmap(user:User) {
@@ -383,7 +385,7 @@ export class Match {
 
 		// All players have finished playing, finish the match
 		if (allSkipped) {
-			const osuPacketWriter = new osu.Bancho.Writer;
+			const osuPacketWriter = osu.Bancho.Writer();
 
 			osuPacketWriter.MatchPlayerSkipped(user.id);
 			osuPacketWriter.MatchSkip();
@@ -392,7 +394,7 @@ export class Match {
 
 			this.matchSkippedSlots = undefined;
 		} else {
-			const osuPacketWriter = new osu.Bancho.Writer;
+			const osuPacketWriter = osu.Bancho.Writer();
 			
 			osuPacketWriter.MatchPlayerSkipped(user.id);
 
@@ -433,7 +435,7 @@ export class Match {
 			this.sendMatchUpdate();
 		}
 
-		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
+		this.shared.multiplayerManager.UpdateLobbyListing();
 	}
 
 	startMatch() {
@@ -446,6 +448,7 @@ export class Match {
 		
 		this.matchLoadSlots = new Array<MatchStartSkipData>();
 		// Loop through all slots in the match
+		console.log(this.slots);
 		for (let slot of this.slots) {
 			// Make sure the slot has a user in it
 			if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
@@ -462,7 +465,7 @@ export class Match {
 			slot.status = 32;
 		}
 
-		const osuPacketWriter = new osu.Bancho.Writer;
+		const osuPacketWriter = osu.Bancho.Writer();
 
 		osuPacketWriter.MatchStart(this.generateMatchJSON());
 
@@ -473,7 +476,7 @@ export class Match {
 		this.sendMatchUpdate();
 
 		// Update match listing in lobby to show the game is in progress
-		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
+		this.shared.multiplayerManager.UpdateLobbyListing();
 	}
 
 	public matchPlayerLoaded(user:User) {
@@ -494,7 +497,7 @@ export class Match {
 
 		// All players have loaded the beatmap, start playing.
 		if (allLoaded) {
-			let osuPacketWriter = new osu.Bancho.Writer;
+			let osuPacketWriter = osu.Bancho.Writer();
 			osuPacketWriter.MatchAllPlayersLoaded();
 			this.matchStream.Send(osuPacketWriter.toBuffer);
 
@@ -563,7 +566,7 @@ export class Match {
 		this.matchLoadSlots = undefined;
 		this.inProgress = false;
 
-		let osuPacketWriter = new osu.Bancho.Writer;
+		let osuPacketWriter = osu.Bancho.Writer();
 
 		let queryData:Array<any> = [
 			this.matchId,
@@ -599,7 +602,7 @@ export class Match {
 			slot.status = SlotStatus.NotReady;
 		}
 
-		await this.sharedContent.database.query("INSERT INTO mp_match_rounds (id, match_id, round_id, round_mode, match_type, round_scoring_type, round_team_type, round_mods, beatmap_md5, freemod, player0, player1, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player12, player13, player14, player15) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", queryData);
+		await this.shared.database.query("INSERT INTO mp_match_rounds (id, match_id, round_id, round_mode, match_type, round_scoring_type, round_team_type, round_mods, beatmap_md5, freemod, player0, player1, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player12, player13, player14, player15) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", queryData);
 
 		osuPacketWriter.MatchComplete();
 
@@ -608,7 +611,7 @@ export class Match {
 		// Update all users in the match with new info
 		this.sendMatchUpdate();
 
-		this.sharedContent.mutiplayerManager.UpdateLobbyListing();
+		this.shared.multiplayerManager.UpdateLobbyListing();
 
 		// TODO: Re-implement multiplayer extras
 		//if (this.multiplayerExtras != null) this.multiplayerExtras.onMatchFinished(JSON.parse(JSON.stringify(this.playerScores)));
@@ -617,7 +620,7 @@ export class Match {
 	}
 
 	updatePlayerScore(user:User, matchScoreData:MatchScoreData) {
-		const osuPacketWriter = new osu.Bancho.Writer;
+		const osuPacketWriter = osu.Bancho.Writer();
 
 		if (user.matchSlot === undefined || user.matchSlot.player === undefined || this.playerScores === undefined) {
 			return;
@@ -647,7 +650,7 @@ export class Match {
 	}
 
 	matchFailed(user:User) {
-		const osuPacketWriter = new osu.Bancho.Writer;
+		const osuPacketWriter = osu.Bancho.Writer();
 
 		// Make sure the user is in the match in a valid slot
 		if (user.matchSlot === undefined) {

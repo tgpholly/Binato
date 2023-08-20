@@ -1,22 +1,22 @@
-import { SharedContent } from "../interfaces/SharedContent";
+import { Shared } from "../objects/Shared";
 import { RankingModes } from "../enums/RankingModes";
 import { User } from "../objects/User";
-const osu = require("osu-packet");
+import { osu } from "../../osuTyping";
 
-export function StatusUpdate(arg0:User | SharedContent, id:number) {
+export function StatusUpdate(arg0:User | Shared, id:number) {
 	if (id == 3) return; // Ignore Bot
 
 	// Create new osu packet writer
-	const osuPacketWriter = new osu.Bancho.Writer;
-	let sharedContent:SharedContent;
+	const osuPacketWriter = osu.Bancho.Writer();
+	let shared:Shared;
 	if (arg0 instanceof User) {
-		sharedContent = arg0.sharedContent;
+		shared = arg0.shared;
 	} else {
-		sharedContent = arg0;
+		shared = arg0;
 	}
 
 	// Get user's class
-	const userData = sharedContent.users.getById(id);
+	const userData = shared.users.getById(id);
 
 	if (userData == null) return;
 

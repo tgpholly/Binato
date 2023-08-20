@@ -1,5 +1,5 @@
 import { Channel } from "./objects/Channel";
-import { SharedContent } from "./interfaces/SharedContent";
+import { Shared } from "./objects/Shared";
 import { SlotStatus } from "./enums/SlotStatus";
 import { DataStream } from "./objects/DataStream";
 import { Match } from "./objects/Match";
@@ -10,18 +10,18 @@ import { UserPresenceBundle } from "./packets/UserPresenceBundle";
 import { MatchArray } from "./objects/MatchArray";
 import { MatchJoinData } from "./interfaces/MatchJoinData";
 import { MatchData } from "./interfaces/MatchData";
-const osu = require("osu-packet");
+import { osu } from "../osuTyping";
 
 export class MultiplayerManager {
-	private readonly sharedContent:SharedContent;
+	private readonly shared:Shared;
 	private matches:MatchArray = new MatchArray();
 	private readonly lobbyStream:DataStream;
 	private readonly lobbyChat:Channel;
 
-	public constructor(sharedContent:SharedContent) {
-		this.sharedContent = sharedContent;
-		this.lobbyStream = sharedContent.streams.CreateStream("multiplayer:lobby", false);
-		const channel = this.sharedContent.chatManager.GetChannelByName("#lobby");
+	public constructor(shared:Shared) {
+		this.shared = shared;
+		this.lobbyStream = shared.streams.CreateStream("multiplayer:lobby", false);
+		const channel = this.shared.chatManager.GetChannelByName("#lobby");
 		if (channel === undefined) {
 			throw "Something has gone horribly wrong, the lobby channel does not exist!";
 		}
@@ -84,7 +84,7 @@ export class MultiplayerManager {
 			match.matchStream.AddUser(user);
 			match.matchChatChannel.Join(user);
 
-			const osuPacketWriter = new osu.Bancho.Writer;
+			const osuPacketWriter = osu.Bancho.Writer();
 
 			osuPacketWriter.MatchJoinSuccess(match.generateMatchJSON());
 
@@ -92,7 +92,7 @@ export class MultiplayerManager {
 
 			this.UpdateLobbyListing();
 		} catch (e) {
-			const osuPacketWriter = new osu.Bancho.Writer;
+			const osuPacketWriter = osu.Bancho.Writer();
 
 			osuPacketWriter.MatchJoinFail();
 
@@ -107,8 +107,8 @@ export class MultiplayerManager {
 	}
 
 	public GenerateLobbyListing(user?:User) : Buffer {
-		const osuPacketWriter = new osu.Bancho.Writer;
-		let bufferToSend = UserPresenceBundle(this.sharedContent);
+		const osuPacketWriter = osu.Bancho.Writer();
+		let bufferToSend = UserPresenceBundle(this.shared);
 
 		for (let match of this.matches.getIterableItems()) {
 			for (let slot of match.slots) {
@@ -116,8 +116,13 @@ export class MultiplayerManager {
 					continue;
 				}
 
-				const presenceBuffer = UserPresence(this.sharedContent, slot.player.id);
-				const statusBuffer = StatusUpdate(this.sharedContent, slot.player.id);
+				const presenceBuffer = UserPresence(this.shared, slot.player.id);
+				const statusBuffer = StatusUpdate(this.shared, slot.player.id);
+
+				if (presenceBuffer === undefined || statusBuffer === undefined) {
+					continue;
+				}
+
 				bufferToSend = Buffer.concat([bufferToSend, presenceBuffer, statusBuffer], bufferToSend.length + presenceBuffer.length + statusBuffer.length);
 			}
 
@@ -134,8 +139,12 @@ export class MultiplayerManager {
 		return bufferToSend;
 	}
 
+	public GetMatchById(id:number) : Match | undefined {
+		return this.matches.getById(id);
+	}
+
 	public async CreateMatch(user:User, matchData:MatchData) {
-		const match = await Match.createMatch(user, matchData, this.sharedContent);
+		const match = await Match.createMatch(user, matchData, this.shared);
 		this.matches.add(match.matchId.toString(), match);
 		this.JoinMatch(user, match.matchId);
 	}
