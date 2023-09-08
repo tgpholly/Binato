@@ -1,0 +1,1 @@
+# The TypeScript rewrite is mostly feature complete but is still missing some features [as well as having some strange behaviours](https://github.com/tgpholly/Binato/issues/16). If you would like to use this I would suggest using the [old JavaScript version](https://github.com/tgpholly/Binato/tree/master) for now.
