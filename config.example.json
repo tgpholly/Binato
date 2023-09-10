@@ -1,0 +1,28 @@
+{
+	"http": {
+		"port": 5001,
+		"compression": false
+	},
+	"prometheus": {
+		"enabled": false,
+		"port": 9103
+	},
+	"redis": {
+		"enabled": false,
+		"address": "127.0.0.1",
+		"port": 6379,
+		"database": 0,
+		"password": ""
+	},
+	"database": {
+		"address": "127.0.0.1",
+		"port": 3306,
+		"username": "user",
+		"password": "password",
+		"name": "osu!",
+		"pbkdf2": {
+			"itterations": 1000,
+			"keylength": 64
+		}
+	}
+}
