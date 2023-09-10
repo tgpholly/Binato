@@ -46,7 +46,7 @@ export default class Match {
 	public countdownTime:number = 0;
 	public countdownTimer?:NodeJS.Timeout;
 
-	private cachedMatchJSON:MatchData;
+	private serialisedMatchJSON:MatchData;
 	private readonly shared:Shared;
 
 	private constructor(matchData:MatchData, shared:Shared) {
@@ -95,7 +95,7 @@ export default class Match {
 		this.matchStream = shared.streams.CreateStream(`multiplayer:match_${this.matchId}`, false);
 		this.matchChatChannel = shared.chatManager.AddSpecialChatChannel("multiplayer", `mp_${this.matchId}`);
 
-		this.cachedMatchJSON = matchData;
+		this.serialisedMatchJSON = matchData;
 
 		//this.multiplayerExtras = null;
 
@@ -118,7 +118,7 @@ export default class Match {
 	
 				const osuPacketWriter = osu.Bancho.Writer();
 	
-				osuPacketWriter.MatchNew(matchInstance.generateMatchJSON());
+				osuPacketWriter.MatchNew(matchInstance.serialiseMatch());
 	
 				matchHost.addActionToQueue(osuPacketWriter.toBuffer);
 	
@@ -132,10 +132,27 @@ export default class Match {
 	}
 
 	// Convert class data back to a format that osu-packet can understand
-	public generateMatchJSON() : MatchData {
+	public serialiseMatch() : MatchData {
+		const matchDataRef = this.serialisedMatchJSON;
+		matchDataRef.matchId = this.matchId;
+		matchDataRef.matchType = this.matchType;
+		matchDataRef.activeMods = this.activeMods;
+		matchDataRef.gameName = this.gameName;
+		matchDataRef.gamePassword = this.gamePassword ?? "";
+		matchDataRef.inProgress = this.inProgress;
+		matchDataRef.beatmapName = this.beatmapName;
+		matchDataRef.beatmapId = this.beatmapId;
+		matchDataRef.beatmapChecksum = this.beatmapChecksum;
+		matchDataRef.host = this.host.id;
+		matchDataRef.playMode = this.playMode;
+		matchDataRef.matchScoringType = this.matchScoringType;
+		matchDataRef.matchTeamType = this.matchTeamType;
+		matchDataRef.specialModes = this.specialModes;
+		matchDataRef.seed = this.seed;
+
 		for (let i = 0; i < this.slots.length; i++) {
 			const slot = this.slots[i];
-			const osuSlot = this.cachedMatchJSON.slots[i];
+			const osuSlot = this.serialisedMatchJSON.slots[i];
 
 			osuSlot.status = slot.status;
 			osuSlot.team = slot.team;
@@ -147,7 +164,7 @@ export default class Match {
 			}
 		}
 
-		return this.cachedMatchJSON;
+		return this.serialisedMatchJSON;
 	}
 
 	public leaveMatch(user:User) {
@@ -184,12 +201,12 @@ export default class Match {
 		if (matchData.gamePassword === "") {
 			this.gamePassword = undefined;
 		} else {
-			this.gamePassword = this.cachedMatchJSON.gamePassword = matchData.gamePassword;
+			this.gamePassword = matchData.gamePassword;
 		}
 
-		this.beatmapName = this.cachedMatchJSON.beatmapName = matchData.beatmapName;
-		this.beatmapId = this.cachedMatchJSON.beatmapId = matchData.beatmapId;
-		this.beatmapChecksum = this.cachedMatchJSON.beatmapChecksum = matchData.beatmapChecksum;
+		this.beatmapName = matchData.beatmapName;
+		this.beatmapId = matchData.beatmapId;
+		this.beatmapChecksum = matchData.beatmapChecksum;
 
 		if (matchData.host !== this.host.id) {
 			const hostUser = this.shared.users.getById(matchData.host);
@@ -198,17 +215,16 @@ export default class Match {
 				throw "Host User of match was undefined";
 			}
 			this.host = hostUser;
-			this.cachedMatchJSON.host = this.host.id;
 		}
 
-		this.playMode = this.cachedMatchJSON.playMode = matchData.playMode;
+		this.playMode = matchData.playMode;
 
-		this.matchScoringType = this.cachedMatchJSON.matchScoringType = matchData.matchScoringType;
-		this.matchTeamType = this.cachedMatchJSON.matchTeamType = matchData.matchTeamType;
-		this.specialModes = this.cachedMatchJSON.specialModes = matchData.specialModes;
+		this.matchScoringType = matchData.matchScoringType;
+		this.matchTeamType = matchData.matchTeamType;
+		this.specialModes = matchData.specialModes;
 
 		const gameSeedChanged = this.seed !== matchData.seed;
-		this.seed = this.cachedMatchJSON.seed = matchData.seed;
+		this.seed = matchData.seed;
 
 		if (gameNameChanged || gameSeedChanged) {
 			const queryData = [];
@@ -220,7 +236,10 @@ export default class Match {
 			}
 			queryData.push(this.matchId);
 
-			await this.shared.database.query(`UPDATE mp_matches SET ${gameNameChanged ? `name = ?${gameSeedChanged ? ", " : ""}` : ""}${gameSeedChanged ? `seed = ?` : ""} WHERE id = ?`, queryData);
+			await this.shared.database.query(
+				`UPDATE mp_matches SET ${gameNameChanged ? `name = ?${gameSeedChanged ? ", " : ""}` : ""}${gameSeedChanged ? `seed = ?` : ""} WHERE id = ?`,
+				queryData
+			);
 		}
 
 		this.sendMatchUpdate();
@@ -232,7 +251,7 @@ export default class Match {
 	public sendMatchUpdate() {
 		const osuPacketWriter = osu.Bancho.Writer();
 
-		osuPacketWriter.MatchUpdate(this.generateMatchJSON());
+		osuPacketWriter.MatchUpdate(this.serialiseMatch());
 
 		// Update all users in the match with new match information
 		this.matchStream.Send(osuPacketWriter.toBuffer);
@@ -291,17 +310,12 @@ export default class Match {
 		}
 
 		// Make sure the user attempting to kick / lock is the host of the match
-		if (User.Equals(user, this.host)) {
+		if (!User.Equals(user, this.host)) {
 			return;
 		}
 
 		const slot = this.slots[slotToActionOn];
-		if (slot.player instanceof Slot) {
-			// Kick
-			if (User.Equals(user, slot.player)) {
-				return;
-			}
-
+		if (slot.player instanceof User) { // Kick
 			const kickedPlayer = slot.player;
 
 			// Remove player's refs to the match & slot
@@ -311,15 +325,11 @@ export default class Match {
 			// Nuke all slot properties
 			slot.reset();
 
-			// Send update before removing the user from the stream so they know
-			// they got kicked
-			this.sendMatchUpdate();
+			// Kick player
+			this.shared.multiplayerManager.LeaveMatch(kickedPlayer);
 
-			// Remove player from stream and chat
-			this.matchStream.RemoveUser(kickedPlayer);
-			this.matchChatChannel.Leave(kickedPlayer);
-		} else {
-			// Lock / Unlock
+			this.sendMatchUpdate();
+		} else { // Lock / Unlock
 			slot.status = slot.status === SlotStatus.Empty ? SlotStatus.Locked : SlotStatus.Empty;
 
 			this.sendMatchUpdate();
@@ -354,7 +364,7 @@ export default class Match {
 		if (this.matchSkippedSlots === undefined) {
 			this.matchSkippedSlots = new Array<MatchStartSkipData>();
 
-			for (let slot of this.slots) {
+			for (const slot of this.slots) {
 				// Make sure the slot has a user in it
 				if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
 					continue;
@@ -369,7 +379,7 @@ export default class Match {
 		}
 
 		let allSkipped = true;
-		for (let skippedSlot of this.matchSkippedSlots) {
+		for (const skippedSlot of this.matchSkippedSlots) {
 			// If loadslot belongs to this user then set loaded to true
 			if (skippedSlot.playerId === user.id) {
 				skippedSlot.flag = true;
@@ -403,9 +413,8 @@ export default class Match {
 	public transferHost(user:User, slotIDToTransferTo:number) {
 		// Set the lobby's host to the new user
 		const newHost = this.slots[slotIDToTransferTo].player;
-		if (newHost instanceof Slot) {
+		if (newHost instanceof User) {
 			this.host = newHost;
-			this.cachedMatchJSON.host = this.host.id;
 
 			this.sendMatchUpdate();
 		}
@@ -446,7 +455,7 @@ export default class Match {
 		
 		this.matchLoadSlots = new Array<MatchStartSkipData>();
 		// Loop through all slots in the match
-		for (let slot of this.slots) {
+		for (const slot of this.slots) {
 			// Make sure the slot has a user in it
 			if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
 				continue;
@@ -464,7 +473,7 @@ export default class Match {
 
 		const osuPacketWriter = osu.Bancho.Writer();
 
-		osuPacketWriter.MatchStart(this.generateMatchJSON());
+		osuPacketWriter.MatchStart(this.serialiseMatch());
 
 		// Inform all users in the match that it has started
 		this.matchStream.Send(osuPacketWriter.toBuffer);
@@ -482,7 +491,7 @@ export default class Match {
 		}
 
 		let allLoaded = true;
-		for (let loadedSlot of this.matchLoadSlots) {
+		for (const loadedSlot of this.matchLoadSlots) {
 			if (loadedSlot.playerId === user.id) {
 				loadedSlot.flag = true;
 			}
@@ -502,7 +511,7 @@ export default class Match {
 			this.matchLoadSlots = undefined;
 
 			this.playerScores = new Array<PlayerScore>();
-			for (let slot of this.slots) {
+			for (const slot of this.slots) {
 				if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
 					continue;
 				}
@@ -523,7 +532,7 @@ export default class Match {
 		if (this.matchLoadSlots === undefined) {
 			// Repopulate user loading slots again
 			this.matchLoadSlots = [];
-			for (let slot of this.slots) {
+			for (const slot of this.slots) {
 				// Make sure the slot has a user
 				if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
 					continue;
@@ -538,7 +547,7 @@ export default class Match {
 		}
 
 		let allLoaded = true;
-		for (let loadedSlot of this.matchLoadSlots) {
+		for (const loadedSlot of this.matchLoadSlots) {
 			if (loadedSlot.playerId == user.id) {
 				loadedSlot.flag = true;
 			}
@@ -581,14 +590,14 @@ export default class Match {
 			throw "playerScores was null in a place it really shouldn't have been!";
 		}
 
-		for (let slot of this.slots) {
+		for (const slot of this.slots) {
 			// For every empty / locked slot push a null to the data array
 			if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {
 				queryData.push(null);
 				continue;
 			}
 
-			for (let _playerScore of this.playerScores) {
+			for (const _playerScore of this.playerScores) {
 				if (_playerScore.player?.id === slot.player?.id && _playerScore._raw !== undefined) {
 					const score = _playerScore._raw;
 					queryData.push(`${slot.player?.id}|${score.totalScore}|${score.maxCombo}|${score.count300}|${score.count100}|${score.count50}|${score.countGeki}|${score.countKatu}|${score.countMiss}|${(score.currentHp == 254) ? 1 : 0}${(this.specialModes === 1) ? `|${slot.mods}` : ""}|${score.usingScoreV2 ? 1 : 0}${score.usingScoreV2 ? `|${score.comboPortion}|${score.bonusPortion}` : ""}`);
@@ -623,11 +632,11 @@ export default class Match {
 			return;
 		}
 
-		matchScoreData.id = user.matchSlot.player.id;
+		matchScoreData.id = user.id;
 
 		// Update playerScores
-		for (let playerScore of this.playerScores) {
-			if (playerScore.player?.id == user.id) {
+		for (const playerScore of this.playerScores) {
+			if (playerScore.player?.id === user.id) {
 				playerScore.score = matchScoreData.totalScore;
 				const isCurrentlyFailed = matchScoreData.currentHp == 254;
 				playerScore.isCurrentlyFailed = isCurrentlyFailed;
