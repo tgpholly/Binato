@@ -1,12 +1,12 @@
-import { Channel } from "./objects/Channel";
+import Channel from "./objects/Channel";
 import { ConsoleHelper } from "../ConsoleHelper";
-import { FunkyArray } from "./objects/FunkyArray";
-import { User } from "./objects/User";
-import { Shared } from "./objects/Shared";
-import { osu } from "../osuTyping";
-import { PrivateChannel } from "./objects/PrivateChannel";
+import FunkyArray from "./objects/FunkyArray";
+import User from "./objects/User";
+import Shared from "./objects/Shared";
+import osu from "../osuTyping";
+import PrivateChannel from "./objects/PrivateChannel";
 
-export class PrivateChatManager {
+export default class PrivateChatManager {
 	public chatChannels:FunkyArray<PrivateChannel> = new FunkyArray<PrivateChannel>();
 	private readonly shared:Shared;
 

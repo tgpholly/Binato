@@ -12,10 +12,6 @@ export function generateSession() : Promise<string> {
 	});
 }
 
-export function generateSessionSync() : string {
-	return randomBytes(12).toString("hex");
-}
-
 export function hexlify(data:Buffer) : string {
 	let out:string = "";
 	for (let i = 0; i < data.length; i++) {

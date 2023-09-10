@@ -1,10 +1,10 @@
-import { osu } from "../../osuTyping";
-import { Match } from "../objects/Match";
-import { User } from "../objects/User";
-import { StatusUpdate } from "./StatusUpdate";
-import { UserPresence } from "./UserPresence";
+import osu from "../../osuTyping";
+import Match from "../objects/Match";
+import User from "../objects/User";
+import StatusUpdate from "./StatusUpdate";
+import UserPresence from "./UserPresence";
 
-export function TourneyMatchSpecialInfo(user:User, matchId:number) {
+export default function TourneyMatchSpecialInfo(user:User, matchId:number) {
 	const match = user.shared.multiplayerManager.GetMatchById(matchId);
 	if (!(match instanceof Match)) {
 		return;

@@ -1,7 +1,7 @@
-import { User } from "../objects/User";
-import { StatusUpdate } from "./StatusUpdate";
+import User from "../objects/User";
+import StatusUpdate from "./StatusUpdate";
 
-export function ChangeAction(user:User, data:any) {
+export default function ChangeAction(user:User, data:any) {
 	user.updatePresence(data);
 
 	if (user.spectatorStream != null) {

@@ -1,10 +1,11 @@
-import { osu } from "../../osuTyping";
-import { Bot } from "../Bot";
-import { Shared } from "../objects/Shared";
-import { DataStream } from "./DataStream";
-import { User } from "./User";
+import osu from "../../osuTyping";
+import Bot from "../Bot";
+import ChatHistory from "../ChatHistory";
+import Shared from "../objects/Shared";
+import DataStream from "./DataStream";
+import User from "./User";
 
-export class Channel {
+export default class Channel {
 	public name:string;
 	public description:string;
 	public stream:DataStream;
@@ -40,6 +41,9 @@ export class Channel {
 				senderId: sender.id
 			});
 			this.stream.SendWithExclusion(osuPacketWriter.toBuffer, sender);
+			if (this.name === "#osu") {
+				ChatHistory.AddMessage(`${sender.username}: ${message}`);
+			}
 		}
 
 		if (message[0] === "!") {
@@ -62,6 +66,10 @@ export class Channel {
 			sendTo.addActionToQueue(osuPacketWriter.toBuffer);
 		} else {
 			this.stream.Send(osuPacketWriter.toBuffer);
+		}
+
+		if (this.name === "#osu") {
+			ChatHistory.AddMessage(`${this.bot.user.username}: ${message}`);
 		}
 	}
 

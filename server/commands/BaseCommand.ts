@@ -1,9 +1,9 @@
-import { ICommand } from "../interfaces/ICommand";
-import { Channel } from "../objects/Channel";
-import { Shared } from "../objects/Shared";
-import { User } from "../objects/User";
+import ICommand from "../interfaces/ICommand";
+import Channel from "../objects/Channel";
+import Shared from "../objects/Shared";
+import User from "../objects/User";
 
-export class BaseCommand implements ICommand {
+export default class BaseCommand implements ICommand {
 	public shared:Shared;
 	public readonly helpText:string = "No help page was found for that command";
 	public readonly helpDescription:string = "Command has no description set";

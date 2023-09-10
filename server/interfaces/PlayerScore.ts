@@ -1,8 +1,8 @@
-import { Slot } from "../objects/Slot";
-import { User } from "../objects/User";
-import { MatchScoreData } from "./MatchScoreData";
+import Slot from "../objects/Slot";
+import User from "../objects/User";
+import MatchScoreData from "./MatchScoreData";
 
-export interface PlayerScore {
+export default interface PlayerScore {
 	player:User,
 	slot:Slot,
 	score:number,

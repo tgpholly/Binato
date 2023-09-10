@@ -1,16 +1,16 @@
-import { ChatManager } from "../ChatManager";
-import { Config } from "../interfaces/Config";
-import { Database } from "../objects/Database";
-import { DataStreamArray } from "../objects/DataStreamArray";
-import { MultiplayerManager } from "../MultiplayerManager";
-import { PrivateChatManager } from "../PrivateChatManager";
+import ChatManager from "../ChatManager";
+import Config from "../interfaces/Config";
+import Database from "../objects/Database";
+import DataStreamArray from "../objects/DataStreamArray";
+import MultiplayerManager from "../MultiplayerManager";
+import PrivateChatManager from "../PrivateChatManager";
 import { readFileSync } from "fs";
-import { UserArray } from "../objects/UserArray";
-import { User } from "./User";
-import { LatLng } from "./LatLng";
-import { Bot } from "../Bot";
+import UserArray from "../objects/UserArray";
+import User from "./User";
+import LatLng from "./LatLng";
+import Bot from "../Bot";
 
-export class Shared {
+export default class Shared {
 	public readonly chatManager:ChatManager;
 	public readonly config:Config;
 	public readonly database:Database;

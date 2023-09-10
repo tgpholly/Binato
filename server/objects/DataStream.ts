@@ -1,13 +1,13 @@
 import { ConsoleHelper } from "../../ConsoleHelper";
-import { Constants } from "../../Constants";
-import { DataStreamArray } from "./DataStreamArray";
-import { User } from "./User";
-import { UserArray } from "./UserArray";
+import Constants from "../../Constants";
+import DataStreamArray from "./DataStreamArray";
+import User from "./User";
+import UserArray from "./UserArray";
 import { hexlify } from "../Util";
 
 type DeleteFunction = (dataStream:DataStream) => void;
 
-export class DataStream {
+export default class DataStream {
 	private users:UserArray = new UserArray();
 	public readonly name:string;
 	private readonly parent:DataStreamArray;

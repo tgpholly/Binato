@@ -1,4 +1,4 @@
-export class FunkyArray<T> {
+export default class FunkyArray<T> {
 	private items:any = {};
 	private itemKeys:Array<string> = Object.keys(this.items);
 	private iterableArray:Array<T> = new Array<T>();

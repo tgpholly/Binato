@@ -1,10 +1,10 @@
-import { LatLng } from "./LatLng";
+import LatLng from "./LatLng";
 import { RankingModes } from "../enums/RankingModes";
-import { Match } from "./Match";
-import { DataStream } from "./DataStream";
-import { StatusUpdate } from "../packets/StatusUpdate";
-import { Shared } from "../objects/Shared";
-import { Slot } from "./Slot";
+import Match from "./Match";
+import DataStream from "./DataStream";
+import StatusUpdate from "../packets/StatusUpdate";
+import Shared from "../objects/Shared";
+import Slot from "./Slot";
 
 const rankingModes = [
 	"pp_raw",
@@ -12,7 +12,7 @@ const rankingModes = [
 	"avg_accuracy"
 ];
 
-export class User {
+export default class User {
 	private static readonly EMPTY_BUFFER = Buffer.alloc(0);
 
 	public shared:Shared;

@@ -1,6 +1,6 @@
-import { MatchDataSlot } from "./MatchDataSlot";
+import MatchDataSlot from "./MatchDataSlot";
 
-export interface MatchData {
+export default interface MatchData {
 	matchId:number,
 	matchType:number,
 	activeMods:number,

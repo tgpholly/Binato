@@ -1,10 +1,10 @@
-import { Channel } from "../objects/Channel";
-import { User } from "../objects/User";
-import { BaseCommand } from "./BaseCommand";
-import { Shared } from "../objects/Shared";
-import { ICommand } from "../interfaces/ICommand";
+import Channel from "../objects/Channel";
+import User from "../objects/User";
+import BaseCommand from "./BaseCommand";
+import Shared from "../objects/Shared";
+import ICommand from "../interfaces/ICommand";
 
-export class HelpCommand extends BaseCommand {
+export default class HelpCommand extends BaseCommand {
 	public readonly helpDescription:string = "Shows this message! :)";
 
 	private readonly commandList:{ [id:string]: ICommand };

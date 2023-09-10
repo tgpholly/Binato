@@ -1,7 +1,7 @@
-import { MatchData } from "./MatchData"
-import { MessageData } from "./MessageData"
+import MatchData from "./MatchData"
+import MessageData from "./MessageData"
 
-export interface OsuPacketWriter {
+export default interface OsuPacketWriter {
 	// Functions
 	LoginReply(data:number) : OsuPacketWriter,
 	CommandError() : OsuPacketWriter,

@@ -1,8 +1,8 @@
-import { osu } from "../../osuTyping";
-import { Shared } from "../objects/Shared";
-import { User } from "../objects/User";
+import osu from "../../osuTyping";
+import Shared from "../objects/Shared";
+import User from "../objects/User";
 
-export function UserPresence(arg0:User | Shared, id:number) {
+export default function UserPresence(arg0:User | Shared, id:number) {
 	const osuPacketWriter = osu.Bancho.Writer();
 	let shared:Shared;
 	if (arg0 instanceof User) {

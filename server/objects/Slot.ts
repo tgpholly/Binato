@@ -1,8 +1,8 @@
 import { Mods } from "../enums/Mods";
 import { SlotStatus } from "../enums/SlotStatus";
-import { User } from "./User";
+import User from "./User";
 
-export class Slot {
+export default class Slot {
 	public readonly slotId:number;
 	public status:SlotStatus;
 	public team:number;

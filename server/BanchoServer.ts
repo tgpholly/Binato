@@ -1,15 +1,15 @@
+import Channel from "./objects/Channel";
 import { ConsoleHelper } from "../ConsoleHelper";
-import { Channel } from "./objects/Channel";
-import { LatLng } from "./objects/LatLng";
-import { LoginProcess } from "./LoginProcess";
+import Constants from "../Constants";
+import LoginProcess from "./LoginProcess";
+import { IncomingMessage, ServerResponse } from "http";
 import { Packets } from "./enums/Packets";
 import { RedisClientType, createClient } from "redis";
-import { Request, Response } from "express";
-import { SpectatorManager } from "./SpectatorManager";
-import { User } from "./objects/User";
-import { PrivateMessage } from "./packets/PrivateMessage";
-import { MessageData } from "./interfaces/MessageData";
-import { Shared } from "./objects/Shared";
+import MessageData from "./interfaces/MessageData";
+import PrivateMessage from "./packets/PrivateMessage";
+import Shared from "./objects/Shared";
+import SpectatorManager from "./SpectatorManager";
+import osu from "../osuTyping";
 
 const shared:Shared = new Shared();
 shared.database.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
@@ -55,19 +55,17 @@ if (shared.config.redis.enabled) {
 } else ConsoleHelper.printWarn("Redis is disabled!");
 
 // Import packets
-import { ChangeAction } from "./packets/ChangeAction";
-import { Logout } from "./packets/Logout";
-import { UserPresence } from "./packets/UserPresence";
-import { UserStatsRequest } from "./packets/UserStatsRequest";
-import { UserPresenceBundle } from "./packets/UserPresenceBundle";
-import { TourneyMatchSpecialInfo } from "./packets/TourneyMatchSpecialInfo";
-import { osu } from "../osuTyping";
-import { TourneyMatchJoinChannel } from "./packets/TourneyJoinMatchChannel";
-import { TourneyMatchLeaveChannel } from "./packets/TourneyMatchLeaveChannel";
-import { AddFriend } from "./packets/AddFriend";
-import { RemoveFriend } from "./packets/RemoveFriend";
-import { PrivateChannel } from "./objects/PrivateChannel";
-import { Constants } from "../Constants";
+import ChangeAction from "./packets/ChangeAction";
+import Logout from "./packets/Logout";
+import UserPresence from "./packets/UserPresence";
+import UserStatsRequest from "./packets/UserStatsRequest";
+import UserPresenceBundle from "./packets/UserPresenceBundle";
+import TourneyMatchSpecialInfo from "./packets/TourneyMatchSpecialInfo";
+import TourneyMatchJoinChannel from "./packets/TourneyJoinMatchChannel";
+import TourneyMatchLeaveChannel from "./packets/TourneyMatchLeaveChannel";
+import AddFriend from "./packets/AddFriend";
+import RemoveFriend from "./packets/RemoveFriend";
+import PrivateChannel from "./objects/PrivateChannel";
 
 // User timeout interval
 setInterval(() => {
@@ -83,30 +81,23 @@ setInterval(() => {
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
-export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
+export default async function HandleRequest(req:IncomingMessage, res:ServerResponse, packet:Buffer) {
 	// Get the client's token string and request data
-	const requestTokenString:string | undefined = req.header("osu-token");
+	const requestTokenString = typeof(req.headers["osu-token"]) === "string" ? req.headers["osu-token"] : undefined;
 
 	// Check if the user is logged in
-	if (requestTokenString == null) {
-		// Only do this if we're absolutely sure that we're connected to the DB
-		if (shared.database.connected) {
-			// Client doesn't have a token yet, let's auth them!
-			
-			await LoginProcess(req, res, packet, shared);
-			shared.database.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [shared.users.getLength() - 1]);
-		}
+	if (requestTokenString === undefined) {
+		// Client doesn't have a token yet, let's auth them!
+		
+		await LoginProcess(req, res, packet, shared);
+		shared.database.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [shared.users.getLength() - 1]);
 	} else {
-		let responseData:Buffer | string = EMPTY_BUFFER;
-
-		// Remove headers we don't need for Bancho
-		res.removeHeader('X-Powered-By');
-		res.removeHeader('Date'); // This is not spec compilant
+		let responseData = EMPTY_BUFFER;
 
 		// Client has a token, let's see what they want.
 		try {
 			// Get the current user
-			const PacketUser:User | undefined = shared.users.getByToken(requestTokenString);
+			const PacketUser = shared.users.getByToken(requestTokenString);
 
 			// Make sure the client's token isn't invalid
 			if (PacketUser != null) {
@@ -298,12 +289,12 @@ export async function HandleRequest(req:Request, res:Response, packet:Buffer) {
 				responseData = PacketUser.queue;
 				PacketUser.clearQueue();
 			} else {
-				// Only do this if we're absolutely sure that we're connected to the DB
-				if (shared.database.connected) {
-					// User's token is invlid, force a reconnect
-					ConsoleHelper.printBancho(`Forced client re-login (Token is invalid)`);
-					responseData = "\u0005\u0000\u0000\u0004\u0000\u0000\u0000����\u0018\u0000\u0000\u0011\u0000\u0000\u0000\u000b\u000fReconnecting...";
-				}
+				// User's token is invlid, force a reconnect
+				ConsoleHelper.printBancho(`Forced client re-login (Token is invalid)`);
+				const osuPacketWriter = osu.Bancho.Writer();
+				osuPacketWriter.Announce("Reconnecting...");
+				osuPacketWriter.Restart(0);
+				responseData = osuPacketWriter.toBuffer;
 			}
 		} catch (e) {
 			if (Constants.DEBUG) {

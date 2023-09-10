@@ -1,8 +1,8 @@
-import { Channel } from "../objects/Channel";
-import { User } from "../objects/User";
-import { BaseCommand } from "./BaseCommand";
+import Channel from "../objects/Channel";
+import User from "../objects/User";
+import BaseCommand from "./BaseCommand";
 
-export class RollCommand extends BaseCommand {
+export default class RollCommand extends BaseCommand {
 	public readonly helpDescription:string = "Roll some dice and get a random number between 1 and a number (default 100)";
 	public readonly helpArguments:Array<string> = ["number"];
 

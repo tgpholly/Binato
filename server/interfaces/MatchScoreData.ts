@@ -1,4 +1,4 @@
-export interface MatchScoreData {
+export default interface MatchScoreData {
 	time:number,
 	id:number,
 	count300:number,

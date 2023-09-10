@@ -1,4 +1,4 @@
-export interface IpZxqResponse {
+export default interface IpZxqResponse {
 	country: string,
 	loc: string
 }

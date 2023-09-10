@@ -1,19 +1,19 @@
-import { Channel } from "./Channel";
-import { Shared } from "../objects/Shared";
-import { DataStream } from "./DataStream";
-import { Slot } from "./Slot";
-import { User } from "./User";
-import { StatusUpdate } from "../packets/StatusUpdate";
+import Channel from "./Channel";
+import Shared from "../objects/Shared";
+import DataStream from "./DataStream";
+import Slot from "./Slot";
+import User from "./User";
+import StatusUpdate from "../packets/StatusUpdate";
 import { SlotStatus } from "../enums/SlotStatus";
-import { MatchData } from "../interfaces/MatchData";
+import MatchData from "../interfaces/MatchData";
 import { Team } from "../enums/Team";
-import { MatchStartSkipData } from "../interfaces/MatchStartSkipData";
+import MatchStartSkipData from "../interfaces/MatchStartSkipData";
 import { Mods } from "../enums/Mods";
-import { PlayerScore } from "../interfaces/PlayerScore";
-import { MatchScoreData } from "../interfaces/MatchScoreData";
-import { osu } from "../../osuTyping";
+import PlayerScore from "../interfaces/PlayerScore";
+import MatchScoreData from "../interfaces/MatchScoreData";
+import osu from "../../osuTyping";
 
-export class Match {
+export default class Match {
 	// osu! Data
 	public matchId:number = -1;
 	public inProgress:boolean = false;
@@ -236,8 +236,6 @@ export class Match {
 
 		// Update all users in the match with new match information
 		this.matchStream.Send(osuPacketWriter.toBuffer);
-
-		console.log(this.slots);
 	}
 
 	public moveToSlot(user:User, slotToMoveTo:number) {
@@ -448,7 +446,6 @@ export class Match {
 		
 		this.matchLoadSlots = new Array<MatchStartSkipData>();
 		// Loop through all slots in the match
-		console.log(this.slots);
 		for (let slot of this.slots) {
 			// Make sure the slot has a user in it
 			if (slot.player === undefined || slot.status === SlotStatus.Empty || slot.status === SlotStatus.Locked) {

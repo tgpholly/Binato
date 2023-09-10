@@ -1,9 +1,9 @@
-import { DataStream } from "./objects/DataStream";
-import { Shared } from "./objects/Shared";
-import { User } from "./objects/User";
-import { osu } from "../osuTyping";
+import DataStream from "./objects/DataStream";
+import Shared from "./objects/Shared";
+import User from "./objects/User";
+import osu from "../osuTyping";
 
-export class SpectatorManager {
+export default class SpectatorManager {
 	private shared:Shared;
 
 	public constructor(shared:Shared) {

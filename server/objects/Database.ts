@@ -1,7 +1,7 @@
 import { ConsoleHelper } from "../../ConsoleHelper";
 import { createPool, Pool } from "mysql2";
 
-export class Database {
+export default class Database {
 	private connectionPool:Pool;
 	private static readonly CONNECTION_LIMIT = 128;
 

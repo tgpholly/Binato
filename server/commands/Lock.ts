@@ -1,8 +1,8 @@
-import { Channel } from "../objects/Channel";
-import { User } from "../objects/User";
-import { BaseCommand } from "./BaseCommand";
+import Channel from "../objects/Channel";
+import User from "../objects/User";
+import BaseCommand from "./BaseCommand";
 
-export class LockCommand extends BaseCommand {
+export default class LockCommand extends BaseCommand {
 	public readonly helpDescription:string = "Locks/Unlocks a channel and limits conversation to mods and above.";
 
 	public exec(channel:Channel, sender:User, args:Array<string>) {

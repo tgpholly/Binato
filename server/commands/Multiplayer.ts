@@ -1,15 +1,13 @@
-import { Channel } from "../objects/Channel";
-import { User } from "../objects/User";
-import { Match } from "../objects/Match";
-import { BaseCommand } from "./BaseCommand";
+import Channel from "../objects/Channel";
+import User from "../objects/User";
+import Match from "../objects/Match";
+import BaseCommand from "./BaseCommand";
 
-const helpText = `Multiplayer Subcommands:
+export default class MultiplayerCommands extends BaseCommand {
+	public readonly helpText:string = `Multiplayer Subcommands:
 !mp start - Starts a multiplayer match with a delay (optional)
 !mp abort - Aborts the currently running round / countdown
 !mp obr - Toggles Battle Royale mode`;
-
-export class MultiplayerCommands extends BaseCommand {
-	public readonly helpText:string = helpText;
 	public readonly helpDescription:string = "Command for use in multiplayer matches.";
 	public readonly helpArguments:Array<string> = ["subCommand"];
 

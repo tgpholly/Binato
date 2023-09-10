@@ -1,8 +1,8 @@
-import { Channel } from "../objects/Channel";
-import { Shared } from "../objects/Shared";
-import { User } from "../objects/User";
+import Channel from "../objects/Channel";
+import Shared from "../objects/Shared";
+import User from "../objects/User";
 
-export interface ICommand {
+export default interface ICommand {
 	shared:Shared,
 	helpText:string,
 	helpDescription:string,

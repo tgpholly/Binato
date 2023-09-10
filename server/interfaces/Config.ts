@@ -1,11 +1,11 @@
-export interface Config {
-	express:ExpressConfigSection,
+export default interface Config {
+	http:HttpConfigSection,
 	prometheus:PrometheusConfigSection,
 	redis:RedisConfigSection,
 	database:DatabaseConfigSection
 }
 
-interface ExpressConfigSection {
+interface HttpConfigSection {
 	port:number,
 	compression:boolean
 }

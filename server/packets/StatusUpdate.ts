@@ -1,9 +1,9 @@
-import { Shared } from "../objects/Shared";
+import Shared from "../objects/Shared";
 import { RankingModes } from "../enums/RankingModes";
-import { User } from "../objects/User";
-import { osu } from "../../osuTyping";
+import User from "../objects/User";
+import osu from "../../osuTyping";
 
-export function StatusUpdate(arg0:User | Shared, id:number) {
+export default function StatusUpdate(arg0:User | Shared, id:number) {
 	if (id == 3) return; // Ignore Bot
 
 	// Create new osu packet writer

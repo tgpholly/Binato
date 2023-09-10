@@ -1,4 +1,4 @@
-export class LoginInfo {
+export default class LoginInfo {
 	public username:string;
 	public password:string;
 	public version:string;
@@ -18,8 +18,6 @@ export class LoginInfo {
 		if (data instanceof Buffer) {
 			data = data.toString();
 		}
-
-		console.log(data);
 
 		const loginData:Array<string> = data.split("\n");
 		const extraData:Array<string> = loginData[2].split("|");

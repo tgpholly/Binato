@@ -1,19 +1,19 @@
 import { ConsoleHelper } from "../ConsoleHelper";
 import fetch from "node-fetch";
-import { getCountryID } from "./Country";
+import getCountryID from "./Country";
 import { generateSession } from "./Util";
-import { LatLng } from "./objects/LatLng";
-import { LoginInfo } from "./objects/LoginInfo";
-import { Logout } from "./packets/Logout";
+import LatLng from "./objects/LatLng";
+import LoginInfo from "./objects/LoginInfo";
+import Logout from "./packets/Logout";
 import { pbkdf2 } from "crypto";
-import { Request, Response } from "express";
-import { User } from "./objects/User";
-import { UserPresenceBundle } from "./packets/UserPresenceBundle";
-import { UserPresence } from "./packets/UserPresence";
-import { StatusUpdate } from "./packets/StatusUpdate";
-import { Shared } from "./objects/Shared";
-import { osu } from "../osuTyping";
-import { IpZxqResponse } from "./interfaces/IpZxqResponse";
+import User from "./objects/User";
+import UserPresenceBundle from "./packets/UserPresenceBundle";
+import UserPresence from "./packets/UserPresence";
+import StatusUpdate from "./packets/StatusUpdate";
+import Shared from "./objects/Shared";
+import osu from "../osuTyping";
+import IpZxqResponse from "./interfaces/IpZxqResponse";
+import { IncomingMessage, ServerResponse } from "http";
 const { decrypt: aesDecrypt } = require("aes256");
 
 const incorrectLoginResponse:Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
@@ -43,7 +43,6 @@ function TestLogin(loginInfo:LoginInfo, shared:Shared) {
 		// Make sure the username is the same as the login info
 		if (userDBData.username !== loginInfo.username) return resolve(LoginResult.INCORRECT);
 
-		console.log(userDBData.has_old_password);
 		switch (userDBData.has_old_password) {
 			case LoginTypes.CURRENT:
 				pbkdf2(loginInfo.password, userDBData.password_salt, shared.config.database.pbkdf2.itterations, shared.config.database.pbkdf2.keylength, "sha512", (err, derivedKey) => {
@@ -58,11 +57,9 @@ function TestLogin(loginInfo:LoginInfo, shared:Shared) {
 				});
 				break;
 			case LoginTypes.OLD_AES:
-				console.log("OLD AES");
 				if (aesDecrypt(shared.config.database.key, userDBData.password_hash) !== loginInfo.password) {
 					return resolve(LoginResult.INCORRECT);
 				}
-				console.log("correct password");
 				return resolve(LoginResult.MIGRATION);
 			case LoginTypes.OLD_MD5:
 				if (userDBData.password_hash !== loginInfo.password) {
@@ -73,7 +70,7 @@ function TestLogin(loginInfo:LoginInfo, shared:Shared) {
 	});
 }
 
-export async function LoginProcess(req:Request, res:Response, packet:Buffer, shared:Shared) {
+export default async function LoginProcess(req:IncomingMessage, res:ServerResponse, packet:Buffer, shared:Shared) {
 	const loginStartTime = Date.now();
 	const loginInfo = LoginInfo.From(packet);
 
@@ -93,11 +90,11 @@ export async function LoginProcess(req:Request, res:Response, packet:Buffer, sha
 
 		// Get users IP for getting location
 		// Get cloudflare requestee IP first
-		let requestIP = req.get("cf-connecting-ip");
+		let requestIP = req.headers["cf-connecting-ip"];
 
 		// Get IP of requestee since we are probably behind a reverse proxy
 		if (requestIP === undefined) {
-			requestIP = req.get("X-Real-IP");
+			requestIP = req.headers["X-Real-IP"];
 		}
 
 		// Just get the requestee IP (we are not behind a reverse proxy)
@@ -196,7 +193,7 @@ export async function LoginProcess(req:Request, res:Response, packet:Buffer, sha
 
 			osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
 			// TODO: Remove once merged into master
-			osuPacketWriter.Announce("WARNING\nThis is a development test server made for the TypeScript rewrite.\nAnything could happen be it data loss, catastrophic crashes or otherwise.\nHere be dragons.");
+			osuPacketWriter.Announce("Heads up!\nWhile the TypeScript server rewrite is mostly stable it still has some issues.");
 		} catch (err) {
 			console.error(err);
 		}
@@ -208,10 +205,10 @@ export async function LoginProcess(req:Request, res:Response, packet:Buffer, sha
 	const writerBuffer:Buffer = osuPacketWriter.toBuffer;
 	if (newUser === undefined) {
 		res.writeHead(200, {
+			"cho-token": "no",
 			"Connection": "keep-alive",
 			"Keep-Alive": "timeout=5, max=100"
 		});
-		console.log(res.headersSent);
 		switch (loginResult) {
 			case LoginResult.INCORRECT:
 				res.end(incorrectLoginResponse, () => {

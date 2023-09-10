@@ -1,9 +1,8 @@
-import { OsuPacketWriter } from "./server/interfaces/OsuPacketWriter";
+import OsuPacketWriter from "./server/interfaces/OsuPacketWriter";
 
-// Dummy file
 const nodeOsu = require("osu-packet");
 
-export abstract class osu {
+export default abstract class osu {
 	static Bancho = {
 		Writer: function() : OsuPacketWriter {
 			return new nodeOsu.Bancho.Writer();

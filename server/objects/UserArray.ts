@@ -1,7 +1,7 @@
-import { FunkyArray } from "./FunkyArray";
-import { User } from "./User";
+import FunkyArray from "./FunkyArray";
+import User from "./User";
 
-export class UserArray extends FunkyArray<User> {
+export default class UserArray extends FunkyArray<User> {
 	public getById(id:number) : User | undefined {
 		for (let user of this.getIterableItems()) {
 			if (user.id == id) 

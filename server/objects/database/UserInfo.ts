@@ -1,4 +1,4 @@
-export class UserInfo {
+export default class UserInfo {
 	id:number = Number.MIN_VALUE;
 	username:string = "";
 	username_safe:string = "";

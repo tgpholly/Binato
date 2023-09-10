@@ -1,10 +1,10 @@
-import { osu } from "../../osuTyping";
-import { Shared } from "../objects/Shared";
-import { Channel } from "./Channel";
-import { DataStream } from "./DataStream";
-import { User } from "./User";
+import osu from "../../osuTyping";
+import Shared from "../objects/Shared";
+import Channel from "./Channel";
+import DataStream from "./DataStream";
+import User from "./User";
 
-export class PrivateChannel extends Channel {
+export default class PrivateChannel extends Channel {
 	private readonly user0:User;
 	private readonly user1:User;
 

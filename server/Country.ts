@@ -254,7 +254,7 @@ enum CountryCodes {
 const keys = Object.keys(CountryCodes);
 const values = Object.values(CountryCodes);
 
-export function getCountryID(code:string) : number {
+export default function getCountryID(code:string) : number {
 	// Get id of a country from a 2 char code
 	const upperCode:string = code.toUpperCase();
 	if (upperCode in CountryCodes) {

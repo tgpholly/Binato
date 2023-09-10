@@ -1,18 +1,18 @@
-import { Channel } from "./objects/Channel";
-import { Shared } from "./objects/Shared";
+import Channel from "./objects/Channel";
+import Shared from "./objects/Shared";
 import { SlotStatus } from "./enums/SlotStatus";
-import { DataStream } from "./objects/DataStream";
-import { Match } from "./objects/Match";
-import { User } from "./objects/User";
-import { StatusUpdate } from "./packets/StatusUpdate";
-import { UserPresence } from "./packets/UserPresence";
-import { UserPresenceBundle } from "./packets/UserPresenceBundle";
-import { MatchArray } from "./objects/MatchArray";
-import { MatchJoinData } from "./interfaces/MatchJoinData";
-import { MatchData } from "./interfaces/MatchData";
-import { osu } from "../osuTyping";
+import DataStream from "./objects/DataStream";
+import Match from "./objects/Match";
+import User from "./objects/User";
+import StatusUpdate from "./packets/StatusUpdate";
+import UserPresence from "./packets/UserPresence";
+import UserPresenceBundle from "./packets/UserPresenceBundle";
+import MatchArray from "./objects/MatchArray";
+import MatchJoinData from "./interfaces/MatchJoinData";
+import MatchData from "./interfaces/MatchData";
+import osu from "../osuTyping";
 
-export class MultiplayerManager {
+export default class MultiplayerManager {
 	private readonly shared:Shared;
 	private matches:MatchArray = new MatchArray();
 	private readonly lobbyStream:DataStream;

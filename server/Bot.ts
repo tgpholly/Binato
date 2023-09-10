@@ -1,16 +1,16 @@
-import { ICommand } from "./interfaces/ICommand";
-import { Channel } from "./objects/Channel";
-import { Shared } from "./objects/Shared";
-import { User } from "./objects/User";
+import ICommand from "./interfaces/ICommand";
+import Channel from "./objects/Channel";
+import Shared from "./objects/Shared";
+import User from "./objects/User";
 
 // Commands
-import { RankingCommand } from "./commands/Ranking";
-import { LockCommand } from "./commands/Lock";
-import { MultiplayerCommands } from "./commands/Multiplayer";
-import { HelpCommand } from "./commands/Help";
-import { RollCommand } from "./commands/RollCommand";
+import RankingCommand from "./commands/Ranking";
+import LockCommand from "./commands/Lock";
+import MultiplayerCommands from "./commands/Multiplayer";
+import HelpCommand from "./commands/Help";
+import RollCommand from "./commands/RollCommand";
 
-export class Bot {
+export default class Bot {
 	public user:User;
 	private commands:{ [id: string]: ICommand } = {};
 

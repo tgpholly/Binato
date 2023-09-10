@@ -1,15 +1,13 @@
-import { Channel } from "../objects/Channel";
-import { User } from "../objects/User";
+import Channel from "../objects/Channel";
+import User from "../objects/User";
 import { RankingModes } from "../enums/RankingModes";
-import { BaseCommand } from "./BaseCommand";
+import BaseCommand from "./BaseCommand";
 
-const helpText = `Ranking Modes:
+export default class RankingCommand extends BaseCommand {
+	public readonly helpText:string = `Ranking Modes:
 !ranking pp - Sets your ranking mode to pp
 !ranking score - Sets your ranking mode to score
 !ranking acc - Sets your ranking mode to accuracy`;
-
-export class RankingCommand extends BaseCommand {
-	public readonly helpText:string = helpText;
 	public readonly helpDescription:string = "Sets your prefered ranking type";
 
 	public exec(channel:Channel, sender:User, args:Array<string>) {
