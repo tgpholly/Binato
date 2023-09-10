@@ -20,11 +20,13 @@ export default class SpectatorManager {
 		let spectateStream:DataStream;
 		if (userToSpectate.spectatorStream === undefined) {
 			user.spectatorStream = spectateStream = userToSpectate.spectatorStream = this.shared.streams.CreateStream(`spectator:${userToSpectate.username}`);
+
 		} else {
 			user.spectatorStream = spectateStream = userToSpectate.spectatorStream;
 		}
 
 		user.spectatingUser = userToSpectate;
+		spectateStream.AddUser(user);
 
 		let osuPacketWriter = osu.Bancho.Writer();
 
