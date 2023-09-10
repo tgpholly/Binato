@@ -20,7 +20,7 @@ i'm sorry peppy
 
 ## Setup:
 While I don't support setting this up yourself it is fairly easy to do, all that should be required is:
- - **NodeJS > 16**
+ - **NodeJS > 18**
  - **MariaDB**
  - Optional (Disabled via config):
    - **Redis**
