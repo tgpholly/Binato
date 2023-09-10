@@ -1,4 +1,4 @@
-# Binato [![CodeFactor](https://www.codefactor.io/repository/github/tgpholly/binato/badge)](https://www.codefactor.io/repository/github/tgpholly/binato)
+# Binato [![CodeFactor](https://www.codefactor.io/repository/github/tgpholly/binato/badge)](https://www.codefactor.io/repository/github/tgpholly/binato) [![Node.js CI](https://github.com/tgpholly/Binato/actions/workflows/node.js.yml/badge.svg?branch=master)](https://github.com/tgpholly/Binato/actions/workflows/node.js.yml)
 An implementation of osu!bancho in Javascript
 
 i'm sorry peppy
