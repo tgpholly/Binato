@@ -1,10 +1,8 @@
-console.clear();
-
 import { ConsoleHelper } from "./ConsoleHelper";
 import { readFileSync, existsSync } from "fs";
 if (!existsSync("./config.json")) {
-	ConsoleHelper.printError("You must have a config file in the root of Binato's folder structure.");
-	ConsoleHelper.printError("Check the GitHub for an example file");
+	ConsoleHelper.printError("Config file missing!");
+	ConsoleHelper.printError("Check the GitHub for an example or create one with the example you have.");
 	process.exit(1);
 }
 

@@ -4,11 +4,12 @@ import Database from "../objects/Database";
 import DataStreamArray from "../objects/DataStreamArray";
 import MultiplayerManager from "../MultiplayerManager";
 import PrivateChatManager from "../PrivateChatManager";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import UserArray from "../objects/UserArray";
 import User from "./User";
 import LatLng from "./LatLng";
 import Bot from "../Bot";
+import { ConsoleHelper } from "../../ConsoleHelper";
 
 export default class Shared {
 	public readonly chatManager:ChatManager;
@@ -21,6 +22,11 @@ export default class Shared {
 	public readonly bot:Bot;
 
 	public constructor() {
+		if (!existsSync("./config.json")) {
+			ConsoleHelper.printError("Config file missing!");
+			ConsoleHelper.printError("Check the GitHub for an example or create one with the example you have.");
+			process.exit(1);
+		}
 		this.config = JSON.parse(readFileSync("./config.json").toString()) as Config;
 		this.database = new Database(this.config.database.address, this.config.database.port, this.config.database.username, this.config.database.password, this.config.database.name);
 		this.streams = new DataStreamArray();

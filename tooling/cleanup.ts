@@ -3,7 +3,7 @@ import { readdirSync, rmSync, renameSync } from "fs";
 const libFiles = readdirSync("./build");
 
 for (const file of libFiles) {
-	if (!file.startsWith("index.min.js")) {
+	if (!file.startsWith("Binato.min.js")) {
 		rmSync(`./build/${file}`, { recursive: true });
 	}
 }

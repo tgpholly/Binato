@@ -1,5 +1,7 @@
 import * as dyetty from "dyetty";
 
+console.clear();
+
 enum LogType {
 	INFO,
 	WARN,
