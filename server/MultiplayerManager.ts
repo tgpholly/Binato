@@ -11,6 +11,7 @@ import MatchArray from "./objects/MatchArray";
 import MatchJoinData from "./interfaces/MatchJoinData";
 import MatchData from "./interfaces/MatchData";
 import osu from "../osuTyping";
+import TourneyMatchSpecialInfo from "./packets/TourneyMatchSpecialInfo";
 
 export default class MultiplayerManager {
 	private readonly shared:Shared;
@@ -86,7 +87,7 @@ export default class MultiplayerManager {
 
 			const osuPacketWriter = osu.Bancho.Writer();
 
-			osuPacketWriter.MatchJoinSuccess(match.generateMatchJSON());
+			osuPacketWriter.MatchJoinSuccess(match.serialiseMatch());
 
 			user.addActionToQueue(osuPacketWriter.toBuffer);
 
@@ -126,7 +127,7 @@ export default class MultiplayerManager {
 				bufferToSend = Buffer.concat([bufferToSend, presenceBuffer, statusBuffer], bufferToSend.length + presenceBuffer.length + statusBuffer.length);
 			}
 
-			osuPacketWriter.MatchNew(match.generateMatchJSON());
+			osuPacketWriter.MatchNew(match.serialiseMatch());
 		}
 
 		const osuBuffer = osuPacketWriter.toBuffer;
@@ -147,5 +148,22 @@ export default class MultiplayerManager {
 		const match = await Match.createMatch(user, matchData, this.shared);
 		this.matches.add(match.matchId.toString(), match);
 		this.JoinMatch(user, match.matchId);
+	}
+
+	public async LeaveMatch(user:User) {
+		if (user.match instanceof Match) {
+			user.match.leaveMatch(user);
+			let usersInMatch = false;
+			for (const slot of user.match.slots) {
+				if (slot.player !== undefined) {
+					usersInMatch = true;
+					break;
+				}
+			}
+			if (!usersInMatch) {
+				this.matches.remove(user.match.matchId.toString());
+			}
+			this.UpdateLobbyListing();
+		}
 	}
 }

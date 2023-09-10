@@ -11,7 +11,7 @@ export default function TourneyMatchSpecialInfo(user:User, matchId:number) {
 	}
 
 	const osuPacketWriter = osu.Bancho.Writer();
-	osuPacketWriter.MatchUpdate(match.generateMatchJSON());
+	osuPacketWriter.MatchUpdate(match.serialiseMatch());
 
 	for (const slot of match.slots) {
 		if (slot.player === undefined) {

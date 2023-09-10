@@ -66,6 +66,7 @@ import TourneyMatchLeaveChannel from "./packets/TourneyMatchLeaveChannel";
 import AddFriend from "./packets/AddFriend";
 import RemoveFriend from "./packets/RemoveFriend";
 import PrivateChannel from "./objects/PrivateChannel";
+import MultiplayerInvite from "./packets/MultiplayerInvite";
 
 // User timeout interval
 setInterval(() => {
@@ -181,7 +182,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_PartMatch:
-							await PacketUser.match?.leaveMatch(PacketUser);
+							await shared.multiplayerManager.LeaveMatch(PacketUser);
 							break;
 
 						case Packets.Client_MatchLock:
@@ -269,7 +270,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_Invite:
-							//MultiplayerInvite(PacketUser, CurrentPacket.data);
+							MultiplayerInvite(PacketUser, CurrentPacket.data);
 							break;
 
 						case Packets.Client_UserPresenceRequest:
