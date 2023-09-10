@@ -8,7 +8,7 @@ import RankingCommand from "./commands/Ranking";
 import LockCommand from "./commands/Lock";
 import MultiplayerCommands from "./commands/Multiplayer";
 import HelpCommand from "./commands/Help";
-import RollCommand from "./commands/RollCommand";
+import RollCommand from "./commands/Roll";
 
 export default class Bot {
 	public user:User;
