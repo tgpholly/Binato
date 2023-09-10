@@ -114,7 +114,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 					switch (CurrentPacket.id) {
 						case Packets.Client_ChangeAction:
 							ChangeAction(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_SendPublicMessage:
 							const message:MessageData = CurrentPacket.data;
@@ -122,167 +122,171 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							if (channel instanceof Channel) {
 								channel.SendMessage(PacketUser, CurrentPacket.data.message);
 							}
-						break;
+							break;
 
 						case Packets.Client_Logout:
 							await Logout(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_RequestStatusUpdate:
 							UserPresenceBundle(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_StartSpectating:
 							spectatorManager.startSpectating(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_SpectateFrames:
 							spectatorManager.spectatorFrames(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_StopSpectating:
 							spectatorManager.stopSpectating(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_SendPrivateMessage:
 							PrivateMessage(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_JoinLobby:
 							shared.multiplayerManager.JoinLobby(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_PartLobby:
 							shared.multiplayerManager.LeaveLobby(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_CreateMatch:
 							await shared.multiplayerManager.CreateMatch(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_JoinMatch:
 							shared.multiplayerManager.JoinMatch(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_MatchChangeSlot:
 							PacketUser.match?.moveToSlot(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_MatchReady:
 							PacketUser.match?.setStateReady(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_MatchChangeSettings:
 							await PacketUser.match?.updateMatch(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_MatchNotReady:
 							PacketUser.match?.setStateNotReady(PacketUser);
-						break;
+							break;
 
-						// TODO: Match leave so the matches actually close
 						case Packets.Client_PartMatch:
 							await PacketUser.match?.leaveMatch(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_MatchLock:
 							PacketUser.match?.lockOrKick(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_MatchNoBeatmap:
 							PacketUser.match?.missingBeatmap(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_MatchSkipRequest:
 							PacketUser.match?.matchSkip(PacketUser);
-						break;
+							break;
 						
 						case Packets.Client_MatchHasBeatmap:
 							PacketUser.match?.notMissingBeatmap(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_MatchTransferHost:
 							PacketUser.match?.transferHost(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_MatchChangeMods:
 							PacketUser.match?.updateMods(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_MatchStart:
 							PacketUser.match?.startMatch();
-						break;
+							break;
 
 						case Packets.Client_MatchLoadComplete:
 							PacketUser.match?.matchPlayerLoaded(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_MatchComplete:
 							await PacketUser.match?.onPlayerFinishMatch(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_MatchScoreUpdate:
 							PacketUser.match?.updatePlayerScore(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_MatchFailed:
 							PacketUser.match?.matchFailed(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_MatchChangeTeam:
 							PacketUser.match?.changeTeam(PacketUser);
-						break;
+							break;
 
 						case Packets.Client_ChannelJoin:
 							//ChannelJoin(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_ChannelPart:
 							//ChannelPart(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_SetAwayMessage:
 							//SetAwayMessage(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_FriendAdd:
 							AddFriend(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_FriendRemove:
 							RemoveFriend(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_UserStatsRequest:
 							UserStatsRequest(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_SpecialMatchInfoRequest:
 							TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_SpecialJoinMatchChannel:
 							TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_SpecialLeaveMatchChannel:
 							TourneyMatchLeaveChannel(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_Invite:
 							//MultiplayerInvite(PacketUser, CurrentPacket.data);
-						break;
+							break;
 
 						case Packets.Client_UserPresenceRequest:
-							UserPresence(PacketUser, PacketUser.id); // Can't really think of a way to generalize this?
-						break;
+							UserPresence(PacketUser, PacketUser.id);
+							break;
+
+						// Ignored packets
+
+						case Packets.Client_Pong:
+						case Packets.Client_BeatmapInfoRequest:
+						case Packets.Client_ReceiveUpdates:
+							break;
 
 						default:
-							// Ignore client_beatmapInfoRequest and client_receiveUpdates
-							if (CurrentPacket.id == 68 || CurrentPacket.id == 79 || CurrentPacket.id == 4) break;
 							// Print out unimplemented packet
 							console.dir(CurrentPacket);
-						break;
+							break;
 					}
 				}
 
@@ -290,7 +294,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 				PacketUser.clearQueue();
 			} else {
 				// User's token is invlid, force a reconnect
-				ConsoleHelper.printBancho(`Forced client re-login (Token is invalid)`);
+				ConsoleHelper.printBancho(`Forced client re-connect (Token is invalid)`);
 				const osuPacketWriter = osu.Bancho.Writer();
 				osuPacketWriter.Announce("Reconnecting...");
 				osuPacketWriter.Restart(0);

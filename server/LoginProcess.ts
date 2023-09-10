@@ -192,8 +192,6 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 			UserPresenceBundle(newUser);
 
 			osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
-			// TODO: Remove once merged into master
-			osuPacketWriter.Announce("Heads up!\nWhile the TypeScript server rewrite is mostly stable it still has some issues.");
 		} catch (err) {
 			console.error(err);
 		}
