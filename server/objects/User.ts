@@ -5,6 +5,7 @@ import DataStream from "./DataStream";
 import StatusUpdate from "../packets/StatusUpdate";
 import Shared from "../objects/Shared";
 import Slot from "./Slot";
+import Channel from "./Channel";
 
 const rankingModes = [
 	"pp_raw",
@@ -142,6 +143,20 @@ export default class User {
 
 		if (userScoreUpdate || forceUpdate) {
 			StatusUpdate(this, this.id);
+		}
+	}
+
+	joinChannel(channelName:string) {
+		const channel = this.shared.chatManager.GetChannelByName(channelName);
+		if (channel instanceof Channel) {
+			channel.Join(this);
+		}
+	}
+
+	leaveChannel(channelName:string) {
+		const channel = this.shared.chatManager.GetChannelByName(channelName);
+		if (channel instanceof Channel) {
+			channel.Leave(this);
 		}
 	}
 }

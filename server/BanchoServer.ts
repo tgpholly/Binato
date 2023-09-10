@@ -234,11 +234,11 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_ChannelJoin:
-							//ChannelJoin(PacketUser, CurrentPacket.data);
+							PacketUser.joinChannel(CurrentPacket.data);
 							break;
 
 						case Packets.Client_ChannelPart:
-							//ChannelPart(PacketUser, CurrentPacket.data);
+							PacketUser.leaveChannel(CurrentPacket.data);
 							break;
 
 						case Packets.Client_SetAwayMessage:
