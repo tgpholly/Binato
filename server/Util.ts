@@ -33,3 +33,7 @@ export function isNullOrEmpty(str:string | undefined | null) {
 
 	return false;
 }
+
+export function enumHasFlag(value:number, flag:number) : boolean {
+	return (value & flag) === flag;
+}

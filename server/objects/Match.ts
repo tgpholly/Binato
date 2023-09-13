@@ -11,7 +11,13 @@ import MatchStartSkipData from "../interfaces/MatchStartSkipData";
 import { Mods } from "../enums/Mods";
 import PlayerScore from "../interfaces/PlayerScore";
 import MatchScoreData from "../interfaces/MatchScoreData";
+import { enumHasFlag } from "../Util";
 import osu from "../../osuTyping";
+
+// Mods which need to be applied to the match during freemod.
+const matchFreemodGlobalMods:Array<Mods> = [
+	Mods.DoubleTime, Mods.Nightcore, Mods.HalfTime
+]
 
 export default class Match {
 	// osu! Data
@@ -431,6 +437,19 @@ export default class Match {
 		if (this.specialModes === 1) {
 			slot.mods = mods;
 
+			// Extra check for host during freemod
+			if (User.Equals(this.host, user)) {
+				let generatedMatchModList = 0;
+				for (const mod of matchFreemodGlobalMods) {
+					if (enumHasFlag(slot.mods, mod)) {
+						slot.mods -= mod;
+						generatedMatchModList += mod;
+					}
+				}
+
+				this.activeMods = generatedMatchModList;
+			}
+
 			this.sendMatchUpdate();
 		} else {
 			if (!User.Equals(this.host, user)) {
@@ -632,7 +651,7 @@ export default class Match {
 			return;
 		}
 
-		matchScoreData.id = user.id;
+		matchScoreData.id = user.matchSlot.slotId;
 
 		// Update playerScores
 		for (const playerScore of this.playerScores) {
