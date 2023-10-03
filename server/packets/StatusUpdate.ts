@@ -20,7 +20,7 @@ export default function StatusUpdate(arg0:User | Shared, id:number) {
 
 	if (userData == null) return;
 
-	let UserStatusObject = {
+	osuPacketWriter.HandleOsuUpdate({
 		userId: userData.id,
 		status: userData.actionID,
 		statusText: userData.actionText,
@@ -34,9 +34,7 @@ export default function StatusUpdate(arg0:User | Shared, id:number) {
 		totalScore: userData.totalScore,
 		rank: userData.rank, 
 		performance: (userData.rankingMode == RankingModes.PP ? userData.pp : 0)
-	};
-
-	osuPacketWriter.HandleOsuUpdate(UserStatusObject);
+	});
 
 	// Send data to user's queue
 	if (arg0 instanceof User) {

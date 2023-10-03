@@ -249,7 +249,7 @@ enum CountryCodes {
 	UY = 226,
 	SI = 194,
 	AI = 7
-};
+}
 
 const keys = Object.keys(CountryCodes);
 const values = Object.values(CountryCodes);

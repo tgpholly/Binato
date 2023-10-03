@@ -67,6 +67,7 @@ import AddFriend from "./packets/AddFriend";
 import RemoveFriend from "./packets/RemoveFriend";
 import PrivateChannel from "./objects/PrivateChannel";
 import MultiplayerInvite from "./packets/MultiplayerInvite";
+import SendPublicMessage from "./packets/SendPublicMessage";
 
 // User timeout interval
 setInterval(() => {
@@ -98,12 +99,12 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 		// Client has a token, let's see what they want.
 		try {
 			// Get the current user
-			const PacketUser = shared.users.getByToken(requestTokenString);
+			const user = shared.users.getByToken(requestTokenString);
 
 			// Make sure the client's token isn't invalid
-			if (PacketUser != null) {
+			if (user != null) {
 				// Update the session timeout time for each request
-				PacketUser.timeoutTime = Date.now() + 60000;
+				user.timeoutTime = Date.now() + 60000;
 
 				// Parse bancho packets
 				const osuPacketReader = osu.Client.Reader(packet);
@@ -113,131 +114,127 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 				for (const packet of packets) {
 					switch (packet.id) {
 						case Packets.Client_ChangeAction:
-							ChangeAction(PacketUser, packet.data);
+							ChangeAction(user, packet.data);
 							break;
 
 						case Packets.Client_SendPublicMessage:
-							const message:MessageData = packet.data;
-							let channel = shared.chatManager.GetChannelByName(message.target);
-							if (channel instanceof Channel) {
-								channel.SendMessage(PacketUser, packet.data.message);
-							}
+							SendPublicMessage(user, packet.data);
 							break;
 
 						case Packets.Client_Logout:
-							await Logout(PacketUser);
+							await Logout(user);
 							break;
 
 						case Packets.Client_RequestStatusUpdate:
-							UserPresenceBundle(PacketUser);
+							UserPresenceBundle(user);
 							break;
 
 						case Packets.Client_StartSpectating:
-							spectatorManager.startSpectating(PacketUser, packet.data);
+							spectatorManager.startSpectating(user, packet.data);
 							break;
 
 						case Packets.Client_SpectateFrames:
-							spectatorManager.spectatorFrames(PacketUser, packet.data);
+							spectatorManager.spectatorFrames(user, packet.data);
 							break;
 
 						case Packets.Client_StopSpectating:
-							spectatorManager.stopSpectating(PacketUser);
+							spectatorManager.stopSpectating(user);
 							break;
 
 						case Packets.Client_SendPrivateMessage:
-							PrivateMessage(PacketUser, packet.data);
+							PrivateMessage(user, packet.data);
 							break;
 
 						case Packets.Client_JoinLobby:
-							shared.multiplayerManager.JoinLobby(PacketUser);
+							shared.multiplayerManager.JoinLobby(user);
 							break;
 
 						case Packets.Client_PartLobby:
-							shared.multiplayerManager.LeaveLobby(PacketUser);
+							shared.multiplayerManager.LeaveLobby(user);
 							break;
 
 						case Packets.Client_CreateMatch:
-							await shared.multiplayerManager.CreateMatch(PacketUser, packet.data);
+							await shared.multiplayerManager.CreateMatch(user, packet.data);
 							break;
 
 						case Packets.Client_JoinMatch:
-							shared.multiplayerManager.JoinMatch(PacketUser, packet.data);
+							shared.multiplayerManager.JoinMatch(user, packet.data);
 							break;
 
 						case Packets.Client_MatchChangeSlot:
-							PacketUser.match?.moveToSlot(PacketUser, packet.data);
+							user.match?.moveToSlot(user, packet.data);
 							break;
 
 						case Packets.Client_MatchReady:
-							PacketUser.match?.setStateReady(PacketUser);
+							user.match?.setStateReady(user);
 							break;
 
 						case Packets.Client_MatchChangeSettings:
-							await PacketUser.match?.updateMatch(PacketUser, packet.data);
+							await user.match?.updateMatch(user, packet.data);
 							break;
 
 						case Packets.Client_MatchNotReady:
-							PacketUser.match?.setStateNotReady(PacketUser);
+							user.match?.setStateNotReady(user);
 							break;
 
 						case Packets.Client_PartMatch:
-							await shared.multiplayerManager.LeaveMatch(PacketUser);
+							await shared.multiplayerManager.LeaveMatch(user);
 							break;
 
 						case Packets.Client_MatchLock:
-							PacketUser.match?.lockOrKick(PacketUser, packet.data);
+							user.match?.lockOrKick(user, packet.data);
 							break;
 
 						case Packets.Client_MatchNoBeatmap:
-							PacketUser.match?.missingBeatmap(PacketUser);
+							user.match?.missingBeatmap(user);
 							break;
 
 						case Packets.Client_MatchSkipRequest:
-							PacketUser.match?.matchSkip(PacketUser);
+							user.match?.matchSkip(user);
 							break;
 						
 						case Packets.Client_MatchHasBeatmap:
-							PacketUser.match?.notMissingBeatmap(PacketUser);
+							user.match?.notMissingBeatmap(user);
 							break;
 
 						case Packets.Client_MatchTransferHost:
-							PacketUser.match?.transferHost(PacketUser, packet.data);
+							user.match?.transferHost(user, packet.data);
 							break;
 
 						case Packets.Client_MatchChangeMods:
-							PacketUser.match?.updateMods(PacketUser, packet.data);
+							user.match?.updateMods(user, packet.data);
 							break;
 
 						case Packets.Client_MatchStart:
-							PacketUser.match?.startMatch();
+							user.match?.startMatch();
 							break;
 
 						case Packets.Client_MatchLoadComplete:
-							PacketUser.match?.matchPlayerLoaded(PacketUser);
+							user.match?.matchPlayerLoaded(user);
 							break;
 
 						case Packets.Client_MatchComplete:
-							await PacketUser.match?.onPlayerFinishMatch(PacketUser);
+							await user.match?.onPlayerFinishMatch(user);
 							break;
 
 						case Packets.Client_MatchScoreUpdate:
-							PacketUser.match?.updatePlayerScore(PacketUser, packet.data);
+							user.match?.updatePlayerScore(user, packet.data);
 							break;
 
 						case Packets.Client_MatchFailed:
-							PacketUser.match?.matchFailed(PacketUser);
+							user.match?.matchFailed(user);
 							break;
 
 						case Packets.Client_MatchChangeTeam:
-							PacketUser.match?.changeTeam(PacketUser);
+							user.match?.changeTeam(user);
 							break;
 
 						case Packets.Client_ChannelJoin:
-							PacketUser.joinChannel(packet.data);
+							user.joinChannel(packet.data);
 							break;
 
 						case Packets.Client_ChannelPart:
-							PacketUser.leaveChannel(packet.data);
+							user.leaveChannel(packet.data);
 							break;
 
 						case Packets.Client_SetAwayMessage:
@@ -245,35 +242,35 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_FriendAdd:
-							AddFriend(PacketUser, packet.data);
+							AddFriend(user, packet.data);
 							break;
 
 						case Packets.Client_FriendRemove:
-							RemoveFriend(PacketUser, packet.data);
+							RemoveFriend(user, packet.data);
 							break;
 
 						case Packets.Client_UserStatsRequest:
-							UserStatsRequest(PacketUser, packet.data);
+							UserStatsRequest(user, packet.data);
 							break;
 
 						case Packets.Client_SpecialMatchInfoRequest:
-							TourneyMatchSpecialInfo(PacketUser, packet.data);
+							TourneyMatchSpecialInfo(user, packet.data);
 							break;
 
 						case Packets.Client_SpecialJoinMatchChannel:
-							TourneyMatchJoinChannel(PacketUser, packet.data);
+							TourneyMatchJoinChannel(user, packet.data);
 							break;
 
 						case Packets.Client_SpecialLeaveMatchChannel:
-							TourneyMatchLeaveChannel(PacketUser, packet.data);
+							TourneyMatchLeaveChannel(user, packet.data);
 							break;
 
 						case Packets.Client_Invite:
-							MultiplayerInvite(PacketUser, packet.data);
+							MultiplayerInvite(user, packet.data);
 							break;
 
 						case Packets.Client_UserPresenceRequest:
-							UserPresence(PacketUser, PacketUser.id);
+							UserPresence(user, user.id);
 							break;
 
 						// Ignored packets
@@ -290,8 +287,8 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 					}
 				}
 
-				responseData = PacketUser.queue;
-				PacketUser.clearQueue();
+				responseData = user.queue;
+				user.clearQueue();
 			} else {
 				// User's token is invlid, force a reconnect
 				ConsoleHelper.printBancho(`Forced client re-connect (Token is invalid)`);

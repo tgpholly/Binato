@@ -11,7 +11,7 @@ export default function UserPresenceBundle(arg0:User | Shared) : Buffer {
 		shared = arg0;
 	}
 
-	let userIds:Array<number> = new Array<number>();
+	const userIds:Array<number> = new Array<number>();
 
 	for (const userData of shared.users.getIterableItems()) {
 		userIds.push(userData.id);
