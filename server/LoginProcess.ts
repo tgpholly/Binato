@@ -81,7 +81,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 	}
 
 	const loginResult:LoginResult = await TestLogin(loginInfo, shared);
-	let osuPacketWriter = osu.Bancho.Writer();
+	const osuPacketWriter = osu.Bancho.Writer();
 	let newUser:User | undefined;
 	let friendsPresence:Buffer = Buffer.alloc(0);
 
@@ -169,10 +169,10 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 			shared.chatManager.SendChannelListing(newUser);
 
 			// Construct & send user's friends list
-			const userFriends = await shared.database.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
+			const friends = await shared.database.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
 			const friendsArray:Array<number> = new Array<number>();
-			for (let useFriend of userFriends) {
-				const friendId:number = useFriend.friendsWith;
+			for (const friend of friends) {
+				const friendId:number = friend.friendsWith;
 				friendsArray.push(friendId);
 
 				// Also fetch presence for friend if they are online

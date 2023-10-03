@@ -23,7 +23,7 @@ export default class HelpCommand extends BaseCommand {
 		// All commands
 		if (args.length === 0) {
 			let constructedHelp = "Help:\n";
-			for (let key of this.commandKeys) {
+			for (const key of this.commandKeys) {
 				constructedHelp += ` !${key} - ${this.commandList[key].helpDescription}\n`;
 			}
 			channel.SendBotMessage(constructedHelp.slice(0, constructedHelp.length - 1));

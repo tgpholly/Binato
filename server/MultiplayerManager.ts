@@ -62,7 +62,7 @@ export default class MultiplayerManager {
 			}
 
 			let matchFull = true;
-			for (let slot of match.slots) {
+			for (const slot of match.slots) {
 				if (slot.player instanceof User || slot.status === SlotStatus.Locked) {
 					continue;
 				}
@@ -111,8 +111,8 @@ export default class MultiplayerManager {
 		const osuPacketWriter = osu.Bancho.Writer();
 		let bufferToSend = UserPresenceBundle(this.shared);
 
-		for (let match of this.matches.getIterableItems()) {
-			for (let slot of match.slots) {
+		for (const match of this.matches.getIterableItems()) {
+			for (const slot of match.slots) {
 				if (!(slot.player instanceof User) || slot.status === SlotStatus.Locked) {
 					continue;
 				}

@@ -70,7 +70,7 @@ import MultiplayerInvite from "./packets/MultiplayerInvite";
 
 // User timeout interval
 setInterval(() => {
-	for (let User of shared.users.getIterableItems()) {
+	for (const User of shared.users.getIterableItems()) {
 		if (User.uuid == "bot") continue; // Ignore the bot
 
 		// Logout this user, they're clearly gone.
@@ -102,26 +102,25 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 
 			// Make sure the client's token isn't invalid
 			if (PacketUser != null) {
-				// Update the session timeout time
+				// Update the session timeout time for each request
 				PacketUser.timeoutTime = Date.now() + 60000;
 
-				// Create a new osu! packet reader
+				// Parse bancho packets
 				const osuPacketReader = osu.Client.Reader(packet);
-				// Parse current bancho packet
-				const PacketData = osuPacketReader.Parse();
+				const packets = osuPacketReader.Parse();
 
 				// Go through each packet sent by the client
-				for (let CurrentPacket of PacketData) {
-					switch (CurrentPacket.id) {
+				for (const packet of packets) {
+					switch (packet.id) {
 						case Packets.Client_ChangeAction:
-							ChangeAction(PacketUser, CurrentPacket.data);
+							ChangeAction(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_SendPublicMessage:
-							const message:MessageData = CurrentPacket.data;
+							const message:MessageData = packet.data;
 							let channel = shared.chatManager.GetChannelByName(message.target);
 							if (channel instanceof Channel) {
-								channel.SendMessage(PacketUser, CurrentPacket.data.message);
+								channel.SendMessage(PacketUser, packet.data.message);
 							}
 							break;
 
@@ -134,11 +133,11 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_StartSpectating:
-							spectatorManager.startSpectating(PacketUser, CurrentPacket.data);
+							spectatorManager.startSpectating(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_SpectateFrames:
-							spectatorManager.spectatorFrames(PacketUser, CurrentPacket.data);
+							spectatorManager.spectatorFrames(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_StopSpectating:
@@ -146,7 +145,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_SendPrivateMessage:
-							PrivateMessage(PacketUser, CurrentPacket.data);
+							PrivateMessage(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_JoinLobby:
@@ -158,15 +157,15 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_CreateMatch:
-							await shared.multiplayerManager.CreateMatch(PacketUser, CurrentPacket.data);
+							await shared.multiplayerManager.CreateMatch(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_JoinMatch:
-							shared.multiplayerManager.JoinMatch(PacketUser, CurrentPacket.data);
+							shared.multiplayerManager.JoinMatch(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_MatchChangeSlot:
-							PacketUser.match?.moveToSlot(PacketUser, CurrentPacket.data);
+							PacketUser.match?.moveToSlot(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_MatchReady:
@@ -174,7 +173,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_MatchChangeSettings:
-							await PacketUser.match?.updateMatch(PacketUser, CurrentPacket.data);
+							await PacketUser.match?.updateMatch(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_MatchNotReady:
@@ -186,7 +185,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_MatchLock:
-							PacketUser.match?.lockOrKick(PacketUser, CurrentPacket.data);
+							PacketUser.match?.lockOrKick(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_MatchNoBeatmap:
@@ -202,11 +201,11 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_MatchTransferHost:
-							PacketUser.match?.transferHost(PacketUser, CurrentPacket.data);
+							PacketUser.match?.transferHost(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_MatchChangeMods:
-							PacketUser.match?.updateMods(PacketUser, CurrentPacket.data);
+							PacketUser.match?.updateMods(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_MatchStart:
@@ -222,7 +221,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_MatchScoreUpdate:
-							PacketUser.match?.updatePlayerScore(PacketUser, CurrentPacket.data);
+							PacketUser.match?.updatePlayerScore(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_MatchFailed:
@@ -234,11 +233,11 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_ChannelJoin:
-							PacketUser.joinChannel(CurrentPacket.data);
+							PacketUser.joinChannel(packet.data);
 							break;
 
 						case Packets.Client_ChannelPart:
-							PacketUser.leaveChannel(CurrentPacket.data);
+							PacketUser.leaveChannel(packet.data);
 							break;
 
 						case Packets.Client_SetAwayMessage:
@@ -246,31 +245,31 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_FriendAdd:
-							AddFriend(PacketUser, CurrentPacket.data);
+							AddFriend(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_FriendRemove:
-							RemoveFriend(PacketUser, CurrentPacket.data);
+							RemoveFriend(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_UserStatsRequest:
-							UserStatsRequest(PacketUser, CurrentPacket.data);
+							UserStatsRequest(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_SpecialMatchInfoRequest:
-							TourneyMatchSpecialInfo(PacketUser, CurrentPacket.data);
+							TourneyMatchSpecialInfo(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_SpecialJoinMatchChannel:
-							TourneyMatchJoinChannel(PacketUser, CurrentPacket.data);
+							TourneyMatchJoinChannel(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_SpecialLeaveMatchChannel:
-							TourneyMatchLeaveChannel(PacketUser, CurrentPacket.data);
+							TourneyMatchLeaveChannel(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_Invite:
-							MultiplayerInvite(PacketUser, CurrentPacket.data);
+							MultiplayerInvite(PacketUser, packet.data);
 							break;
 
 						case Packets.Client_UserPresenceRequest:
@@ -286,7 +285,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 
 						default:
 							// Print out unimplemented packet
-							console.dir(CurrentPacket);
+							console.dir(packet);
 							break;
 					}
 				}

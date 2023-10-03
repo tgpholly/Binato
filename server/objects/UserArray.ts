@@ -3,7 +3,7 @@ import User from "./User";
 
 export default class UserArray extends FunkyArray<User> {
 	public getById(id:number) : User | undefined {
-		for (let user of this.getIterableItems()) {
+		for (const user of this.getIterableItems()) {
 			if (user.id == id) 
 				return user;
 		}
@@ -12,7 +12,7 @@ export default class UserArray extends FunkyArray<User> {
 	}
 
 	public getByUsername(username:string) : User | undefined {
-		for (let user of this.getIterableItems()) {
+		for (const user of this.getIterableItems()) {
 			if (user.username === username)
 				return user;
 		}

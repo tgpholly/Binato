@@ -30,7 +30,7 @@ export default class FunkyArray<T> {
 
 	public regenerateIterableArray() : void {
 		this.iterableArray = new Array();
-		for (let itemKey of this.itemKeys) {
+		for (const itemKey of this.itemKeys) {
 			this.iterableArray.push(this.items[itemKey]);
 		}
 		this.itemKeys = Object.keys(this.items);

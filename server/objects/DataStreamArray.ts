@@ -26,7 +26,7 @@ export default class DataStreamArray extends FunkyArray<DataStream> {
 	}
 
 	public RemoveUserFromAllStreams(user:User) {
-		for (let stream of this.getIterableItems()) {
+		for (const stream of this.getIterableItems()) {
 			stream.RemoveUser(user);
 		}
 	}

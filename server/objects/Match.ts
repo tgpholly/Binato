@@ -522,7 +522,7 @@ export default class Match {
 
 		// All players have loaded the beatmap, start playing.
 		if (allLoaded) {
-			let osuPacketWriter = osu.Bancho.Writer();
+			const osuPacketWriter = osu.Bancho.Writer();
 			osuPacketWriter.MatchAllPlayersLoaded();
 			this.matchStream.Send(osuPacketWriter.toBuffer);
 
@@ -591,7 +591,7 @@ export default class Match {
 		this.matchLoadSlots = undefined;
 		this.inProgress = false;
 
-		let osuPacketWriter = osu.Bancho.Writer();
+		const osuPacketWriter = osu.Bancho.Writer();
 
 		let queryData:Array<any> = [
 			this.matchId,

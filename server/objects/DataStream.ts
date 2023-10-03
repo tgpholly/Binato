@@ -74,7 +74,7 @@ export default class DataStream {
 	public Send(data:Buffer) {
 		this.checkInactive();
 
-		for (let user of this.users.getIterableItems()) {
+		for (const user of this.users.getIterableItems()) {
 			user.addActionToQueue(data);
 		}
 		if (Constants.DEBUG) {
@@ -85,7 +85,7 @@ export default class DataStream {
 	public SendWithExclusion(data:Buffer, exclude:User) {
 		this.checkInactive();
 
-		for (let user of this.users.getIterableItems()) {
+		for (const user of this.users.getIterableItems()) {
 			if (user.uuid !== exclude.uuid) {
 				user.addActionToQueue(data);
 			}

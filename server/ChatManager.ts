@@ -69,7 +69,7 @@ export default class ChatManager {
 	}
 
 	public ForceJoinChannels(user:User) {
-		for (let channel of this.forceJoinChannels.getIterableItems()) {
+		for (const channel of this.forceJoinChannels.getIterableItems()) {
 			channel.Join(user);
 		}
 	}
@@ -77,7 +77,7 @@ export default class ChatManager {
 
 	public SendChannelListing(user:User) {
 		const osuPacketWriter = osu.Bancho.Writer();
-		for (let channel of this.chatChannels.getIterableItems()) {
+		for (const channel of this.chatChannels.getIterableItems()) {
 			if (channel.isSpecial) {
 				continue;
 			}
