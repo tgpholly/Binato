@@ -5,6 +5,7 @@
 import { readdirSync, lstatSync, readFileSync, writeFileSync } from "fs";
 
 let tsFileData:Array<string> = new Array<string>();
+const tsHighPriorityData:Array<string> = new Array<string>();
 const tsEvenFirsterData:Array<string> = new Array<string>();
 const tsVeryFirstData:Array<string> = new Array<string>();
 const tsFirstFileData:Array<string> = new Array<string>();
@@ -25,9 +26,11 @@ function readDir(nam:string) {
 		} else if (file.endsWith(".ts")) {
 			if (file == "Binato.ts") {
 				tsLastFileData.push(readFileSync((`${nam}/${file}`).replace("//", "/")).toString());
+			} else if (file.includes("BaseCommand")) {
+				tsHighPriorityData.push(readFileSync((`${nam}/${file}`).replace("//", "/")).toString());
 			} else if (nam.includes("commands") || file.includes("ConsoleHelper")) {
 				tsEvenFirsterData.push(readFileSync((`${nam}/${file}`).replace("//", "/")).toString());
-			} else if (file.includes("FunkyArray") || file.includes("ChatManager") || file.includes("MultiplayerManager") || file === "Bot.ts") {
+			} else if (file.includes("FunkyArray") || file.includes("ChatManager") || file.includes("MultiplayerManager") || file === "BaseCommand.ts" || file.includes("Bot.ts")) {
 				tsVeryFirstData.push(readFileSync((`${nam}/${file}`).replace("//", "/")).toString());
 			} else if (nam.includes("enum") || nam.includes("packets") || (nam.includes("objects") && !file.includes("FunkyArray") ) || file.includes("SpectatorManager")) {
 				tsFirstFileData.push(readFileSync((`${nam}/${file}`).replace("//", "/")).toString());
@@ -40,7 +43,7 @@ function readDir(nam:string) {
 
 readDir("./");
 
-tsFileData = tsFileData.concat(tsEvenFirsterData).concat(tsVeryFirstData).concat(tsFirstFileData).concat(tsEverythingElse).concat(tsLastFileData);
+tsFileData = tsFileData.concat(tsHighPriorityData).concat(tsEvenFirsterData).concat(tsVeryFirstData).concat(tsFirstFileData).concat(tsEverythingElse).concat(tsLastFileData);
 
 const combinedFiles = tsFileData.join("\n");
 

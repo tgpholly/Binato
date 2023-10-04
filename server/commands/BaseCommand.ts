@@ -6,7 +6,7 @@ import User from "../objects/User";
 export default class BaseCommand implements ICommand {
 	public shared:Shared;
 	public readonly adminOnly:boolean = false;
-	public readonly helpText = "No help page was found for that command";
+	public readonly helpText:string = "No help page was found for that command";
 	public readonly helpDescription:string = "Command has no description set";
 	public readonly helpArguments:Array<string> = new Array<string>();
 
