@@ -7,6 +7,7 @@ import Shared from "../objects/Shared";
 import Slot from "./Slot";
 import Channel from "./Channel";
 import PresenceData from "../interfaces/PresenceData";
+import { Permissions } from "../enums/Permissions";
 
 const rankingModes = [
 	"pp_raw",
@@ -28,6 +29,7 @@ export default class User {
 	public rankingMode:RankingModes = RankingModes.PP;
 	public spectatorStream?:DataStream;
 	public spectatingUser?:User;
+	public permissions:Permissions;
 
 	// osu! data
 	public playMode:number = 0;
@@ -65,10 +67,11 @@ export default class User {
 		return user0.uuid === user1.uuid;
 	}
 
-	public constructor(id:number, username:string, uuid:string, shared:Shared) {
+	public constructor(id:number, username:string, uuid:string, permissions:Permissions, shared:Shared) {
 		this.id = id;
 		this.username = username;
 		this.uuid = uuid;
+		this.permissions = permissions;
 
 		this.shared = shared;
 	}

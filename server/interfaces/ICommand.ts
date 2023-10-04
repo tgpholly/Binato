@@ -4,6 +4,7 @@ import User from "../objects/User";
 
 export default interface ICommand {
 	shared:Shared,
+	adminOnly:boolean,
 	helpText:string,
 	helpDescription:string,
 	exec: (channel:Channel, sender:User, args:Array<string>) => void

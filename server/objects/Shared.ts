@@ -11,6 +11,7 @@ import LatLng from "./LatLng";
 import Bot from "../Bot";
 import { ConsoleHelper } from "../../ConsoleHelper";
 import UserInfoRepository from "../repos/UserInfoRepository";
+import { Permissions } from "../enums/Permissions";
 
 export default class Shared {
 	public readonly chatManager:ChatManager;
@@ -36,7 +37,7 @@ export default class Shared {
 
 		// Add the bot user
 		this.users = new UserArray();
-		const botUser = this.users.add("bot", new User(3, "SillyBot", "bot", this));
+		const botUser = this.users.add("bot", new User(3, "SillyBot", "bot", Permissions.None, this));
 		botUser.location = new LatLng(50, -32);
 		this.bot = new Bot(this, botUser);
 

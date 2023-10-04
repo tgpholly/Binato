@@ -5,7 +5,7 @@ import User from "./objects/User";
 
 // Commands
 import RankingCommand from "./commands/Ranking";
-import LockCommand from "./commands/Lock";
+import AdminCommand from "./commands/Admin";
 import MultiplayerCommands from "./commands/Multiplayer";
 import HelpCommand from "./commands/Help";
 import RollCommand from "./commands/Roll";
@@ -19,7 +19,7 @@ export default class Bot {
 		
 		this.commands["help"] = new HelpCommand(shared, this.commands);
 		this.commands["ranking"] = new RankingCommand(shared);
-		this.commands["lock"] = new LockCommand(shared);
+		this.commands["admin"] = new AdminCommand(shared);
 		this.commands["mp"] = new MultiplayerCommands(shared);
 		this.commands["roll"] = new RollCommand(shared);
 	}

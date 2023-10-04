@@ -139,7 +139,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		}
 
 		// Retreive the newly created user
-		newUser = shared.users.add(newClientToken, new User(userInfo.id, loginInfo.username, newClientToken, shared));
+		newUser = shared.users.add(newClientToken, new User(userInfo.id, loginInfo.username, newClientToken, userInfo.tags, shared));
 		// Set tourney client flag
 		newUser.isTourneyUser = isTourneyClient;
 		newUser.location = userLocation;
