@@ -12,8 +12,8 @@ import SpectatorManager from "./SpectatorManager";
 import osu from "../osuTyping";
 
 const shared:Shared = new Shared();
-shared.database.query("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
-shared.database.query("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
+shared.database.execute("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
+shared.database.execute("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
 
 // Server Setup
 const spectatorManager:SpectatorManager = new SpectatorManager(shared);
@@ -90,7 +90,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 		// Client doesn't have a token yet, let's auth them!
 		
 		await LoginProcess(req, res, packet, shared);
-		shared.database.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [shared.users.getLength() - 1]);
+		shared.database.execute("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [shared.users.getLength() - 1]);
 	} else {
 		let responseData = Buffer.allocUnsafe(0);
 
@@ -240,11 +240,11 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_FriendAdd:
-							AddFriend(user, packet.data);
+							await AddFriend(user, packet.data);
 							break;
 
 						case Packets.Client_FriendRemove:
-							RemoveFriend(user, packet.data);
+							await RemoveFriend(user, packet.data);
 							break;
 
 						case Packets.Client_UserStatsRequest:

@@ -53,7 +53,7 @@ import { Registry, collectDefaultMetrics } from "prom-client";
 import { RedisClientType, createClient } from "redis";
 import { readFileSync, existsSync } from "fs";
 import { randomBytes, pbkdf2 } from "crypto";
-import { createPool, Pool } from "mysql2";
+import { createPool, Pool, RowDataPacket } from "mysql2";
 import * as dyetty from "dyetty";
 import fetch from "node-fetch";
 import http from "http";`);

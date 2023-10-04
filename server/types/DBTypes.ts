@@ -1,0 +1,1 @@
+export type DBInDataType = string | number | null | undefined;

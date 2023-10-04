@@ -29,7 +29,7 @@ export default class FunkyArray<T> {
 	}
 
 	public regenerateIterableArray() : void {
-		this.iterableArray = new Array();
+		this.iterableArray = new Array<T>();
 		for (const itemKey of this.itemKeys) {
 			this.iterableArray.push(this.items[itemKey]);
 		}
@@ -64,7 +64,7 @@ export default class FunkyArray<T> {
 		return this.itemKeys;
 	}
 
-	public getItems() : any {
+	public getItems() : { [id: string]: T } {
 		return this.items;
 	}
 

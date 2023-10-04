@@ -37,7 +37,7 @@ enum LoginResult {
 
 function TestLogin(loginInfo:LoginInfo, shared:Shared) {
 	return new Promise<LoginResult>(async (resolve, reject) => {
-		const userDBData:UserInfo = await shared.database.query("SELECT * FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
+		const userDBData = await shared.userInfoRepository.getByUsername(loginInfo.username);
 
 		// Make sure a user was found in the database
 		if (userDBData == null) return resolve(LoginResult.INCORRECT);
@@ -123,7 +123,10 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		}
 
 		// Get information about the user from the database
-		const userId:number = (await shared.database.query("SELECT id FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username])).id;
+		const userInfo = await shared.userInfoRepository.getByUsername(loginInfo.username);
+		if (userInfo == null) {
+			return;
+		}
 
 		// Create a token for the client
 		const newClientToken:string = await generateSession();
@@ -136,7 +139,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		}
 
 		// Retreive the newly created user
-		newUser = shared.users.add(newClientToken, new User(userId, loginInfo.username, newClientToken, shared));
+		newUser = shared.users.add(newClientToken, new User(userInfo.id, loginInfo.username, newClientToken, shared));
 		// Set tourney client flag
 		newUser.isTourneyUser = isTourneyClient;
 		newUser.location = userLocation;

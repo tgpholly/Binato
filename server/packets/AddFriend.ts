@@ -1,7 +1,7 @@
 import User from "../objects/User";
 
-export default function AddFriend(user:User, friendId:number) {
-	user.shared.database.query("INSERT INTO friends (user, friendsWith) VALUES (?, ?)", [
+export default async function AddFriend(user:User, friendId:number) {
+	await user.shared.database.execute("INSERT INTO friends (user, friendsWith) VALUES (?, ?)", [
 		user.id, friendId
 	]);
 }

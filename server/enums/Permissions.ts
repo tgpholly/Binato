@@ -1,4 +1,5 @@
 export enum Permissions {
+	None = 0,
 	BAT = 2,
 	Supporter = 4,
 	Friend = 8,

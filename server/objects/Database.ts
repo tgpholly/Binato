@@ -1,5 +1,6 @@
 import { ConsoleHelper } from "../../ConsoleHelper";
-import { createPool, Pool } from "mysql2";
+import { createPool, Pool, RowDataPacket } from "mysql2";
+import { DBInDataType } from "../types/DBTypes";
 
 export default class Database {
 	private connectionPool:Pool;
@@ -20,50 +21,70 @@ export default class Database {
 		ConsoleHelper.printInfo(`Connected DB connection pool. MAX_CONNECTIONS = ${Database.CONNECTION_LIMIT}`);
 	}
 
-	public query(query = "", data?:Array<any>) {
-		const limited = query.includes("LIMIT 1");
-
-		return new Promise<any>((resolve, reject) => {
+	public execute(query:string, data?:Array<DBInDataType>) {
+		return new Promise<boolean>((resolve, reject) => {
 			this.connectionPool.getConnection((err, connection) => {
 				if (err) {
-					reject(err);
-					try {
-						connection.release();
-					} catch (e) {
-						ConsoleHelper.printError("Failed to release mysql connection\n" + err);
-					}
+					return reject(err);
+				}
+
+				if (data == null) {
+					connection.execute(query, data, (err, result) => {
+						if (err) {
+							connection.release();
+							return reject(err);
+						}
+	
+						resolve(result !== undefined);
+					});
+				} else {
+
+				}
+			});
+		});
+	}
+
+	public query(query:string, data?:Array<DBInDataType>) {
+		return new Promise<RowDataPacket[]>((resolve, reject) => {
+			this.connectionPool.getConnection((err, connection) => {
+				if (err) {
+					return reject(err);
 				} else {
 					// Use old query
 					if (data == null) {
-						connection.query(query, (err, data) => {
+						connection.query<RowDataPacket[]>(query, (err, rows) => {
+							connection.release();
 							if (err) {
-								reject(err);
-								connection.release();
-							} else {
-								dataReceived(resolve, data, limited);
-								connection.release();
+								return reject(err);
 							}
+
+							resolve(rows);
+							connection.release();
 						});
 					}
 					// Use new prepared statements w/ placeholders
 					else {
-						connection.execute(query, data, (err, data) => {
+						connection.execute<RowDataPacket[]>(query, data, (err, rows) => {
+							connection.release();
 							if (err) {
-								reject(err);
-								connection.release();
-							} else {
-								dataReceived(resolve, data, limited);
-								connection.release();
+								return reject(err);
 							}
+
+							resolve(rows);
+							connection.release();
 						});
 					}
 				}
 			});
 		});
 	}
-}
 
-function dataReceived(resolveCallback:(value:unknown) => void, data:any, limited:boolean = false) : void {
-	if (limited) resolveCallback(data[0]);
-	else resolveCallback(data);
+	public async querySingle(query:string, data?:Array<DBInDataType>) {
+		const dbData = await this.query(query, data);
+		if (dbData != null && dbData.length > 0) {
+			return dbData[0];
+		}
+
+		return null;
+	}
 }

@@ -98,7 +98,7 @@ export default class User {
 
 	// Gets the user's score information from the database and caches it
 	async updateUserInfo(forceUpdate:boolean = false) {
-		const userScoreDB = await this.shared.database.query("SELECT * FROM users_modes_info WHERE user_id = ? AND mode_id = ? LIMIT 1", [this.id, this.playMode]);
+		const userScoreDB = await this.shared.database.querySingle("SELECT * FROM users_modes_info WHERE user_id = ? AND mode_id = ? LIMIT 1", [this.id, this.playMode]);
 		const mappedRankingMode = rankingModes[this.rankingMode];
 		const userRankDB = await this.shared.database.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ? ORDER BY ${mappedRankingMode} DESC`, [this.playMode]);
 

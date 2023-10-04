@@ -13,7 +13,7 @@ export default async function Logout(user:User) {
 	// Remove user from user list
 	user.shared.users.remove(user.uuid);
 
-	await user.shared.database.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [user.shared.users.getLength() - 1]);
+	await user.shared.database.execute("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [user.shared.users.getLength() - 1]);
 
 	ConsoleHelper.printBancho(`User logged out, took ${Date.now() - logoutStartTime}ms. [User: ${user.username}]`);
 }
