@@ -81,8 +81,6 @@ setInterval(() => {
 	}
 }, 10000);
 
-const EMPTY_BUFFER = Buffer.alloc(0);
-
 export default async function HandleRequest(req:IncomingMessage, res:ServerResponse, packet:Buffer) {
 	// Get the client's token string and request data
 	const requestTokenString = typeof(req.headers["osu-token"]) === "string" ? req.headers["osu-token"] : undefined;
@@ -94,7 +92,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 		await LoginProcess(req, res, packet, shared);
 		shared.database.query("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [shared.users.getLength() - 1]);
 	} else {
-		let responseData = EMPTY_BUFFER;
+		let responseData = Buffer.allocUnsafe(0);
 
 		// Client has a token, let's see what they want.
 		try {

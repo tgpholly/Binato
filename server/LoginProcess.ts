@@ -1,6 +1,6 @@
 import { ConsoleHelper } from "../ConsoleHelper";
 import fetch from "node-fetch";
-import getCountryID from "./Country";
+import { getCountryID } from "./Country";
 import { generateSession } from "./Util";
 import LatLng from "./objects/LatLng";
 import LoginInfo from "./objects/LoginInfo";
@@ -14,6 +14,7 @@ import Shared from "./objects/Shared";
 import osu from "../osuTyping";
 import IpZxqResponse from "./interfaces/IpZxqResponse";
 import { IncomingMessage, ServerResponse } from "http";
+import UserInfo from "./objects/database/UserInfo";
 const { decrypt: aesDecrypt } = require("aes256");
 
 const incorrectLoginResponse:Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
@@ -36,7 +37,7 @@ enum LoginResult {
 
 function TestLogin(loginInfo:LoginInfo, shared:Shared) {
 	return new Promise<LoginResult>(async (resolve, reject) => {
-		const userDBData:any = await shared.database.query("SELECT * FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
+		const userDBData:UserInfo = await shared.database.query("SELECT * FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
 
 		// Make sure a user was found in the database
 		if (userDBData == null) return resolve(LoginResult.INCORRECT);
@@ -122,7 +123,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		}
 
 		// Get information about the user from the database
-		const userDB = await shared.database.query("SELECT id FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username]);
+		const userId:number = (await shared.database.query("SELECT id FROM users_info WHERE username = ? LIMIT 1", [loginInfo.username])).id;
 
 		// Create a token for the client
 		const newClientToken:string = await generateSession();
@@ -135,7 +136,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		}
 
 		// Retreive the newly created user
-		newUser = shared.users.add(newClientToken, new User(userDB.id, loginInfo.username, newClientToken, shared));
+		newUser = shared.users.add(newClientToken, new User(userId, loginInfo.username, newClientToken, shared));
 		// Set tourney client flag
 		newUser.isTourneyUser = isTourneyClient;
 		newUser.location = userLocation;
@@ -203,7 +204,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 	const writerBuffer:Buffer = osuPacketWriter.toBuffer;
 	if (newUser === undefined) {
 		res.writeHead(200, {
-			"cho-token": "no",
+			"cho-token": "no", // NOTE: You have to specify a token even if it's an incorrect login for some reason.
 			"Connection": "keep-alive",
 			"Keep-Alive": "timeout=5, max=100"
 		});

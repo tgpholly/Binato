@@ -6,6 +6,7 @@ import StatusUpdate from "../packets/StatusUpdate";
 import Shared from "../objects/Shared";
 import Slot from "./Slot";
 import Channel from "./Channel";
+import PresenceData from "../interfaces/PresenceData";
 
 const rankingModes = [
 	"pp_raw",
@@ -14,8 +15,6 @@ const rankingModes = [
 ];
 
 export default class User {
-	private static readonly EMPTY_BUFFER = Buffer.alloc(0);
-
 	public shared:Shared;
 
 	public id:number;
@@ -23,7 +22,7 @@ export default class User {
 	public uuid:string;
 	public readonly connectTime:number = Date.now();
 	public timeoutTime:number = Date.now() + 30000;
-	public queue:Buffer = User.EMPTY_BUFFER;
+	public queue:Buffer = Buffer.allocUnsafe(0);
 	
 	// Binato data
 	public rankingMode:RankingModes = RankingModes.PP;
@@ -80,11 +79,11 @@ export default class User {
 	}
 
 	clearQueue() {
-		this.queue = User.EMPTY_BUFFER;
+		this.queue = Buffer.allocUnsafe(0);
 	}
 
 	// Updates the user's current action
-	updatePresence(action:any) {
+	updatePresence(action:PresenceData) {
 		this.actionID = action.status;
 		this.actionText = action.statusText;
 		this.beatmapChecksum = action.beatmapChecksum;

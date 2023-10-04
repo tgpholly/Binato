@@ -1,5 +1,5 @@
 export default class FunkyArray<T> {
-	private items:any = {};
+	private items:{ [id: string]: T } = {};
 	private itemKeys:Array<string> = Object.keys(this.items);
 	private iterableArray:Array<T> = new Array<T>();
 

@@ -14,6 +14,6 @@ export default class BaseCommand implements ICommand {
 	}
 
 	public exec(channel:Channel, sender:User, args:Array<string>) {
-
+		channel.SendBotMessage(`Sorry ${sender.username}! This command has no functionality yet. Args: ["${args.join('", "')}"]`);
 	}
 }

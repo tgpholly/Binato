@@ -6,8 +6,7 @@ import BaseCommand from "./BaseCommand";
 export default class MultiplayerCommands extends BaseCommand {
 	public readonly helpText:string = `Multiplayer Subcommands:
 !mp start - Starts a multiplayer match with a delay (optional)
-!mp abort - Aborts the currently running round / countdown
-!mp obr - Toggles Battle Royale mode`;
+!mp abort - Aborts the currently running round / countdown`;
 	public readonly helpDescription:string = "Command for use in multiplayer matches.";
 	public readonly helpArguments:Array<string> = ["subCommand"];
 
@@ -36,9 +35,6 @@ export default class MultiplayerCommands extends BaseCommand {
 
 			case "abort":
 				return mpAbort(channel, sender.match);
-
-			case "obr":
-				return mpOBR(channel, sender.match);
 		}
 	}
 }
@@ -89,8 +85,4 @@ function mpAbort(channel:Channel, match:Match) {
 		match.finishMatch();
 		channel.SendBotMessage("Aborted current round");
 	}
-}
-
-function mpOBR(channel:Channel, match:Match) {
-
 }

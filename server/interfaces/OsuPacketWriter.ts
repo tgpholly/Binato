@@ -1,5 +1,7 @@
 import MatchData from "./MatchData"
+import MatchScoreData from "./MatchScoreData"
 import MessageData from "./MessageData"
+import StatusUpdateData from "./StatusUpdateData"
 
 export default interface OsuPacketWriter {
 	// Functions
@@ -9,7 +11,7 @@ export default interface OsuPacketWriter {
 	Ping() : OsuPacketWriter,
 	HandleIrcChangeUsername(data:any) : OsuPacketWriter,
 	HandleIrcQuit() : OsuPacketWriter,
-	HandleOsuUpdate(data:any) : OsuPacketWriter,
+	HandleOsuUpdate(data:StatusUpdateData) : OsuPacketWriter,
 	HandleUserQuit(data:any) : OsuPacketWriter,
 	SpectatorJoined(data:any) : OsuPacketWriter,
 	SpectatorLeft(data:any) : OsuPacketWriter,
@@ -19,14 +21,14 @@ export default interface OsuPacketWriter {
 	GetAttention() : OsuPacketWriter,
 	Announce(data:string) : OsuPacketWriter,
 	MatchUpdate(data:MatchData) : OsuPacketWriter,
-	MatchNew(data:any) : OsuPacketWriter,
+	MatchNew(data:MatchData) : OsuPacketWriter,
 	MatchDisband(data:any) : OsuPacketWriter,
-	MatchJoinSuccess(data:any) : OsuPacketWriter,
+	MatchJoinSuccess(data:MatchData) : OsuPacketWriter,
 	MatchJoinFail() : OsuPacketWriter,
-	FellowSpectatorJoined(data:any) : OsuPacketWriter,
-	FellowSpectatorLeft(data:any) : OsuPacketWriter,
-	MatchStart(data:any) : OsuPacketWriter,
-	MatchScoreUpdate(data:any) : OsuPacketWriter,
+	FellowSpectatorJoined(data:number) : OsuPacketWriter,
+	FellowSpectatorLeft(data:number) : OsuPacketWriter,
+	MatchStart(data:MatchData) : OsuPacketWriter,
+	MatchScoreUpdate(data:MatchScoreData) : OsuPacketWriter,
 	MatchTransferHost(data:any) : OsuPacketWriter,
 	MatchAllPlayersLoaded() : OsuPacketWriter,
 	MatchPlayerFailed(data:any) : OsuPacketWriter,
@@ -43,9 +45,9 @@ export default interface OsuPacketWriter {
 	ProtocolNegotiation(data:number) : OsuPacketWriter,
 	TitleUpdate(data:string) : OsuPacketWriter,
 	Monitor() : OsuPacketWriter,
-	MatchPlayerSkipped(data:any) : OsuPacketWriter,
+	MatchPlayerSkipped(data:number) : OsuPacketWriter,
 	UserPresence(data:any) : OsuPacketWriter,
-	Restart(data:any) : OsuPacketWriter,
+	Restart(data:number) : OsuPacketWriter,
 	Invite(data:any) : OsuPacketWriter,
 	ChannelListingComplete() : OsuPacketWriter,
 	MatchChangePassword(data:any) : OsuPacketWriter,
@@ -58,7 +60,7 @@ export default interface OsuPacketWriter {
 	VersionUpdateForced() : OsuPacketWriter,
 	SwitchServer(data:any) : OsuPacketWriter,
 	AccountRestricted() : OsuPacketWriter,
-	RTX(data:any) : OsuPacketWriter,
+	RTX(data:string) : OsuPacketWriter,
 	SwitchTourneyServer(data:any) : OsuPacketWriter
 
 	toBuffer : Buffer

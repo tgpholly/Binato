@@ -397,11 +397,16 @@ export default class Match {
 			allSkipped = false;
 		}
 
+		const slotId = user.matchSlot?.slotId ?? Number.MIN_VALUE;
+		if (slotId === Number.MIN_VALUE) {
+			return;
+		}
+
 		// All players have finished playing, finish the match
 		if (allSkipped) {
 			const osuPacketWriter = osu.Bancho.Writer();
 
-			osuPacketWriter.MatchPlayerSkipped(user.id);
+			osuPacketWriter.MatchPlayerSkipped(slotId);
 			osuPacketWriter.MatchSkip();
 
 			this.matchStream.Send(osuPacketWriter.toBuffer);
@@ -410,7 +415,7 @@ export default class Match {
 		} else {
 			const osuPacketWriter = osu.Bancho.Writer();
 			
-			osuPacketWriter.MatchPlayerSkipped(user.id);
+			osuPacketWriter.MatchPlayerSkipped(slotId);
 
 			this.matchStream.Send(osuPacketWriter.toBuffer);
 		}
@@ -593,7 +598,7 @@ export default class Match {
 
 		const osuPacketWriter = osu.Bancho.Writer();
 
-		let queryData:Array<any> = [
+		const queryData:Array<string | number | null> = [
 			this.matchId,
 			this.roundId++,
 			this.playMode,
