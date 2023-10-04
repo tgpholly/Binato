@@ -29,7 +29,7 @@ export default class Database {
 				}
 
 				if (data == null) {
-					connection.execute(query, data, (err, result) => {
+					connection.execute(query, (err, result) => {
 						if (err) {
 							connection.release();
 							return reject(err);
@@ -38,7 +38,14 @@ export default class Database {
 						resolve(result !== undefined);
 					});
 				} else {
-
+					connection.execute(query, data, (err, result) => {
+						if (err) {
+							connection.release();
+							return reject(err);
+						}
+	
+						resolve(result !== undefined);
+					});
 				}
 			});
 		});
