@@ -6,7 +6,7 @@ enum LogType {
 	INFO,
 	WARN,
 	ERROR
-};
+}
 
 const LogTags = {
 	INFO: dyetty.bgGreen(dyetty.black("  INFO  ")),
