@@ -10,7 +10,7 @@ export default abstract class osu {
 	};
 
 	static Client = {
-		Reader: function(data:any) : any {
+		Reader: function(data:Buffer) {
 			return new nodeOsu.Client.Reader(data);
 		}
 	};
