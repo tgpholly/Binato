@@ -1,10 +1,11 @@
 import { readFileSync, writeFileSync } from "fs";
 import { minify } from "terser";
 
-const DISABLE = false;
+const DISABLE = true;
+writeFileSync("./build/.MANGLED", `${DISABLE}`);
 
 if (DISABLE) {
-	writeFileSync("./build/Binato.min.js", readFileSync("./build/combined.js"));
+	writeFileSync("./build/Binato.js", readFileSync("./build/combined.js"));
 	console.warn("[WARNING] mangle.ts is disabled!");
 } else {
 	(async () => {
