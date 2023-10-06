@@ -5,7 +5,7 @@ import LoginProcess from "./LoginProcess";
 import { IncomingMessage, ServerResponse } from "http";
 import { Packets } from "./enums/Packets";
 import { RedisClientType, createClient } from "redis";
-import MessageData from "./interfaces/MessageData";
+import MessageData from "./interfaces/packetTypes/MessageData";
 import PrivateMessage from "./packets/PrivateMessage";
 import Shared from "./objects/Shared";
 import SpectatorManager from "./SpectatorManager";

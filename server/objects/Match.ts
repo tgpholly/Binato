@@ -5,14 +5,14 @@ import Slot from "./Slot";
 import User from "./User";
 import StatusUpdate from "../packets/StatusUpdate";
 import { SlotStatus } from "../enums/SlotStatus";
-import MatchData from "../interfaces/MatchData";
+import MatchData from "../interfaces/packetTypes/MatchData";
 import { Team } from "../enums/Team";
-import MatchStartSkipData from "../interfaces/MatchStartSkipData";
+import MatchStartSkipData from "../interfaces/packetTypes/MatchStartSkipData";
 import { Mods } from "../enums/Mods";
 import PlayerScore from "../interfaces/PlayerScore";
 import { enumHasFlag } from "../Util";
 import osu from "../../osuTyping";
-import ScoreFrameData from "../interfaces/ScoreFrameData";
+import ScoreFrameData from "../interfaces/packetTypes/ScoreFrameData";
 
 // Mods which need to be applied to the match during freemod.
 const matchFreemodGlobalMods:Array<Mods> = [

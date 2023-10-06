@@ -1,5 +1,5 @@
 import { Channel } from "diagnostics_channel";
-import MessageData from "../interfaces/MessageData";
+import MessageData from "../interfaces/packetTypes/MessageData";
 import User from "../objects/User";
 
 export default function SendPublicMessage(user:User, message:MessageData) {

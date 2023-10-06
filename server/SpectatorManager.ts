@@ -2,7 +2,7 @@ import DataStream from "./objects/DataStream";
 import Shared from "./objects/Shared";
 import User from "./objects/User";
 import osu from "../osuTyping";
-import SpectateFramesData from "./interfaces/SpectateFramesData";
+import SpectateFramesData from "./interfaces/packetTypes/SpectateFramesData";
 
 export default class SpectatorManager {
 	private shared:Shared;

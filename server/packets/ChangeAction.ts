@@ -1,4 +1,4 @@
-import PresenceData from "../interfaces/PresenceData";
+import PresenceData from "../interfaces/packetTypes/PresenceData";
 import User from "../objects/User";
 import StatusUpdate from "./StatusUpdate";
 

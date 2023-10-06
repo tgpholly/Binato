@@ -1,4 +1,4 @@
-import MessageData from "../interfaces/MessageData";
+import MessageData from "../interfaces/packetTypes/MessageData";
 import Shared from "../objects/Shared";
 import PrivateChannel from "../objects/PrivateChannel";
 import User from "../objects/User";

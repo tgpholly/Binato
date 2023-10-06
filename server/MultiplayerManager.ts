@@ -8,8 +8,8 @@ import StatusUpdate from "./packets/StatusUpdate";
 import UserPresence from "./packets/UserPresence";
 import UserPresenceBundle from "./packets/UserPresenceBundle";
 import MatchArray from "./objects/MatchArray";
-import MatchJoinData from "./interfaces/MatchJoinData";
-import MatchData from "./interfaces/MatchData";
+import MatchJoinData from "./interfaces/packetTypes/MatchJoinData";
+import MatchData from "./interfaces/packetTypes/MatchData";
 import osu from "../osuTyping";
 import TourneyMatchSpecialInfo from "./packets/TourneyMatchSpecialInfo";
 

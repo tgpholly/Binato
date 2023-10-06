@@ -1,4 +1,4 @@
-import { Permissions } from "../enums/Permissions";
+import { Permissions } from "../../enums/Permissions";
 
 export default interface UserPresenceData {
 	userId: number,

@@ -1,6 +1,6 @@
 import Slot from "../objects/Slot";
 import User from "../objects/User";
-import ScoreFrameData from "./ScoreFrameData";
+import ScoreFrameData from "./packetTypes/ScoreFrameData";
 
 export default interface PlayerScore {
 	player: User,

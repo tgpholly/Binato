@@ -6,7 +6,7 @@ import StatusUpdate from "../packets/StatusUpdate";
 import Shared from "../objects/Shared";
 import Slot from "./Slot";
 import Channel from "./Channel";
-import PresenceData from "../interfaces/PresenceData";
+import PresenceData from "../interfaces/packetTypes/PresenceData";
 import { Permissions } from "../enums/Permissions";
 
 const rankingModes = [

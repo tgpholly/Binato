@@ -1,11 +1,11 @@
-import ChannelData from "./ChannelData"
-import MatchData from "./MatchData"
-import MessageData from "./MessageData"
-import ScoreFrameData from "./ScoreFrameData"
-import SpectateFramesData from "./SpectateFramesData"
-import StatusUpdateData from "./StatusUpdateData"
-import UserPresenceData from "./UserPresenceData"
-import UserQuitData from "./UserQuitData"
+import ChannelData from "./packetTypes/ChannelData"
+import MatchData from "./packetTypes/MatchData"
+import MessageData from "./packetTypes/MessageData"
+import ScoreFrameData from "./packetTypes/ScoreFrameData"
+import SpectateFramesData from "./packetTypes/SpectateFramesData"
+import StatusUpdateData from "./packetTypes/StatusUpdateData"
+import UserPresenceData from "./packetTypes/UserPresenceData"
+import UserQuitData from "./packetTypes/UserQuitData"
 
 export default interface OsuPacketWriter {
 	// Functions
