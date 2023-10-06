@@ -1,7 +1,7 @@
 import ChannelData from "./ChannelData"
 import MatchData from "./MatchData"
-import MatchScoreData from "./MatchScoreData"
 import MessageData from "./MessageData"
+import ScoreFrameData from "./ScoreFrameData"
 import SpectateFramesData from "./SpectateFramesData"
 import StatusUpdateData from "./StatusUpdateData"
 import UserPresenceData from "./UserPresenceData"
@@ -32,7 +32,7 @@ export default interface OsuPacketWriter {
 	FellowSpectatorJoined(data:number) : OsuPacketWriter,
 	FellowSpectatorLeft(data:number) : OsuPacketWriter,
 	MatchStart(data:MatchData) : OsuPacketWriter,
-	MatchScoreUpdate(data:MatchScoreData) : OsuPacketWriter,
+	MatchScoreUpdate(data:ScoreFrameData) : OsuPacketWriter,
 	MatchTransferHost() : OsuPacketWriter,
 	MatchAllPlayersLoaded() : OsuPacketWriter,
 	MatchPlayerFailed(data:number) : OsuPacketWriter,

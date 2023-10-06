@@ -1,4 +1,3 @@
-import MatchScoreData from "./MatchScoreData";
 import ReplayFrameData from "./ReplayFrameData";
 import ScoreFrameData from "./ScoreFrameData";
 

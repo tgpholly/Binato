@@ -10,9 +10,9 @@ import { Team } from "../enums/Team";
 import MatchStartSkipData from "../interfaces/MatchStartSkipData";
 import { Mods } from "../enums/Mods";
 import PlayerScore from "../interfaces/PlayerScore";
-import MatchScoreData from "../interfaces/MatchScoreData";
 import { enumHasFlag } from "../Util";
 import osu from "../../osuTyping";
+import ScoreFrameData from "../interfaces/ScoreFrameData";
 
 // Mods which need to be applied to the match during freemod.
 const matchFreemodGlobalMods:Array<Mods> = [
@@ -649,31 +649,31 @@ export default class Match {
 		this.playerScores = undefined;
 	}
 
-	updatePlayerScore(user:User, matchScoreData:MatchScoreData) {
+	updatePlayerScore(user:User, scoreFrameData:ScoreFrameData) {
 		const osuPacketWriter = osu.Bancho.Writer();
 
 		if (user.matchSlot === undefined || user.matchSlot.player === undefined || this.playerScores === undefined) {
 			return;
 		}
 
-		matchScoreData.id = user.matchSlot.slotId;
+		scoreFrameData.id = user.matchSlot.slotId;
 
 		// Update playerScores
 		for (const playerScore of this.playerScores) {
 			if (playerScore.player?.id === user.id) {
-				playerScore.score = matchScoreData.totalScore;
-				const isCurrentlyFailed = matchScoreData.currentHp == 254;
+				playerScore.score = scoreFrameData.totalScore;
+				const isCurrentlyFailed = scoreFrameData.currentHp == 254;
 				playerScore.isCurrentlyFailed = isCurrentlyFailed;
 				if (!playerScore.hasFailed && isCurrentlyFailed) {
 					playerScore.hasFailed = true;
 				}
-				playerScore._raw = matchScoreData;
+				playerScore._raw = scoreFrameData;
 
 				break;
 			}
 		}
 		
-		osuPacketWriter.MatchScoreUpdate(matchScoreData);
+		osuPacketWriter.MatchScoreUpdate(scoreFrameData);
 
 		// Send the newly updated score to all users in the match
 		this.matchStream.Send(osuPacketWriter.toBuffer);

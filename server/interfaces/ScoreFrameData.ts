@@ -14,4 +14,7 @@ export default interface ScoreFrameData {
 	currentHp: number,
 	tagByte: number,
 	usingScoreV2: boolean,
+	// Only exists if usingScoreV2 = true
+	comboPortion?: number,
+	bonusPortion?: number
 }
