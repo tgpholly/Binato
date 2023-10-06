@@ -2,6 +2,7 @@ import DataStream from "./objects/DataStream";
 import Shared from "./objects/Shared";
 import User from "./objects/User";
 import osu from "../osuTyping";
+import SpectateFramesData from "./interfaces/SpectateFramesData";
 
 export default class SpectatorManager {
 	private shared:Shared;
@@ -41,14 +42,13 @@ export default class SpectatorManager {
 		spectateStream.Send(osuPacketWriter.toBuffer);
 	}
 
-	// TODO: Interface for spectateFrameData
-	public spectatorFrames(user:User, spectateFrameData:any) {
+	public spectatorFrames(user:User, spectateFramesData:SpectateFramesData) {
 		if (user.spectatorStream === undefined) {
 			return;
 		}
 
 		const osuPacketWriter = osu.Bancho.Writer();
-		osuPacketWriter.SpectateFrames(spectateFrameData);
+		osuPacketWriter.SpectateFrames(spectateFramesData);
 
 		user.spectatorStream.Send(osuPacketWriter.toBuffer);
 	}
