@@ -1,7 +1,11 @@
+import ChannelData from "./ChannelData"
 import MatchData from "./MatchData"
 import MatchScoreData from "./MatchScoreData"
 import MessageData from "./MessageData"
+import SpectateFramesData from "./SpectateFramesData"
 import StatusUpdateData from "./StatusUpdateData"
+import UserPresenceData from "./UserPresenceData"
+import UserQuitData from "./UserQuitData"
 
 export default interface OsuPacketWriter {
 	// Functions
@@ -9,36 +13,36 @@ export default interface OsuPacketWriter {
 	CommandError() : OsuPacketWriter,
 	SendMessage(data:MessageData) : OsuPacketWriter,
 	Ping() : OsuPacketWriter,
-	HandleIrcChangeUsername(data:any) : OsuPacketWriter,
+	HandleIrcChangeUsername(data:string) : OsuPacketWriter,
 	HandleIrcQuit() : OsuPacketWriter,
 	HandleOsuUpdate(data:StatusUpdateData) : OsuPacketWriter,
-	HandleUserQuit(data:any) : OsuPacketWriter,
-	SpectatorJoined(data:any) : OsuPacketWriter,
-	SpectatorLeft(data:any) : OsuPacketWriter,
-	SpectateFrames(data:any) : OsuPacketWriter,
+	HandleUserQuit(data:UserQuitData) : OsuPacketWriter,
+	SpectatorJoined(data:number) : OsuPacketWriter,
+	SpectatorLeft(data:number) : OsuPacketWriter,
+	SpectateFrames(data:SpectateFramesData) : OsuPacketWriter,
 	VersionUpdate() : OsuPacketWriter,
-	SpectatorCantSpectate(data:any) : OsuPacketWriter,
+	SpectatorCantSpectate(data:number) : OsuPacketWriter,
 	GetAttention() : OsuPacketWriter,
 	Announce(data:string) : OsuPacketWriter,
 	MatchUpdate(data:MatchData) : OsuPacketWriter,
 	MatchNew(data:MatchData) : OsuPacketWriter,
-	MatchDisband(data:any) : OsuPacketWriter,
+	MatchDisband(data:number) : OsuPacketWriter,
 	MatchJoinSuccess(data:MatchData) : OsuPacketWriter,
 	MatchJoinFail() : OsuPacketWriter,
 	FellowSpectatorJoined(data:number) : OsuPacketWriter,
 	FellowSpectatorLeft(data:number) : OsuPacketWriter,
 	MatchStart(data:MatchData) : OsuPacketWriter,
 	MatchScoreUpdate(data:MatchScoreData) : OsuPacketWriter,
-	MatchTransferHost(data:any) : OsuPacketWriter,
+	MatchTransferHost() : OsuPacketWriter,
 	MatchAllPlayersLoaded() : OsuPacketWriter,
-	MatchPlayerFailed(data:any) : OsuPacketWriter,
+	MatchPlayerFailed(data:number) : OsuPacketWriter,
 	MatchComplete() : OsuPacketWriter,
 	MatchSkip() : OsuPacketWriter,
 	Unauthorised() : OsuPacketWriter,
-	ChannelJoinSuccess(data:any) : OsuPacketWriter,
-	ChannelAvailable(data:any) : OsuPacketWriter,
-	ChannelRevoked(data:any) : OsuPacketWriter,
-	ChannelAvailableAutojoin(data:any) : OsuPacketWriter,
+	ChannelJoinSuccess(data:string) : OsuPacketWriter,
+	ChannelAvailable(data:ChannelData) : OsuPacketWriter,
+	ChannelRevoked(data:string) : OsuPacketWriter,
+	ChannelAvailableAutojoin(data:ChannelData) : OsuPacketWriter,
 	BeatmapInfoReply() : OsuPacketWriter,
 	LoginPermissions(data:number) : OsuPacketWriter,
 	FriendsList(data:Array<number>) : OsuPacketWriter,
@@ -46,22 +50,22 @@ export default interface OsuPacketWriter {
 	TitleUpdate(data:string) : OsuPacketWriter,
 	Monitor() : OsuPacketWriter,
 	MatchPlayerSkipped(data:number) : OsuPacketWriter,
-	UserPresence(data:any) : OsuPacketWriter,
+	UserPresence(data:UserPresenceData) : OsuPacketWriter,
 	Restart(data:number) : OsuPacketWriter,
-	Invite(data:any) : OsuPacketWriter,
+	Invite(data:MessageData) : OsuPacketWriter,
 	ChannelListingComplete() : OsuPacketWriter,
-	MatchChangePassword(data:any) : OsuPacketWriter,
-	BanInfo(data:any) : OsuPacketWriter,
-	UserSilenced(data:any) : OsuPacketWriter,
-	UserPresenceSingle(data:any) : OsuPacketWriter,
-	UserPresenceBundle(data:any) : OsuPacketWriter,
-	UserPMBlocked(data:any) : OsuPacketWriter,
-	TargetIsSilenced(data:any) : OsuPacketWriter,
+	MatchChangePassword(data:string) : OsuPacketWriter,
+	BanInfo(data:number) : OsuPacketWriter,
+	UserSilenced(data:number) : OsuPacketWriter,
+	UserPresenceSingle(data:number) : OsuPacketWriter,
+	UserPresenceBundle(data:Array<number>) : OsuPacketWriter,
+	UserPMBlocked(data:MessageData) : OsuPacketWriter,
+	TargetIsSilenced(data:MessageData) : OsuPacketWriter,
 	VersionUpdateForced() : OsuPacketWriter,
-	SwitchServer(data:any) : OsuPacketWriter,
+	SwitchServer(data:number) : OsuPacketWriter,
 	AccountRestricted() : OsuPacketWriter,
 	RTX(data:string) : OsuPacketWriter,
-	SwitchTourneyServer(data:any) : OsuPacketWriter
+	SwitchTourneyServer(data:string) : OsuPacketWriter
 
 	toBuffer : Buffer
 }

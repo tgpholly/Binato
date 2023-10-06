@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "fs";
 import { minify } from "terser";
 
-const DISABLE = true;
+const DISABLE = false;
 writeFileSync("./build/.MANGLED", `${DISABLE}`);
 
 if (DISABLE) {
