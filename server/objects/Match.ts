@@ -431,7 +431,6 @@ export default class Match {
 		}
 	}
 
-	// TODO: Fix not being able to add DT when freemod is active
 	public updateMods(user:User, mods:Mods) {
 		const slot = user.matchSlot;
 		if (!(slot instanceof Slot)) {
