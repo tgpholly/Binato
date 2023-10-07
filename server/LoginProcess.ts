@@ -37,7 +37,7 @@ enum LoginResult {
 
 function TestLogin(loginInfo:LoginInfo, shared:Shared) {
 	return new Promise<LoginResult>(async (resolve, reject) => {
-		const userDBData = await shared.userInfoRepository.getByUsername(loginInfo.username);
+		const userDBData = await shared.userInfoRepository.selectByUsername(loginInfo.username);
 
 		// Make sure a user was found in the database
 		if (userDBData == null) return resolve(LoginResult.INCORRECT);
@@ -123,7 +123,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		}
 
 		// Get information about the user from the database
-		const userInfo = await shared.userInfoRepository.getByUsername(loginInfo.username);
+		const userInfo = await shared.userInfoRepository.selectByUsername(loginInfo.username);
 		if (userInfo == null) {
 			return;
 		}

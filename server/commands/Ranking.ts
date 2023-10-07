@@ -1,6 +1,6 @@
 import Channel from "../objects/Channel";
 import User from "../objects/User";
-import { RankingModes } from "../enums/RankingModes";
+import { RankingMode } from "../enums/RankingMode";
 import BaseCommand from "./BaseCommand";
 
 export default class RankingCommand extends BaseCommand {
@@ -18,15 +18,15 @@ export default class RankingCommand extends BaseCommand {
 
 		switch (args[0].toLowerCase()) {
 			case "pp":
-				sender.rankingMode = RankingModes.PP;
+				sender.rankingMode = RankingMode.PP;
 				channel.SendBotMessage("Set ranking mode to pp.");
 				break;
 			case "score":
-				sender.rankingMode = RankingModes.RANKED_SCORE;
+				sender.rankingMode = RankingMode.RANKED_SCORE;
 				channel.SendBotMessage("Set ranking mode to score.");
 				break;
 			case "acc":
-				sender.rankingMode = RankingModes.AVG_ACCURACY;
+				sender.rankingMode = RankingMode.AVG_ACCURACY;
 				channel.SendBotMessage("Set ranking mode to accuracy.");
 				break;
 		}

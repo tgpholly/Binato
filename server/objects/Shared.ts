@@ -12,6 +12,7 @@ import Bot from "../Bot";
 import { ConsoleHelper } from "../../ConsoleHelper";
 import UserInfoRepository from "../repos/UserInfoRepository";
 import { Permissions } from "../enums/Permissions";
+import UserModesInfoRepository from "../repos/UserModesInfoRepository";
 
 export default class Shared {
 	public readonly chatManager:ChatManager;
@@ -24,6 +25,7 @@ export default class Shared {
 	public readonly bot:Bot;
 
 	public readonly userInfoRepository:UserInfoRepository;
+	public readonly userModesInfoRepository:UserModesInfoRepository;
 
 	public constructor() {
 		if (!existsSync("./config.json")) {
@@ -53,5 +55,6 @@ export default class Shared {
 
 		// DB Repos
 		this.userInfoRepository = new UserInfoRepository(this);
+		this.userModesInfoRepository = new UserModesInfoRepository(this);
 	}
 }

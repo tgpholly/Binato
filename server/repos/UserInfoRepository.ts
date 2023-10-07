@@ -9,11 +9,11 @@ export default class UserInfoRepository {
 		this.database = shared.database;
 	}
 
-	public async getById(id:number) {
-		const query = await this.database.query("SELECT * FROM users_info WHERE id = ? AND is_deleted = 0 LIMIT 1", [id]);
+	public async selectById(id:number) {
+		const query = await this.database.query("CALL SelectUserInfoById(?)", [id]);
 		if (query != null) {
 			const userInfo = new UserInfo();
-			populateUserInfoFromRowDataPacket(userInfo, query[0]);
+			populateUserInfoFromRowDataPacket(userInfo, query[0][0]);
 
 			return userInfo;
 		}
@@ -21,11 +21,11 @@ export default class UserInfoRepository {
 		return null;
 	}
 
-	public async getByUsername(username:string) {
-		const query = await this.database.query("SELECT * FROM users_info WHERE username = ? AND is_deleted = 0 LIMIT 1", [username]);
+	public async selectByUsername(username:string) {
+		const query = await this.database.query("CALL SelectUserInfoByUsername(?)", [username]);
 		if (query != null) {
 			const userInfo = new UserInfo();
-			populateUserInfoFromRowDataPacket(userInfo, query[0]);
+			populateUserInfoFromRowDataPacket(userInfo, query[0][0]);
 
 			return userInfo;
 		}

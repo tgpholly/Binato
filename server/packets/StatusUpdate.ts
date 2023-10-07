@@ -1,10 +1,13 @@
 import Shared from "../objects/Shared";
-import { RankingModes } from "../enums/RankingModes";
+import { RankingMode } from "../enums/RankingMode";
 import User from "../objects/User";
 import osu from "../../osuTyping";
 
 export default function StatusUpdate(arg0:User | Shared, id:number) {
-	if (id == 3) return; // Ignore Bot
+	// Ignore Bot
+	if (id == 3) {
+		return Buffer.allocUnsafe(0);
+	}
 
 	// Create new osu packet writer
 	const osuPacketWriter = osu.Bancho.Writer();
@@ -18,7 +21,9 @@ export default function StatusUpdate(arg0:User | Shared, id:number) {
 	// Get user's class
 	const userData = shared.users.getById(id);
 
-	if (userData == null) return;
+	if (userData == null) {
+		return Buffer.allocUnsafe(0);
+	}
 
 	osuPacketWriter.HandleOsuUpdate({
 		userId: userData.id,
@@ -33,7 +38,7 @@ export default function StatusUpdate(arg0:User | Shared, id:number) {
 		playCount: userData.playCount,
 		totalScore: userData.totalScore,
 		rank: userData.rank, 
-		performance: (userData.rankingMode == RankingModes.PP ? userData.pp : 0)
+		performance: (userData.rankingMode == RankingMode.PP ? userData.pp : 0)
 	});
 
 	// Send data to user's queue

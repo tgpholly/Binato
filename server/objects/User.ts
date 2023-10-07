@@ -1,5 +1,5 @@
 import LatLng from "./LatLng";
-import { RankingModes } from "../enums/RankingModes";
+import { RankingMode } from "../enums/RankingMode";
 import Match from "./Match";
 import DataStream from "./DataStream";
 import StatusUpdate from "../packets/StatusUpdate";
@@ -8,12 +8,6 @@ import Slot from "./Slot";
 import Channel from "./Channel";
 import PresenceData from "../interfaces/packetTypes/PresenceData";
 import { Permissions } from "../enums/Permissions";
-
-const rankingModes = [
-	"pp_raw",
-	"ranked_score",
-	"avg_accuracy"
-];
 
 export default class User {
 	public shared:Shared;
@@ -26,7 +20,7 @@ export default class User {
 	public queue:Buffer = Buffer.allocUnsafe(0);
 	
 	// Binato data
-	public rankingMode:RankingModes = RankingModes.PP;
+	public rankingMode:RankingMode = RankingMode.PP;
 	public spectatorStream?:DataStream;
 	public spectatingUser?:User;
 	public permissions:Permissions;
@@ -101,26 +95,27 @@ export default class User {
 
 	// Gets the user's score information from the database and caches it
 	async updateUserInfo(forceUpdate:boolean = false) {
-		const userScoreDB = await this.shared.database.querySingle("SELECT * FROM users_modes_info WHERE user_id = ? AND mode_id = ? LIMIT 1", [this.id, this.playMode]);
-		const mappedRankingMode = rankingModes[this.rankingMode];
-		const userRankDB = await this.shared.database.query(`SELECT user_id, ${mappedRankingMode} FROM users_modes_info WHERE mode_id = ? ORDER BY ${mappedRankingMode} DESC`, [this.playMode]);
+		const userScoreDB = await this.shared.userModesInfoRepository.selectByUserIdModeId(this.id, this.playMode);
+		const userRank = await this.shared.userModesInfoRepository.selectRankByIdModeIdRankingMode(this.id, this.playMode, this.rankingMode);
 
-		if (userScoreDB == null || userRankDB == null) throw "fuck";
+		if (userScoreDB == null || userRank == null) throw "fuck";
+
+		this.rank = userRank;
 
 		// Handle "if we should update" checks for each rankingMode
 		let userScoreUpdate = false;
 		switch (this.rankingMode) {
-			case RankingModes.PP:
+			case RankingMode.PP:
 				if (this.pp != userScoreDB.pp_raw)
 					userScoreUpdate = true;
 				break;
 
-			case RankingModes.RANKED_SCORE:
+			case RankingMode.RANKED_SCORE:
 				if (this.rankedScore != userScoreDB.ranked_score)
 					userScoreUpdate = true;
 				break;
 
-			case RankingModes.AVG_ACCURACY:
+			case RankingMode.AVG_ACCURACY:
 				if (this.accuracy != userScoreDB.avg_accuracy)
 					userScoreUpdate = true;
 				break;
@@ -130,14 +125,6 @@ export default class User {
 		this.totalScore = userScoreDB.total_score;
 		this.accuracy = userScoreDB.avg_accuracy;
 		this.playCount = userScoreDB.playcount;
-
-		// Fetch rank
-		for (let i = 0; i < userRankDB.length; i++) {
-			if (userRankDB[i]["user_id"] == this.id) {
-				this.rank = i + 1;
-				break;
-			}
-		}
 
 		// Set PP to none if ranking mode is not PP
 		if (this.rankingMode == 0) this.pp = userScoreDB.pp_raw;
