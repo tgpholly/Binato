@@ -183,14 +183,21 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 				if (shared.users.getById(friendId) === undefined) { continue; }
 
 				const friendPresence = UserPresence(shared, friendId);
-				if (friendPresence === undefined) { continue; }
+				if (friendPresence === undefined) {
+					continue;
+				}
 
 				friendsPresence = Buffer.concat([
 					friendsPresence,
 					friendPresence
 				], friendsPresence.length + friendPresence.length);
 			}
-			osuPacketWriter.FriendsList(friendsArray);
+			// Write this to the user's queue rather than just sending it back so we
+			// don't get the weird `Loading..., Loading...` etc on friends after login.
+			const friendsPacketWriter = osu.Bancho.Writer();
+			friendsPacketWriter.FriendsList(friendsArray);
+			const friendData = friendsPacketWriter.toBuffer;
+			newUser.addActionToQueue(Buffer.concat([friendData, friendsPresence], friendData.length + friendsPresence.length));
 
 			// After sending the user their friends list send them the online users
 			UserPresenceBundle(newUser);
