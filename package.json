@@ -7,8 +7,7 @@
 		"dev:updateCheck": "check-outdated",
 		"dev:run": "nodemon --watch './**/*.ts' Binato.ts",
 		"build": "npm-run-all build:*",
-		"build:smash": "ts-node ./tooling/fileSmasher.ts",
-		"build:build": "tsc --build",
+		"build:build": "ncc build Binato.ts -o build",
 		"build:mangle": "ts-node ./tooling/mangle.ts",
 		"build:cleanup": "ts-node ./tooling/cleanup.ts",
 		"_clean": "tsc --build --clean"
@@ -28,6 +27,7 @@
 	"devDependencies": {
 		"@types/node": "^20.6.0",
 		"@types/node-fetch": "^2.6.4",
+		"@vercel/ncc": "^0.38.0",
 		"check-outdated": "^2.12.0",
 		"nodemon": "^3.0.1",
 		"npm-run-all": "^4.1.5",
