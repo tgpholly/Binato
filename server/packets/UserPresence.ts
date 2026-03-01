@@ -13,7 +13,9 @@ export default function UserPresence(arg0:User | Shared, id:number) {
 
 	const userData = shared.users.getById(id);
 
-	if (userData == null) return;
+	if (!userData) {
+		return;
+	}
 
 	osuPacketWriter.UserPresence({
 		userId: id,

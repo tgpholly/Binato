@@ -1,10 +1,10 @@
 import Channel from "../objects/Channel";
 import User from "../objects/User";
-import BaseCommand from "./BaseCommand";
+import CommandBase from "./CommandBase";
 import Shared from "../objects/Shared";
 import ICommand from "../interfaces/ICommand";
 
-export default class HelpCommand extends BaseCommand {
+export default class HelpCommand extends CommandBase {
 	public readonly helpDescription:string = "Shows this message! :)";
 
 	private readonly commandList:{ [id:string]: ICommand };
@@ -15,7 +15,7 @@ export default class HelpCommand extends BaseCommand {
 		this.commandList = commands;
 	}
 
-	public exec(channel:Channel, sender:User, args:Array<string>) {
+	public exec(channel: Channel, _sender: User, args: Array<string>) {
 		if (this.commandKeys.length === 0) {
 			this.commandKeys = Object.keys(this.commandList);
 		}

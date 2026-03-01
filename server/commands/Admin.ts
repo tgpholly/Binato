@@ -1,10 +1,10 @@
 import { enumHasFlag } from "../Util";
-import { Permissions } from "../enums/Permissions";
+import Permissions from "../enums/Permissions";
 import Channel from "../objects/Channel";
 import User from "../objects/User";
-import BaseCommand from "./BaseCommand";
+import CommandBase from "./CommandBase";
 
-export default class AdminCommand extends BaseCommand {
+export default class AdminCommand extends CommandBase {
 	public readonly adminOnly:boolean = true;
 	public readonly helpDescription:string = "Locks/Unlocks a channel and limits conversation to mods and above.";
 

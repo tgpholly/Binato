@@ -1,21 +1,19 @@
-import { ConsoleHelper } from "../../ConsoleHelper";
+import ConsoleHelper from "../../ConsoleHelper";
 import Constants from "../../Constants";
 import DataStreamArray from "./DataStreamArray";
 import User from "./User";
 import UserArray from "./UserArray";
 import { hexlify } from "../Util";
 
-type DeleteFunction = (dataStream:DataStream) => void;
-
 export default class DataStream {
-	private users:UserArray = new UserArray();
-	public readonly name:string;
-	private readonly parent:DataStreamArray;
-	private readonly removeWhenEmpty:boolean;
-	private inactive:boolean = false;
-	public onDelete?:DeleteFunction;
+	private users: UserArray = new UserArray();
+	public readonly name: string;
+	private readonly parent: DataStreamArray;
+	private readonly removeWhenEmpty: boolean;
+	private inactive: boolean = false;
+	public onDelete?: (dataStream: DataStream) => void;
 
-	public constructor(name:string, parent:DataStreamArray, removeWhenEmpty:boolean) {
+	public constructor(name: string, parent: DataStreamArray, removeWhenEmpty: boolean) {
 		this.name = name;
 		this.parent = parent;
 		this.removeWhenEmpty = removeWhenEmpty;

@@ -1,5 +1,5 @@
 import Channel from "./objects/Channel";
-import { ConsoleHelper } from "../ConsoleHelper";
+import ConsoleHelper from "../ConsoleHelper";
 import FunkyArray from "./objects/FunkyArray";
 import User from "./objects/User";
 import Shared from "./objects/Shared";
@@ -7,9 +7,9 @@ import osu from "../osuTyping";
 import PrivateChannel from "./objects/PrivateChannel";
 
 export default class ChatManager {
-	public chatChannels:FunkyArray<Channel> = new FunkyArray<Channel>();
-	public forceJoinChannels:FunkyArray<Channel> = new FunkyArray<Channel>();
-	private readonly shared:Shared;
+	public chatChannels: FunkyArray<Channel> = new FunkyArray<Channel>();
+	public forceJoinChannels: FunkyArray<Channel> = new FunkyArray<Channel>();
+	private readonly shared: Shared;
 
 	public constructor(shared:Shared) {
 		this.shared = shared;

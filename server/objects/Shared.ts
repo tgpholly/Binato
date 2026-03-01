@@ -1,40 +1,22 @@
 import ChatManager from "../ChatManager";
-import Config from "../interfaces/Config";
-import Database from "../objects/Database";
 import DataStreamArray from "../objects/DataStreamArray";
 import MultiplayerManager from "../MultiplayerManager";
 import PrivateChatManager from "../PrivateChatManager";
-import { existsSync, readFileSync } from "fs";
 import UserArray from "../objects/UserArray";
 import User from "./User";
 import LatLng from "./LatLng";
 import Bot from "../Bot";
-import { ConsoleHelper } from "../../ConsoleHelper";
-import UserInfoRepository from "../repos/UserInfoRepository";
-import { Permissions } from "../enums/Permissions";
-import UserModesInfoRepository from "../repos/UserModesInfoRepository";
+import Permissions from "../enums/Permissions";
 
 export default class Shared {
-	public readonly chatManager:ChatManager;
-	public readonly config:Config;
-	public readonly database:Database;
-	public readonly multiplayerManager:MultiplayerManager;
-	public readonly privateChatManager:PrivateChatManager;
-	public readonly streams:DataStreamArray;
-	public readonly users:UserArray;
-	public readonly bot:Bot;
-
-	public readonly userInfoRepository:UserInfoRepository;
-	public readonly userModesInfoRepository:UserModesInfoRepository;
+	public readonly chatManager: ChatManager;
+	public readonly multiplayerManager: MultiplayerManager;
+	public readonly privateChatManager: PrivateChatManager;
+	public readonly streams: DataStreamArray;
+	public readonly users: UserArray;
+	public readonly bot: Bot;
 
 	public constructor() {
-		if (!existsSync("./config.json")) {
-			ConsoleHelper.printError("Config file missing!");
-			ConsoleHelper.printError("Check the GitHub for an example or create one with the example you have.");
-			process.exit(1);
-		}
-		this.config = JSON.parse(readFileSync("./config.json").toString()) as Config;
-		this.database = new Database(this.config.database.address, this.config.database.port, this.config.database.username, this.config.database.password, this.config.database.name);
 		this.streams = new DataStreamArray();
 
 		// Add the bot user
@@ -52,9 +34,5 @@ export default class Shared {
 
 		this.multiplayerManager = new MultiplayerManager(this);
 		this.privateChatManager = new PrivateChatManager(this);
-
-		// DB Repos
-		this.userInfoRepository = new UserInfoRepository(this);
-		this.userModesInfoRepository = new UserModesInfoRepository(this);
 	}
 }

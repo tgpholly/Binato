@@ -1,15 +1,31 @@
 {
 	"compilerOptions": {
-		"module": "commonjs",
-		"moduleResolution": "node",
-		"target": "es6",
 		"esModuleInterop": true,
 		"resolveJsonModule": true,
 		"rootDir": "./",
 		"outDir": "./build",
+
+		// Enable latest features
+		"lib": ["ESNext"],
+		"target": "ESNext",
+		"module": "commonjs",
+		"moduleDetection": "force",
+		"allowJs": true,
+
+		// Bundler mode
+		"moduleResolution": "node",
+		"allowImportingTsExtensions": false,
+
+		// Best practices
 		"strict": true,
-		"lib": [
-			"ES2021.String"
-		]
+		"skipLibCheck": true,
+		"noFallthroughCasesInSwitch": true,
+
+		// Some stricter flags
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noPropertyAccessFromIndexSignature": true,
+
+		"experimentalDecorators": true
 	}
 }

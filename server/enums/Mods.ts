@@ -1,5 +1,5 @@
 // TODO: Complete mods enum.
-export enum Mods {
+enum Mods {
 	None,
 	NoFail = 1 << 0,
 	Easy = 1 << 1,
@@ -31,3 +31,5 @@ export enum Mods {
 	Mania3K = 1 << 27,
 	Mania2K = 1 << 28
 }
+
+export default Mods;

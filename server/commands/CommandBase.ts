@@ -3,7 +3,7 @@ import Channel from "../objects/Channel";
 import Shared from "../objects/Shared";
 import User from "../objects/User";
 
-export default class BaseCommand implements ICommand {
+export default class CommandBase implements ICommand {
 	public shared:Shared;
 	public readonly adminOnly:boolean = false;
 	public readonly helpText:string = "No help page was found for that command";

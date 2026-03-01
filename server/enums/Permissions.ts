@@ -1,4 +1,4 @@
-export enum Permissions {
+enum Permissions {
 	None = 0,
 	BAT = 2,
 	Supporter = 4,
@@ -9,3 +9,5 @@ export enum Permissions {
 	Moderator = 128,
 	Admin = 256
 }
+
+export default Permissions;

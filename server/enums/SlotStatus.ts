@@ -1,4 +1,4 @@
-export enum SlotStatus {
+enum SlotStatus {
 	Empty = 1,
 	Locked = 2,
 	NotReady = 4,
@@ -7,3 +7,5 @@ export enum SlotStatus {
 	Playing = 32,
 	Quit = 128
 }
+
+export default SlotStatus;

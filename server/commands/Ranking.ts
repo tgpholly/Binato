@@ -1,9 +1,9 @@
 import Channel from "../objects/Channel";
 import User from "../objects/User";
-import { RankingMode } from "../enums/RankingMode";
-import BaseCommand from "./BaseCommand";
+import RankingMode from "../enums/RankingMode";
+import CommandBase from "./CommandBase";
 
-export default class RankingCommand extends BaseCommand {
+export default class RankingCommand extends CommandBase {
 	public readonly helpText:string = `Ranking Modes:
 !ranking pp - Sets your ranking mode to pp
 !ranking score - Sets your ranking mode to score

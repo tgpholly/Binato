@@ -4,13 +4,12 @@
 	"description": "",
 	"main": "Binato.ts",
 	"scripts": {
-		"dev:updateCheck": "check-outdated",
-		"dev:run": "nodemon --watch './**/*.ts' Binato.ts",
+		"dev": "tsx watch Binato.ts",
 		"build": "npm-run-all build:*",
+		"build:clean": "tsc --build --clean",
 		"build:build": "ncc build Binato.ts -o build",
 		"build:mangle": "ts-node ./tooling/mangle.ts",
-		"build:cleanup": "ts-node ./tooling/cleanup.ts",
-		"_clean": "tsc --build --clean"
+		"build:cleanup": "ts-node ./tooling/cleanup.ts"
 	},
 	"keywords": [],
 	"author": "",
@@ -18,22 +17,18 @@
 	"dependencies": {
 		"aes256": "^1.1.0",
 		"dyetty": "^1.0.1",
-		"mysql2": "^3.6.1",
-		"node-fetch": "^2.7.0",
+		"mariadb": "^3.5.1",
 		"osu-packet": "^4.1.2",
-		"prom-client": "^14.2.0",
-		"redis": "^4.6.8"
+		"prom-client": "^15.1.3",
+		"redis": "^5.11.0"
 	},
 	"devDependencies": {
-		"@types/node": "^20.6.0",
-		"@types/node-fetch": "^2.6.4",
-		"@vercel/ncc": "^0.38.0",
-		"check-outdated": "^2.12.0",
-		"nodemon": "^3.0.1",
+		"@types/node": "^25.3.3",
+		"@vercel/ncc": "^0.38.4",
+		"node": "^25.7.0",
 		"npm-run-all": "^4.1.5",
-		"terser": "^5.21.0",
-		"ts-loader": "^9.4.4",
-		"ts-node": "^10.9.1",
-		"typescript": "^5.2.2"
+		"terser": "^5.46.0",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
 	}
 }

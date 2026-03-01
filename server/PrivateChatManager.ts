@@ -1,9 +1,8 @@
 import Channel from "./objects/Channel";
-import { ConsoleHelper } from "../ConsoleHelper";
+import ConsoleHelper from "../ConsoleHelper";
 import FunkyArray from "./objects/FunkyArray";
 import User from "./objects/User";
 import Shared from "./objects/Shared";
-import osu from "../osuTyping";
 import PrivateChannel from "./objects/PrivateChannel";
 
 export default class PrivateChatManager {

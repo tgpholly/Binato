@@ -1,10 +1,10 @@
 export default class LoginInfo {
-	public username:string;
-	public password:string;
-	public version:string;
-	public timeOffset:number;
+	public username: string;
+	public password: string;
+	public version: string;
+	public timeOffset: number;
 	// TODO: Parse client data
-	public clientData:string;
+	public clientData: string;
 
 	private constructor(username:string, password:string, version:string, timeOffset:number, clientData:string) {
 		this.username = username;
@@ -15,7 +15,7 @@ export default class LoginInfo {
 	}
 
 	public static From(data:Buffer | string) : LoginInfo | undefined {
-		if (data instanceof Buffer) {
+		if (typeof(data) !== "string") {
 			data = data.toString();
 		}
 

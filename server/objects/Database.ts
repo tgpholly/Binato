@@ -1,14 +1,15 @@
-import { ConsoleHelper } from "../../ConsoleHelper";
-import { createPool, Pool, RowDataPacket } from "mysql2";
-import { DBInDataType } from "../types/DBTypes";
+import { Console } from "hsconsole";
+import { createPool, type Pool } from "mariadb";
+
+export type DBInDataType = string | number | Date | null | undefined;
 
 export default class Database {
-	private connectionPool:Pool;
+	private connectionPool: Pool;
 	private static readonly CONNECTION_LIMIT = 128;
 
-	public connected:boolean = false;
+	public static Instance: Database;
 
-	public constructor(databaseAddress:string, databasePort:number = 3306, databaseUsername:string, databasePassword:string, databaseName:string) {
+	public constructor(databaseAddress: string, databasePort: number = 3306, databaseUsername: string, databasePassword: string, databaseName: string) {
 		this.connectionPool = createPool({
 			connectionLimit: Database.CONNECTION_LIMIT,
 			host: databaseAddress,
@@ -18,80 +19,52 @@ export default class Database {
 			database: databaseName
 		});
 
-		ConsoleHelper.printInfo(`Connected DB connection pool. MAX_CONNECTIONS = ${Database.CONNECTION_LIMIT}`);
+		Console.printInfo(`DB connection pool created. MAX_CONNECTIONS = ${Database.CONNECTION_LIMIT}`);
+
+		Database.Instance = this;
 	}
 
-	public execute(query:string, data?:Array<DBInDataType>) {
-		return new Promise<boolean>((resolve, reject) => {
-			this.connectionPool.getConnection((err, connection) => {
-				if (err) {
-					return reject(err);
-				}
+	public async execute(query: string, data?: Array<DBInDataType>) {
+		try {
+			const connection = await this.connectionPool.getConnection();
+			if (connection == null) {
+				return false;
+			}
 
-				if (data == null) {
-					connection.execute(query, (err, result) => {
-						if (err) {
-							connection.release();
-							return reject(err);
-						}
-	
-						resolve(result !== undefined);
-					});
-				} else {
-					connection.execute(query, data, (err, result) => {
-						if (err) {
-							connection.release();
-							return reject(err);
-						}
-	
-						resolve(result !== undefined);
-					});
-				}
-			});
-		});
-	}
-
-	public query(query:string, data?:Array<DBInDataType>) {
-		return new Promise<RowDataPacket[]>((resolve, reject) => {
-			this.connectionPool.getConnection((err, connection) => {
-				if (err) {
-					return reject(err);
-				} else {
-					// Use old query
-					if (data == null) {
-						connection.query<RowDataPacket[]>(query, (err, rows) => {
-							connection.release();
-							if (err) {
-								return reject(err);
-							}
-
-							resolve(rows);
-							connection.release();
-						});
-					}
-					// Use new prepared statements w/ placeholders
-					else {
-						connection.execute<RowDataPacket[]>(query, data, (err, rows) => {
-							connection.release();
-							if (err) {
-								return reject(err);
-							}
-
-							resolve(rows);
-							connection.release();
-						});
-					}
-				}
-			});
-		});
-	}
-
-	public async querySingle(query:string, data?:Array<DBInDataType>) {
-		const dbData = await this.query(query, data);
-		if (dbData != null && dbData.length > 0) {
-			return dbData[0];
+			if (data == null) {
+				const result = await connection.execute(query);
+				await connection.release();
+				return result !== undefined;
+			} else {
+				const result = await connection.execute(query, data);
+				await connection.release();
+				return result !== undefined;
+			}
+		} catch (e) {
+			Console.printError(`MultiProbe server repository error:\n${e}`);
+			throw e;
 		}
+	}
 
-		return null;
+	public async query(query: string, data?: Array<DBInDataType>) {
+		try {
+			const connection = await this.connectionPool.getConnection();
+			if (connection == null) {
+				return null;
+			}
+
+			if (data == null) {
+				const result = await connection.query(query);
+				await connection.release();
+				return result;
+			} else {
+				const result = await connection.query(query, data);
+				await connection.release();
+				return result;
+			}
+		} catch (e) {
+			Console.printError(`MultiProbe server repository error:\n${e}`);
+			throw e;
+		}
 	}
 }

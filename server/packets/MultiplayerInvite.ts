@@ -1,7 +1,7 @@
 import PrivateChannel from "../objects/PrivateChannel";
 import User from "../objects/User";
 
-export default function MultiplayerInvite(user:User, invitedUserId:number) {
+export default function MultiplayerInvite(user: User, invitedUserId: number) {
 	const invitedUser = user.shared.users.getById(invitedUserId);
 	if (invitedUser instanceof User) {
 		let channel = user.shared.privateChatManager.GetChannelByName(`${user.username}${invitedUser.username}`);

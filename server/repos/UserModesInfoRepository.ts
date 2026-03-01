@@ -1,18 +1,11 @@
 import { RowDataPacket } from "mysql2";
 import Database from "../objects/Database";
-import Shared from "../objects/Shared";
 import UserModeInfo from "../objects/database/UserModeInfo";
-import { Mode } from "fs";
-import { RankingMode } from "../enums/RankingMode";
+import RankingMode from "../enums/RankingMode";
 
-export default class UserModesInfoRepository {
-	private database:Database;
-	public constructor(shared:Shared) {
-		this.database = shared.database;
-	}
-
-	public async selectByUserIdModeId(id:number, mode:Mode) {
-		const query = await this.database.query("CALL SelectUserModesInfoByUserIdModeId(?,?)", [id, mode]);
+export default abstract class UserModesInfoRepository {
+	public static async selectByUserIdModeId(id:number, mode: RankingMode) {
+		const query = await Database.Instance.query("CALL SelectUserModesInfoByUserIdModeId(?,?)", [id, mode]);
 		if (query != null) {
 			const userModeInfo = new UserModeInfo();
 			populateUserModeInfoFromRowDataPacket(userModeInfo, query[0][0]);
@@ -23,20 +16,20 @@ export default class UserModesInfoRepository {
 		return null;
 	}
 
-	public async selectRankByIdModeIdRankingMode(id:number, mode:Mode, rankingMode:RankingMode) : Promise<number | null> {
+	public static async selectRankByIdModeIdRankingMode(id:number, mode: RankingMode, rankingMode:RankingMode) : Promise<number | null> {
 		let query:RowDataPacket[] | undefined;
 		switch (rankingMode) {
 			case RankingMode.RANKED_SCORE:
-				query = await this.database.query("CALL SelectUserScoreRankByIdModeId(?,?)", [id, mode]);
+				query = await Database.Instance.query("CALL SelectUserScoreRankByIdModeId(?,?)", [id, mode]);
 				break;
 
 			case RankingMode.AVG_ACCURACY:
-				query = await this.database.query("CALL SelectUserAccRankByIdModeId(?,?)", [id, mode]);
+				query = await Database.Instance.query("CALL SelectUserAccRankByIdModeId(?,?)", [id, mode]);
 				break;
 
 			case RankingMode.PP:
 			default:
-				query = await this.database.query("CALL SelectUserPPRankByIdModeId(?,?)", [id, mode]);
+				query = await Database.Instance.query("CALL SelectUserPPRankByIdModeId(?,?)", [id, mode]);
 				break;
 		}
 

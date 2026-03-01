@@ -1,20 +1,19 @@
 import osu from "../../osuTyping";
-import Shared from "../objects/Shared";
 import Channel from "./Channel";
 import DataStream from "./DataStream";
 import User from "./User";
 
 export default class PrivateChannel extends Channel {
-	private readonly user0:User;
-	private readonly user1:User;
+	private readonly user0: User;
+	private readonly user1: User;
 
-	public constructor(user0:User, user1:User, stream:DataStream) {
+	public constructor(user0: User, user1: User, stream: DataStream) {
 		super(user0.shared, `${user0.username}${user1.username}`, "", stream);
 		this.user0 = user0;
 		this.user1 = user1;
 	}
 
-	public override SendMessage(sender:User, message:string) {
+	public override SendMessage(sender: User, message: string) {
 		const osuPacketWriter = osu.Bancho.Writer();
 		if (!this.stream.HasUser(this.user0)) {
 			this.Join(this.user0);
@@ -37,7 +36,7 @@ export default class PrivateChannel extends Channel {
 		this.stream.SendWithExclusion(osuPacketWriter.toBuffer, sender);
 	}
 
-	public override Join(user:User) {
+	public override Join(user: User) {
 		this.stream.AddUser(user);
 		const osuPacketWriter = osu.Bancho.Writer();
 		if (user.uuid === this.user0.uuid) {
@@ -48,7 +47,7 @@ export default class PrivateChannel extends Channel {
 		user.addActionToQueue(osuPacketWriter.toBuffer);
 	}
 
-	public override Leave(user:User) {
+	public override Leave(user: User) {
 		this.stream.RemoveUser(user);
 		const osuPacketWriter = osu.Bancho.Writer();
 		if (user.id === this.user0.id) {

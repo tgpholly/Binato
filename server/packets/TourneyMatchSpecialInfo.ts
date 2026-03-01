@@ -21,7 +21,7 @@ export default function TourneyMatchSpecialInfo(user:User, matchId:number) {
 		const presenceBuffer = UserPresence(user, slot.player.id);
 		const statusBuffer = StatusUpdate(user, slot.player.id);
 
-		if (presenceBuffer instanceof Buffer && statusBuffer instanceof Buffer) {
+		if (presenceBuffer && statusBuffer) {
 			user.addActionToQueue(presenceBuffer);
 			user.addActionToQueue(statusBuffer);
 		}

@@ -7,8 +7,6 @@ export default function ChangeAction(user:User, data:PresenceData) {
 
 	if (user.spectatorStream != null) {
 		const statusUpdate = StatusUpdate(user.shared, user.id);
-		if (statusUpdate instanceof Buffer) {
-			user.spectatorStream.Send(statusUpdate);
-		}
+		user.spectatorStream.Send(statusUpdate);
 	}
 }

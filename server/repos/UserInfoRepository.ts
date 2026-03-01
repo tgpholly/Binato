@@ -1,16 +1,9 @@
-import { RowDataPacket } from "mysql2";
-import Database from "../objects/Database";
-import Shared from "../objects/Shared";
 import UserInfo from "../objects/database/UserInfo";
+import Database from "../objects/Database";
 
-export default class UserInfoRepository {
-	private database:Database;
-	public constructor(shared:Shared) {
-		this.database = shared.database;
-	}
-
-	public async selectById(id:number) {
-		const query = await this.database.query("CALL SelectUserInfoById(?)", [id]);
+export default abstract class UserInfoRepository {
+	public static async selectById(id:number) {
+		const query = await Database.Instance.query("CALL SelectUserInfoById(?)", [id]);
 		if (query != null) {
 			const userInfo = new UserInfo();
 			populateUserInfoFromRowDataPacket(userInfo, query[0][0]);
@@ -21,8 +14,8 @@ export default class UserInfoRepository {
 		return null;
 	}
 
-	public async selectByUsername(username:string) {
-		const query = await this.database.query("CALL SelectUserInfoByUsername(?)", [username]);
+	public static async selectByUsername(username:string) {
+		const query = await Database.Instance.query("CALL SelectUserInfoByUsername(?)", [username]);
 		if (query != null) {
 			const userInfo = new UserInfo();
 			populateUserInfoFromRowDataPacket(userInfo, query[0][0]);
@@ -34,7 +27,7 @@ export default class UserInfoRepository {
 	}
 }
 
-function populateUserInfoFromRowDataPacket(userInfo:UserInfo, rowDataPacket:RowDataPacket) {
+function populateUserInfoFromRowDataPacket(userInfo: UserInfo, rowDataPacket: any) {
 	userInfo.id = rowDataPacket["id"];
 	userInfo.username = rowDataPacket["username"];
 	userInfo.username_safe = rowDataPacket["username_safe"];

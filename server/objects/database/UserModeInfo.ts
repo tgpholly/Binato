@@ -1,4 +1,4 @@
-import { Mode } from "../../enums/Mode";
+import Mode from "../../enums/Mode";
 
 export default class UserModeInfo {
 	n:number = Number.MIN_VALUE;

@@ -4,15 +4,16 @@ import DataStream from "./DataStream";
 import Slot from "./Slot";
 import User from "./User";
 import StatusUpdate from "../packets/StatusUpdate";
-import { SlotStatus } from "../enums/SlotStatus";
+import SlotStatus from "../enums/SlotStatus";
 import MatchData from "../interfaces/packetTypes/MatchData";
-import { Team } from "../enums/Team";
+import Team from "../enums/Team";
 import MatchStartSkipData from "../interfaces/packetTypes/MatchStartSkipData";
-import { Mods } from "../enums/Mods";
+import Mods from "../enums/Mods";
 import PlayerScore from "../interfaces/PlayerScore";
 import { enumHasFlag } from "../Util";
 import osu from "../../osuTyping";
 import ScoreFrameData from "../interfaces/packetTypes/ScoreFrameData";
+import Database from "./Database";
 
 // Mods which need to be applied to the match during freemod.
 const matchFreemodGlobalMods:Array<Mods> = [
@@ -21,39 +22,39 @@ const matchFreemodGlobalMods:Array<Mods> = [
 
 export default class Match {
 	// osu! Data
-	public matchId:number = -1;
-	public inProgress:boolean = false;
-	public matchType:number = 0;
-	public activeMods:number = 0;
-	public gameName:string = "";
-	public gamePassword?:string;
-	public beatmapName:string = '';
-	public beatmapId:number = 0;
-	public beatmapChecksum:string = '';
-	public slots:Array<Slot> = new Array<Slot>();
-	public host:User;
-	public playMode:number = 0;
-	public matchScoringType:number = 0;
-	public matchTeamType:number = 0;
-	public specialModes:number = 0;
-	public seed:number = 0;
+	public matchId: number = -1;
+	public inProgress: boolean = false;
+	public matchType: number = 0;
+	public activeMods: number = 0;
+	public gameName: string = "";
+	public gamePassword?: string;
+	public beatmapName: string = '';
+	public beatmapId: number = 0;
+	public beatmapChecksum: string = '';
+	public slots: Array<Slot> = new Array<Slot>();
+	public host: User;
+	public playMode: number = 0;
+	public matchScoringType: number = 0;
+	public matchTeamType: number = 0;
+	public specialModes: number = 0;
+	public seed: number = 0;
 
 	// Binato data
-	public roundId:number = 0;
-	public matchStartCountdownActive:boolean = false;
-	public matchStream:DataStream;
-	public matchChatChannel:Channel;
+	public roundId: number = 0;
+	public matchStartCountdownActive: boolean = false;
+	public matchStream: DataStream;
+	public matchChatChannel: Channel;
 
-	public matchLoadSlots?:Array<MatchStartSkipData>;
-	public matchSkippedSlots?:Array<MatchStartSkipData>;
+	public matchLoadSlots?: Array<MatchStartSkipData>;
+	public matchSkippedSlots?: Array<MatchStartSkipData>;
 
-	public playerScores?:Array<PlayerScore>;
+	public playerScores?: Array<PlayerScore>;
 
 	public countdownTime:number = 0;
-	public countdownTimer?:NodeJS.Timeout;
+	public countdownTimer?: NodeJS.Timeout;
 
-	private serialisedMatchJSON:MatchData;
-	private readonly shared:Shared;
+	private serialisedMatchJSON: MatchData;
+	private readonly shared: Shared;
 
 	private constructor(matchData:MatchData, shared:Shared) {
 		this.shared = shared;
@@ -112,7 +113,7 @@ export default class Match {
 	public static createMatch(matchHost:User, matchData:MatchData, shared:Shared) : Promise<Match> {
 		return new Promise<Match>(async (resolve, reject) => {
 			try {
-				matchData.matchId = (await shared.database.query(
+				matchData.matchId = (await Database.Instance.query(
 					"INSERT INTO mp_matches (id, name, open_time, close_time, seed) VALUES (NULL, ?, UNIX_TIMESTAMP(), NULL, ?) RETURNING id;",
 					[matchData.gameName, matchData.seed]
 				))[0]["id"];
@@ -173,7 +174,7 @@ export default class Match {
 		return this.serialisedMatchJSON;
 	}
 
-	public leaveMatch(user:User) {
+	public leaveMatch(user: User) {
 		// Make sure this leave call is valid
 		if (!user.inMatch || user.matchSlot === undefined) {
 			return;
@@ -193,7 +194,7 @@ export default class Match {
 		this.sendMatchUpdate();
 	}
 
-	public async updateMatch(user:User, matchData:MatchData) {
+	public async updateMatch(_user: User, matchData: MatchData) {
 		// Update match with new data
 		this.inProgress = matchData.inProgress;
 
@@ -242,7 +243,7 @@ export default class Match {
 			}
 			queryData.push(this.matchId);
 
-			await this.shared.database.execute(
+			await Database.Instance.execute(
 				`UPDATE mp_matches SET ${gameNameChanged ? `name = ?${gameSeedChanged ? ", " : ""}` : ""}${gameSeedChanged ? `seed = ?` : ""} WHERE id = ?`,
 				queryData
 			);
@@ -263,7 +264,7 @@ export default class Match {
 		this.matchStream.Send(osuPacketWriter.toBuffer);
 	}
 
-	public moveToSlot(user:User, slotToMoveTo:number) {
+	public moveToSlot(user: User, slotToMoveTo:number) {
 		if (slotToMoveTo < 0 || slotToMoveTo >= this.slots.length) {
 			return;
 		}
@@ -280,7 +281,7 @@ export default class Match {
 		this.shared.multiplayerManager.UpdateLobbyListing();
 	}
 
-	public changeTeam(user:User) {
+	public changeTeam(user: User) {
 		if (!(user.matchSlot instanceof Slot)) {
 			return;
 		}
@@ -290,7 +291,7 @@ export default class Match {
 		this.sendMatchUpdate();
 	}
 
-	public setStateReady(user:User) {
+	public setStateReady(user: User) {
 		if (!(user.matchSlot instanceof Slot)) {
 			return; 
 		}
@@ -300,7 +301,7 @@ export default class Match {
 		this.sendMatchUpdate();
 	}
 
-	public setStateNotReady(user:User) {
+	public setStateNotReady(user: User) {
 		if (!(user.matchSlot instanceof Slot)) {
 			return;
 		}
@@ -310,7 +311,7 @@ export default class Match {
 		this.sendMatchUpdate();
 	}
 
-	public lockOrKick(user:User, slotToActionOn:number) {
+	public async lockOrKick(user: User, slotToActionOn:number) {
 		if (slotToActionOn < 0 || slotToActionOn >= 16) {
 			return;
 		}
@@ -332,7 +333,7 @@ export default class Match {
 			slot.reset();
 
 			// Kick player
-			this.shared.multiplayerManager.LeaveMatch(kickedPlayer);
+			await this.shared.multiplayerManager.LeaveMatch(kickedPlayer);
 
 			this.sendMatchUpdate();
 		} else { // Lock / Unlock
@@ -344,7 +345,7 @@ export default class Match {
 		this.shared.multiplayerManager.UpdateLobbyListing();
 	}
 
-	public missingBeatmap(user:User) {
+	public missingBeatmap(user: User) {
 		const slot = user.matchSlot;
 		if (!(slot instanceof Slot)) {
 			return;
@@ -355,7 +356,7 @@ export default class Match {
 		this.sendMatchUpdate();
 	}
 
-	public notMissingBeatmap(user:User) {
+	public notMissingBeatmap(user: User) {
 		const slot = user.matchSlot;
 		if (!(slot instanceof Slot)) {
 			return;
@@ -366,7 +367,7 @@ export default class Match {
 		this.sendMatchUpdate();
 	}
 
-	public matchSkip(user:User) {
+	public matchSkip(user: User) {
 		if (this.matchSkippedSlots === undefined) {
 			this.matchSkippedSlots = new Array<MatchStartSkipData>();
 
@@ -421,10 +422,10 @@ export default class Match {
 		}
 	}
 
-	public transferHost(user:User, slotIDToTransferTo:number) {
+	public transferHost(_user: User, slotIDToTransferTo: number) {
 		// Set the lobby's host to the new user
 		const newHost = this.slots[slotIDToTransferTo].player;
-		if (newHost instanceof User) {
+		if (newHost) {
 			this.host = newHost;
 
 			this.sendMatchUpdate();
@@ -631,7 +632,7 @@ export default class Match {
 			slot.status = SlotStatus.NotReady;
 		}
 
-		await this.shared.database.execute("INSERT INTO mp_match_rounds (id, match_id, round_id, round_mode, match_type, round_scoring_type, round_team_type, round_mods, beatmap_md5, freemod, player0, player1, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player12, player13, player14, player15) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", queryData);
+		await Database.Instance.execute("INSERT INTO mp_match_rounds (id, match_id, round_id, round_mode, match_type, round_scoring_type, round_team_type, round_mods, beatmap_md5, freemod, player0, player1, player2, player3, player4, player5, player6, player7, player8, player9, player10, player11, player12, player13, player14, player15) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", queryData);
 
 		osuPacketWriter.MatchComplete();
 

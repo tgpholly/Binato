@@ -1,15 +1,15 @@
-import { Mods } from "../enums/Mods";
-import { SlotStatus } from "../enums/SlotStatus";
+import Mods from "../enums/Mods";
+import SlotStatus from "../enums/SlotStatus";
 import User from "./User";
 
 export default class Slot {
-	public readonly slotId:number;
-	public status:SlotStatus;
-	public team:number;
-	public player?:User;
-	public mods:Mods;
+	public readonly slotId: number;
+	public status: SlotStatus;
+	public team: number;
+	public player?: User;
+	public mods: Mods;
 
-	public constructor(slotId:number, status:SlotStatus, team:number, player?:User, mods:Mods = Mods.None) {
+	public constructor(slotId: number, status: SlotStatus, team: number, player?: User, mods: Mods = Mods.None) {
 		this.slotId = slotId;
 		this.status = status;
 		this.team = team;
@@ -17,7 +17,7 @@ export default class Slot {
 		this.mods = mods;
 	}
 
-	public transferFrom(slot:Slot) : Slot {
+	public transferFrom(slot: Slot) : Slot {
 		this.status = slot.status;
 		this.team = slot.team;
 		this.player = slot.player;
@@ -27,7 +27,7 @@ export default class Slot {
 		return this;
 	}
 
-	public transferTo(slot:Slot) : Slot {
+	public transferTo(slot: Slot) : Slot {
 		slot.status = this.status;
 		slot.team = this.team;
 		slot.player = this.player;

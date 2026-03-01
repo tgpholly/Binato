@@ -1,5 +1,4 @@
-import { ConsoleHelper } from "../ConsoleHelper";
-import fetch from "node-fetch";
+import ConsoleHelper from "../ConsoleHelper";
 import { getCountryID } from "./Country";
 import { generateSession } from "./Util";
 import LatLng from "./objects/LatLng";
@@ -14,7 +13,9 @@ import Shared from "./objects/Shared";
 import osu from "../osuTyping";
 import IpZxqResponse from "./interfaces/IpZxqResponse";
 import { IncomingMessage, ServerResponse } from "http";
-import UserInfo from "./objects/database/UserInfo";
+import UserInfoRepository from "./repos/UserInfoRepository";
+import Config from "./objects/Config";
+import Database from "./objects/Database";
 const { decrypt: aesDecrypt } = require("aes256");
 
 const incorrectLoginResponse:Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
@@ -35,30 +36,36 @@ enum LoginResult {
 	INCORRECT,
 }
 
-function TestLogin(loginInfo:LoginInfo, shared:Shared) {
+function TestLogin(loginInfo:LoginInfo) {
 	return new Promise<LoginResult>(async (resolve, reject) => {
-		const userDBData = await shared.userInfoRepository.selectByUsername(loginInfo.username);
+		const userDBData = await UserInfoRepository.selectByUsername(loginInfo.username);
 
 		// Make sure a user was found in the database
-		if (userDBData == null) return resolve(LoginResult.INCORRECT);
+		if (userDBData == null) {
+			return resolve(LoginResult.INCORRECT);
+		}
 		// Make sure the username is the same as the login info
-		if (userDBData.username !== loginInfo.username) return resolve(LoginResult.INCORRECT);
+		if (userDBData.username !== loginInfo.username) {
+			return resolve(LoginResult.INCORRECT);
+		}
 
 		switch (userDBData.has_old_password) {
 			case LoginTypes.CURRENT:
-				pbkdf2(loginInfo.password, userDBData.password_salt, shared.config.database.pbkdf2.itterations, shared.config.database.pbkdf2.keylength, "sha512", (err, derivedKey) => {
+				pbkdf2(loginInfo.password, userDBData.password_salt, Config.database.pbkdf2.itterations, Config.database.pbkdf2.keylength, "sha512", (err, derivedKey) => {
 					if (err) {
 						return reject(err);
 					} else {
 						if (derivedKey.toString("hex") !== userDBData.password_hash)
+						{
 							return resolve(LoginResult.INCORRECT);
+						}
 	
-						return resolve(LoginResult.VALID); // We good
+						return resolve(LoginResult.VALID);
 					}
 				});
 				break;
 			case LoginTypes.OLD_AES:
-				if (aesDecrypt(shared.config.database.key, userDBData.password_hash) !== loginInfo.password) {
+				if (aesDecrypt(Config.database.key, userDBData.password_hash) !== loginInfo.password) {
 					return resolve(LoginResult.INCORRECT);
 				}
 				return resolve(LoginResult.MIGRATION);
@@ -81,12 +88,12 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		return res.end("");
 	}
 
-	const loginResult:LoginResult = await TestLogin(loginInfo, shared);
+	const loginResult: LoginResult = await TestLogin(loginInfo);
 	const osuPacketWriter = osu.Bancho.Writer();
-	let newUser:User | undefined;
-	let friendsPresence:Buffer = Buffer.alloc(0);
+	let newUser: User | undefined;
+	let friendsPresence: Buffer = Buffer.alloc(0);
 
-	if (loginResult === LoginResult.VALID && loginInfo !== undefined) {
+	if (loginResult === LoginResult.VALID) {
 		ConsoleHelper.printBancho(`New client connection. [User: ${loginInfo.username}]`);
 
 		// Get users IP for getting location
@@ -116,14 +123,14 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		} else {
 			// Get user's location using zxq
 			const userLocationRequest = await fetch(`https://ip.zxq.co/${requestIP}`);
-			const userLocationData:IpZxqResponse = await userLocationRequest.json();
+			const userLocationData: IpZxqResponse = await userLocationRequest.json() as IpZxqResponse;
 			const userLatLng = userLocationData.loc.split(",");
 			userCountryCode = userLocationData.country;
 			userLocation = new LatLng(parseFloat(userLatLng[0]), parseFloat(userLatLng[1]));
 		}
 
 		// Get information about the user from the database
-		const userInfo = await shared.userInfoRepository.selectByUsername(loginInfo.username);
+		const userInfo = await UserInfoRepository.selectByUsername(loginInfo.username);
 		if (userInfo == null) {
 			return;
 		}
@@ -173,7 +180,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 			shared.chatManager.SendChannelListing(newUser);
 
 			// Construct & send user's friends list
-			const friends = await shared.database.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
+			const friends = await Database.Instance.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
 			const friendsArray:Array<number> = new Array<number>();
 			for (const friend of friends) {
 				const friendId:number = friend.friendsWith;
@@ -211,7 +218,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 	res.removeHeader('X-Powered-By');
 	res.removeHeader('Date');
 	// Complete / Fail login
-	const writerBuffer:Buffer = osuPacketWriter.toBuffer;
+	const writerBuffer: Buffer = osuPacketWriter.toBuffer;
 	if (newUser === undefined) {
 		res.writeHead(200, {
 			"cho-token": "no", // NOTE: You have to specify a token even if it's an incorrect login for some reason.

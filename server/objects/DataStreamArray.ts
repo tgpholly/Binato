@@ -1,4 +1,4 @@
-import { ConsoleHelper } from "../../ConsoleHelper";
+import ConsoleHelper from "../../ConsoleHelper";
 import DataStream from "./DataStream";
 import FunkyArray from "./FunkyArray";
 import User from "./User";

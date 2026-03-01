@@ -1,19 +1,12 @@
-import { ConsoleHelper } from "./ConsoleHelper";
-import { readFileSync, existsSync } from "fs";
-if (!existsSync("./config.json")) {
-	ConsoleHelper.printError("Config file missing!");
-	ConsoleHelper.printError("Check the GitHub for an example or create one with the example you have.");
-	process.exit(1);
-}
-
+import Config from "./server/objects/Config";
+import ConsoleHelper from "./ConsoleHelper";
 import ChatHistory from "./server/ChatHistory";
-import Config from "./server/interfaces/Config";
 import HandleRequest from "./server/BanchoServer";
-import { Registry, collectDefaultMetrics } from "prom-client";
 import http from "http";
-const config:Config = JSON.parse(readFileSync(__dirname + "/config.json").toString()) as Config;
+import { Registry, collectDefaultMetrics } from "prom-client";
+import { readFileSync } from "fs";
 
-if (config["prometheus"]["enabled"]) {
+if (Config.prometheus.enabled) {
 	const register:Registry = new Registry();
 	register.setDefaultLabels({ app: "nodejs_binato" });
 
@@ -25,7 +18,7 @@ if (config["prometheus"]["enabled"]) {
 		}
 	});
 
-	prometheusServer.listen(config["prometheus"]["port"], () => ConsoleHelper.printInfo(`Prometheus metrics listening at port ${config["prometheus"]["port"]}`));
+	prometheusServer.listen(Config.prometheus.port, () => ConsoleHelper.printInfo(`Prometheus metrics listening at port ${Config.prometheus.port}`));
 } else {
 	ConsoleHelper.printWarn("Prometheus is disabled!");
 }
@@ -56,4 +49,4 @@ const binatoServer = http.createServer((req, res) => {
 	});
 });
 
-binatoServer.listen(config.http.port, () => ConsoleHelper.printInfo(`Binato is up! Listening at port ${config.http.port}`));
+binatoServer.listen(Config.http.port, () => ConsoleHelper.printInfo(`Binato is up! Listening at port ${Config.http.port}`));

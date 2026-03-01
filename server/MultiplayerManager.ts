@@ -1,6 +1,6 @@
 import Channel from "./objects/Channel";
 import Shared from "./objects/Shared";
-import { SlotStatus } from "./enums/SlotStatus";
+import SlotStatus from "./enums/SlotStatus";
 import DataStream from "./objects/DataStream";
 import Match from "./objects/Match";
 import User from "./objects/User";
@@ -11,7 +11,6 @@ import MatchArray from "./objects/MatchArray";
 import MatchJoinData from "./interfaces/packetTypes/MatchJoinData";
 import MatchData from "./interfaces/packetTypes/MatchData";
 import osu from "../osuTyping";
-import TourneyMatchSpecialInfo from "./packets/TourneyMatchSpecialInfo";
 
 export default class MultiplayerManager {
 	private readonly shared:Shared;

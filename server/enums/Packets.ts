@@ -1,4 +1,4 @@
-export enum Packets {
+enum Packets {
 	Client_ChangeAction,
 	Client_SendPublicMessage,
 	Client_Logout,
@@ -111,3 +111,5 @@ export enum Packets {
 	// NOTE: Tournament client only
 	Client_SpecialLeaveMatchChannel,
 }
+
+export default Packets;

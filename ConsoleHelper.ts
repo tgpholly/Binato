@@ -40,7 +40,7 @@ function log(tag:string, log:string, logType:LogType = LogType.INFO) : void {
 	}
 }
 
-export class ConsoleHelper {
+export default class ConsoleHelper {
 	public static printWebReq(s:string) : void {
 		log(LogTags.WEBREQ, s);
 	}

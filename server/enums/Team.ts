@@ -1,4 +1,6 @@
-export enum Team {
+enum Team {
     Red,
     Blue
 }
+
+export default Team;

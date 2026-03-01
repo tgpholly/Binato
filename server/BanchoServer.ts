@@ -1,38 +1,37 @@
-import Channel from "./objects/Channel";
-import { ConsoleHelper } from "../ConsoleHelper";
+import ConsoleHelper from "../ConsoleHelper";
 import Constants from "../Constants";
 import LoginProcess from "./LoginProcess";
 import { IncomingMessage, ServerResponse } from "http";
-import { Packets } from "./enums/Packets";
+import Packets from "./enums/Packets";
 import { RedisClientType, createClient } from "redis";
-import MessageData from "./interfaces/packetTypes/MessageData";
 import PrivateMessage from "./packets/PrivateMessage";
 import Shared from "./objects/Shared";
 import SpectatorManager from "./SpectatorManager";
 import osu from "../osuTyping";
 
 const shared:Shared = new Shared();
-shared.database.execute("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
-shared.database.execute("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
+const database = new Database(Config.database.address, Config.database.port, Config.database.username, Config.database.password, Config.database.name);
+database.execute("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
+database.execute("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
 
 // Server Setup
-const spectatorManager:SpectatorManager = new SpectatorManager(shared);
+const spectatorManager: SpectatorManager = new SpectatorManager(shared);
 
-let redisClient:RedisClientType;
+let redisClient: RedisClientType;
 
 async function subscribeToChannel(channelName:string, callback:(message:string) => void) {
 	// Dup and connect new client for channel subscription (required)
-	const subscriptionClient:RedisClientType = redisClient.duplicate();
+	const subscriptionClient: RedisClientType = redisClient.duplicate();
 	await subscriptionClient.connect();
 	// Subscribe to channel
 	await subscriptionClient.subscribe(channelName, callback);
 	ConsoleHelper.printRedis(`Subscribed to ${channelName} channel`);
 }
 
-if (shared.config.redis.enabled) {
+if (Config.redis.enabled) {
 	(async () => {
 		redisClient = createClient({
-			url: `redis://${shared.config.redis.password.replaceAll(" ", "") == "" ? "" : `${shared.config.redis.password}@`}${shared.config.redis.address}:${shared.config.redis.port}/${shared.config.redis.database}`
+			url: `redis://${Config.redis.password.replaceAll(" ", "") == "" ? "" : `${Config.redis.password}@`}${Config.redis.address}:${Config.redis.port}/${Config.redis.database}`
 		});
 
 		redisClient.on('error', e => ConsoleHelper.printRedis(e));
@@ -42,7 +41,7 @@ if (shared.config.redis.enabled) {
 		ConsoleHelper.printRedis(`Connected to redis server. Took ${Date.now() - connectionStartTime}ms`);
 
 		// Score submit update channel
-		subscribeToChannel("binato:update_user_stats", (message) => {
+		await subscribeToChannel("binato:update_user_stats", (message) => {
 			const user = shared.users.getById(parseInt(message));
 			if (user != null) {
 				// Update user info
@@ -65,9 +64,10 @@ import TourneyMatchJoinChannel from "./packets/TourneyJoinMatchChannel";
 import TourneyMatchLeaveChannel from "./packets/TourneyMatchLeaveChannel";
 import AddFriend from "./packets/AddFriend";
 import RemoveFriend from "./packets/RemoveFriend";
-import PrivateChannel from "./objects/PrivateChannel";
 import MultiplayerInvite from "./packets/MultiplayerInvite";
 import SendPublicMessage from "./packets/SendPublicMessage";
+import Database from "./objects/Database";
+import Config from "./objects/Config";
 
 // User timeout interval
 setInterval(() => {
@@ -81,7 +81,7 @@ setInterval(() => {
 	}
 }, 10000);
 
-export default async function HandleRequest(req:IncomingMessage, res:ServerResponse, packet:Buffer) {
+export default async function HandleRequest(req: IncomingMessage, res: ServerResponse, packet: Buffer) {
 	// Get the client's token string and request data
 	const requestTokenString = typeof(req.headers["osu-token"]) === "string" ? req.headers["osu-token"] : undefined;
 
@@ -90,9 +90,9 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 		// Client doesn't have a token yet, let's auth them!
 		
 		await LoginProcess(req, res, packet, shared);
-		shared.database.execute("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [shared.users.getLength() - 1]);
+		await Database.Instance.execute("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [shared.users.getLength() - 1]);
 	} else {
-		let responseData = Buffer.allocUnsafe(0);
+		let responseData: Buffer = Buffer.alloc(0);
 
 		// Client has a token, let's see what they want.
 		try {
@@ -180,7 +180,7 @@ export default async function HandleRequest(req:IncomingMessage, res:ServerRespo
 							break;
 
 						case Packets.Client_MatchLock:
-							user.match?.lockOrKick(user, packet.data);
+							await user.match?.lockOrKick(user, packet.data);
 							break;
 
 						case Packets.Client_MatchNoBeatmap:

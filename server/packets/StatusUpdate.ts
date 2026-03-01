@@ -1,12 +1,12 @@
 import Shared from "../objects/Shared";
-import { RankingMode } from "../enums/RankingMode";
+import RankingMode from "../enums/RankingMode";
 import User from "../objects/User";
 import osu from "../../osuTyping";
 
 export default function StatusUpdate(arg0:User | Shared, id:number) {
 	// Ignore Bot
 	if (id == 3) {
-		return Buffer.allocUnsafe(0);
+		return Buffer.alloc(0);
 	}
 
 	// Create new osu packet writer
@@ -22,7 +22,7 @@ export default function StatusUpdate(arg0:User | Shared, id:number) {
 	const userData = shared.users.getById(id);
 
 	if (userData == null) {
-		return Buffer.allocUnsafe(0);
+		return Buffer.alloc(0);
 	}
 
 	osuPacketWriter.HandleOsuUpdate({

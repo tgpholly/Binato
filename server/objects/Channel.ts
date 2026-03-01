@@ -6,11 +6,11 @@ import DataStream from "./DataStream";
 import User from "./User";
 
 export default class Channel {
-	public name:string;
-	public description:string;
-	public stream:DataStream;
-	public isLocked:boolean = false;
-	private _isSpecial:boolean = false;
+	public name: string;
+	public description: string;
+	public stream: DataStream;
+	public isLocked: boolean = false;
+	public readonly isSpecial: boolean;
 
 	private readonly bot:Bot;
 
@@ -18,13 +18,9 @@ export default class Channel {
 		this.name = name;
 		this.description = description;
 		this.stream = stream;
-		this._isSpecial = isSpecial;
+		this.isSpecial = isSpecial;
 
 		this.bot = shared.bot;
-	}
-
-	public get isSpecial() : boolean {
-		return this._isSpecial;
 	}
 
 	public get userCount() : number {
