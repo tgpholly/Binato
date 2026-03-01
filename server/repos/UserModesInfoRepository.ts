@@ -1,4 +1,3 @@
-import { RowDataPacket } from "mysql2";
 import Database from "../objects/Database";
 import UserModeInfo from "../objects/database/UserModeInfo";
 import RankingMode from "../enums/RankingMode";
@@ -17,7 +16,7 @@ export default abstract class UserModesInfoRepository {
 	}
 
 	public static async selectRankByIdModeIdRankingMode(id:number, mode: RankingMode, rankingMode:RankingMode) : Promise<number | null> {
-		let query:RowDataPacket[] | undefined;
+		let query: any;
 		switch (rankingMode) {
 			case RankingMode.RANKED_SCORE:
 				query = await Database.Instance.query("CALL SelectUserScoreRankByIdModeId(?,?)", [id, mode]);
@@ -41,7 +40,7 @@ export default abstract class UserModesInfoRepository {
 	}
 }
 
-function populateUserModeInfoFromRowDataPacket(userModeInfo:UserModeInfo, rowDataPacket:RowDataPacket) {
+function populateUserModeInfoFromRowDataPacket(userModeInfo:UserModeInfo, rowDataPacket: any) {
 	userModeInfo.n = rowDataPacket["n"];
 	userModeInfo.user_id = rowDataPacket["user_id"];
 	userModeInfo.mode_id = rowDataPacket["mode_id"];

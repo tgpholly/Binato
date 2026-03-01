@@ -56,9 +56,9 @@ import { Registry, collectDefaultMetrics } from "prom-client";
 import { RedisClientType, createClient } from "redis";
 import { readFileSync, existsSync } from "fs";
 import { randomBytes, pbkdf2 } from "crypto";
-import { createPool, Pool, RowDataPacket } from "mysql2";
+import { createPool, type Pool } from "mariadb";
 import * as dyetty from "dyetty";
-import fetch from "node-fetch";
+import { Console } from "hsconsole";
 import http from "http";`);
 
 // Let's process the file to make it usable
