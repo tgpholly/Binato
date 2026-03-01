@@ -8,8 +8,8 @@
 		"build": "npm-run-all build:*",
 		"build:clean": "tsc --build --clean",
 		"build:build": "ncc build Binato.ts -o build",
-		"build:mangle": "ts-node ./tooling/mangle.ts",
-		"build:cleanup": "ts-node ./tooling/cleanup.ts"
+		"build:mangle": "tsx ./tooling/mangle.ts",
+		"build:cleanup": "tsx ./tooling/cleanup.ts"
 	},
 	"keywords": [],
 	"author": "",
