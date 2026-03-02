@@ -10,7 +10,7 @@ export default abstract class ChatManager {
 	public static chatChannels: FunkyArray<Channel> = new FunkyArray<Channel>();
 	public static forceJoinChannels: FunkyArray<Channel> = new FunkyArray<Channel>();
 
-	public static AddChatChannel(name:string, description:string, forceJoin:boolean = false) : Channel {
+	public static AddChatChannel(name: string, description: string, forceJoin: boolean = false) : Channel {
 		const stream = StreamManager.CreateStream(`chat_channel:${name}`, false);
 		const channel = new Channel(`#${name}`, description, stream);
 		this.chatChannels.add(channel.name, channel);
@@ -21,7 +21,7 @@ export default abstract class ChatManager {
 		return channel;
 	}
 
-	public static AddSpecialChatChannel(name:string, streamName:string, forceJoin:boolean = false) : Channel {
+	public static AddSpecialChatChannel(name: string, streamName: string, forceJoin: boolean = false) : Channel {
 		const stream = StreamManager.CreateStream(`chat_channel:${streamName}`, false);
 		const channel = new Channel(`#${name}`, "", stream);
 		this.chatChannels.add(channel.name, channel);
@@ -32,7 +32,7 @@ export default abstract class ChatManager {
 		return channel;
 	}
 
-	public static RemoveChatChannel(channel:Channel | string) {
+	public static RemoveChatChannel(channel: Channel | string) {
 		if (channel instanceof Channel) {
 			channel.stream.Delete();
 			this.chatChannels.remove(channel.stream.name);
@@ -59,19 +59,20 @@ export default abstract class ChatManager {
 		return this.chatChannels.getByKey(channelName);
 	}
 
-	public static GetPrivateChannelByName(channelName:string) : Channel | undefined {
+	public static GetPrivateChannelByName(channelName: string) : Channel | undefined {
 		return this.chatChannels.getByKey(channelName);
 	}
 
-	public static ForceJoinChannels(user:User) {
+	public static ForceJoinChannels(user: User) {
 		for (const channel of this.forceJoinChannels.getIterableItems()) {
 			channel.Join(user);
 		}
 	}
 	
 
-	public static SendChannelListing(user:User) {
+	public static SendChannelListing(user: User) {
 		const osuPacketWriter = osu.Bancho.Writer();
+		osuPacketWriter.ChannelListingComplete();
 		for (const channel of this.chatChannels.getIterableItems()) {
 			if (channel.isSpecial) {
 				continue;

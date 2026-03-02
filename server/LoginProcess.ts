@@ -17,11 +17,12 @@ import Config from "./objects/Config";
 import Database from "./objects/Database";
 import ChatManager from "./ChatManager";
 import Users from "./Users";
+import OsuPacketWriter from "./interfaces/OsuPacketWriter";
 const { decrypt: aesDecrypt } = require("aes256");
 
-const incorrectLoginResponse:Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
+const incorrectLoginResponse: Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
 
-const requiredPWChangeResponse:Buffer = osu.Bancho.Writer()
+const requiredPWChangeResponse: Buffer = osu.Bancho.Writer()
 	.LoginReply(-1)
 	.Announce("As part of migration to a new password system you are required to change your password. Please logon to the website and change your password.").toBuffer;
 
@@ -37,7 +38,7 @@ enum LoginResult {
 	INCORRECT,
 }
 
-function TestLogin(loginInfo:LoginInfo) {
+function TestLogin(loginInfo: LoginInfo) {
 	return new Promise<LoginResult>(async (resolve, reject) => {
 		const userDBData = await UserInfoRepository.selectByUsername(loginInfo.username);
 
@@ -79,6 +80,50 @@ function TestLogin(loginInfo:LoginInfo) {
 	});
 }
 
+function sendUserDetails(osuPacketWriter: OsuPacketWriter, newUser: User, loginInfo: LoginInfo) {
+	// The reply id is the user's id in any other case than an error in which case negative numbers are used
+	osuPacketWriter.LoginReply(newUser.id);
+	osuPacketWriter.ProtocolNegotiation(19);
+	// Permission level 4 is osu!supporter
+	osuPacketWriter.LoginPermissions(4);
+
+	// Set title screen image
+	//osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
+
+	// Add user panel data packets
+	UserPresence(newUser, newUser.id);
+	StatusUpdate(newUser, newUser.id);
+
+	osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
+}
+
+async function constructFriendsList(newUser: User) {
+	const friends = await Database.Instance.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
+	const friendsArray:Array<number> = new Array<number>();
+	for (const friend of friends) {
+		const friendId:number = friend.friendsWith;
+		friendsArray.push(friendId);
+
+		// Also fetch presence for friend if they are online
+		if (Users.getById(friendId) === undefined) {
+			continue;
+		}
+
+		const friendPresence = UserPresence(null, friendId);
+		if (friendPresence === undefined) {
+			continue;
+		}
+
+		newUser.addActionToQueue(friendPresence);
+	}
+	// Write this to the user's queue rather than just sending it back so we
+	// don't get the weird `Loading..., Loading...` etc on friends after login.
+	const friendsPacketWriter = osu.Bancho.Writer();
+	friendsPacketWriter.FriendsList(friendsArray);
+	const friendData = friendsPacketWriter.toBuffer;
+	newUser.addActionToQueue(friendData);
+}
+
 export default async function LoginProcess(req:IncomingMessage, res:ServerResponse, packet:Buffer) {
 	const loginStartTime = Date.now();
 	const loginInfo = LoginInfo.From(packet);
@@ -92,7 +137,6 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 	const loginResult: LoginResult = await TestLogin(loginInfo);
 	const osuPacketWriter = osu.Bancho.Writer();
 	let newUser: User | undefined;
-	let friendsPresence: Buffer = Buffer.alloc(0);
 
 	if (loginResult === LoginResult.VALID) {
 		ConsoleHelper.printBancho(`New client connection. [User: ${loginInfo.username}]`);
@@ -105,10 +149,6 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		if (requestIP === undefined) {
 			requestIP = req.headers["X-Real-IP"];
 		}
-
-		// Just get the requestee IP (we are not behind a reverse proxy)
-		// if (requestIP == null)
-		// 	requestIP = req.remote_addr;
 
 		// Make sure requestIP is never undefined
 		if (requestIP === undefined) {
@@ -136,83 +176,36 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 			return;
 		}
 
-		// Create a token for the client
 		const newClientToken:string = await generateSession();
 		const isTourneyClient = loginInfo.version.includes("tourney");
 
 		// Make sure user is not already connected, kick off if so.
 		const connectedUser = Users.getByUsername(loginInfo.username);
 		if (connectedUser != null && !isTourneyClient && !connectedUser.isTourneyUser) {
-			Logout(connectedUser);
+			await Logout(connectedUser);
 		}
 
-		// Retreive the newly created user
 		newUser = Users.add(newClientToken, new User(userInfo.id, loginInfo.username, newClientToken, userInfo.tags));
-		// Set tourney client flag
 		newUser.isTourneyUser = isTourneyClient;
 		newUser.location = userLocation;
-
-		// Get user's data from the database
-		newUser.updateUserInfo();
+		// Populate this new user with info from the DB
+		await newUser.updateUserInfo();
 
 		try {
 			newUser.countryID = getCountryID(userCountryCode);
 
 			// We're ready to start putting together a login response
-
-			// The reply id is the user's id in any other case than an error in which case negative numbers are used
-			osuPacketWriter.LoginReply(newUser.id);
-			osuPacketWriter.ProtocolNegotiation(19);
-			// Permission level 4 is osu!supporter
-			osuPacketWriter.LoginPermissions(4);
-
-			// Set title screen image
-			//osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
-
-			// Add user panel data packets
-			UserPresence(newUser, newUser.id);
-			StatusUpdate(newUser, newUser.id);
-
-			// peppy pls, why
-			osuPacketWriter.ChannelListingComplete();
+			sendUserDetails(osuPacketWriter, newUser, loginInfo);
 
 			// Setup chat
 			ChatManager.ForceJoinChannels(newUser);
 			ChatManager.SendChannelListing(newUser);
 
-			// Construct & send user's friends list
-			const friends = await Database.Instance.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
-			const friendsArray:Array<number> = new Array<number>();
-			for (const friend of friends) {
-				const friendId:number = friend.friendsWith;
-				friendsArray.push(friendId);
-
-				// Also fetch presence for friend if they are online
-				if (Users.getById(friendId) === undefined) {
-					continue;
-				}
-
-				const friendPresence = UserPresence(null, friendId);
-				if (friendPresence === undefined) {
-					continue;
-				}
-
-				friendsPresence = Buffer.concat([
-					friendsPresence,
-					friendPresence
-				], friendsPresence.length + friendPresence.length);
-			}
-			// Write this to the user's queue rather than just sending it back so we
-			// don't get the weird `Loading..., Loading...` etc on friends after login.
-			const friendsPacketWriter = osu.Bancho.Writer();
-			friendsPacketWriter.FriendsList(friendsArray);
-			const friendData = friendsPacketWriter.toBuffer;
-			newUser.addActionToQueue(Buffer.concat([friendData, friendsPresence], friendData.length + friendsPresence.length));
+			// Send user their friends list
+			await constructFriendsList(newUser);
 
 			// After sending the user their friends list send them the online users
 			UserPresenceBundle(newUser);
-
-			osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
 		} catch (err) {
 			console.error(err);
 		}
