@@ -12,13 +12,14 @@ import MatchData from "./interfaces/packetTypes/MatchData";
 import osu from "../osuTyping";
 import StreamManager from "./StreamManager";
 import ChatManager from "./ChatManager";
+import ConsoleHelper from "../ConsoleHelper";
 
 export default abstract class MultiplayerManager {
 	private static matches: MatchArray = new MatchArray();
 	private static readonly lobbyStream: DataStream = StreamManager.CreateStream("multiplayer:lobby", false);
 	private static readonly lobbyChat: Channel = ChatManager.AddChatChannel("lobby", "Talk about multiplayer stuff");
 
-	public static JoinLobby(user:User) {
+	public static JoinLobby(user: User) {
 		if (user.inMatch) {
 			user.match?.leaveMatch(user);
 		}
@@ -28,11 +29,21 @@ export default abstract class MultiplayerManager {
 		this.lobbyStream.AddUser(user);
 	}
 
-	public static LeaveLobby(user:User) {
+	public static LeaveLobby(user: User) {
 		this.lobbyStream.RemoveUser(user);
 	}
 
-	public static JoinMatch(user:User, matchData:number | MatchJoinData) {
+	private static MatchJoinFail(user: User) {
+		const osuPacketWriter = osu.Bancho.Writer();
+
+		osuPacketWriter.MatchJoinFail();
+
+		user.addActionToQueue(osuPacketWriter.toBuffer);
+
+		this.GenerateLobbyListing(user);
+	}
+
+	public static JoinMatch(user: User, matchData: number | MatchJoinData) {
 		try {
 			let match:Match | undefined;
 			if (typeof(matchData) === "number") {
@@ -41,12 +52,14 @@ export default abstract class MultiplayerManager {
 				match = this.matches.getById(matchData.matchId);
 			}
 			if (!(match instanceof Match)) {
-				throw "MatchIdInvalid";
+				this.MatchJoinFail(user);
+				return;
 			}
 
 			if (match.gamePassword !== undefined && typeof(matchData) !== "number") {
 				if (match.gamePassword !== matchData.gamePassword) {
-					throw "IncorrectPassword";
+					this.MatchJoinFail(user);
+					return;
 				}
 			}
 
@@ -65,7 +78,8 @@ export default abstract class MultiplayerManager {
 			}
 
 			if (matchFull) {
-				throw "MatchFull";
+				this.MatchJoinFail(user);
+				return;
 			}
 
 			// Inform users in the match that somebody has joined
@@ -82,13 +96,9 @@ export default abstract class MultiplayerManager {
 
 			this.UpdateLobbyListing();
 		} catch (e) {
-			const osuPacketWriter = osu.Bancho.Writer();
-
-			osuPacketWriter.MatchJoinFail();
-
-			user.addActionToQueue(osuPacketWriter.toBuffer);
-
-			this.GenerateLobbyListing(user);
+			this.MatchJoinFail(user);
+			ConsoleHelper.printError(`Something went horribly wrong while joining a match:`);
+			console.error(e);
 		}
 	}
 
@@ -96,7 +106,7 @@ export default abstract class MultiplayerManager {
 		this.lobbyStream.Send(this.GenerateLobbyListing());
 	}
 
-	public static GenerateLobbyListing(user?:User) : Buffer {
+	public static GenerateLobbyListing(user?: User): Buffer {
 		const osuPacketWriter = osu.Bancho.Writer();
 		let bufferToSend = UserPresenceBundle();
 
@@ -129,17 +139,17 @@ export default abstract class MultiplayerManager {
 		return bufferToSend;
 	}
 
-	public static GetMatchById(id:number) : Match | undefined {
+	public static GetMatchById(id: number): Match | undefined {
 		return this.matches.getById(id);
 	}
 
-	public static async CreateMatch(user:User, matchData:MatchData) {
+	public static async CreateMatch(user: User, matchData: MatchData) {
 		const match = await Match.createMatch(user, matchData);
 		this.matches.add(match.matchId.toString(), match);
 		this.JoinMatch(user, match.matchId);
 	}
 
-	public static async LeaveMatch(user:User) {
+	public static async LeaveMatch(user: User) {
 		if (user.match instanceof Match) {
 			user.match.leaveMatch(user);
 			let usersInMatch = false;
