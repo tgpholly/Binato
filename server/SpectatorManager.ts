@@ -5,15 +5,15 @@ import SpectateFramesData from "./interfaces/packetTypes/SpectateFramesData";
 import StreamManager from "./StreamManager";
 import Users from "./Users";
 
-export default class SpectatorManager {
-	public startSpectating(user:User, userIdToSpectate:number) {
+export default abstract class SpectatorManager {
+	public static StartSpectating(user: User, userIdToSpectate: number) {
 		const userToSpectate = Users.getById(userIdToSpectate);
 		if (userToSpectate === undefined) {
 			return;
 		}
 
 		// Use existing or create spectator stream
-		let spectateStream:DataStream;
+		let spectateStream: DataStream;
 		if (userToSpectate.spectatorStream === undefined) {
 			user.spectatorStream = spectateStream = userToSpectate.spectatorStream = StreamManager.CreateStream(`spectator:${userToSpectate.username}`);
 
@@ -37,7 +37,7 @@ export default class SpectatorManager {
 		spectateStream.Send(osuPacketWriter.toBuffer);
 	}
 
-	public spectatorFrames(user:User, spectateFramesData:SpectateFramesData) {
+	public static SpectatorFrames(user: User, spectateFramesData: SpectateFramesData) {
 		if (user.spectatorStream === undefined) {
 			return;
 		}
@@ -48,7 +48,7 @@ export default class SpectatorManager {
 		user.spectatorStream.Send(osuPacketWriter.toBuffer);
 	}
 
-	public stopSpectating(user:User) {
+	public static StopSpectating(user: User) {
 		if (user.spectatingUser === undefined || user.spectatorStream === undefined) {
 			return;
 		}

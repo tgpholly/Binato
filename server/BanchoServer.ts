@@ -21,8 +21,6 @@ database.execute("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE clos
 database.execute("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
 
 // Server Setup
-const spectatorManager: SpectatorManager = new SpectatorManager();
-
 let redisClient: RedisClientType;
 
 async function subscribeToChannel(channelName:string, callback:(message:string) => void) {
@@ -141,15 +139,15 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 							break;
 
 						case Packets.Client_StartSpectating:
-							spectatorManager.startSpectating(user, packet.data);
+							SpectatorManager.StartSpectating(user, packet.data);
 							break;
 
 						case Packets.Client_SpectateFrames:
-							spectatorManager.spectatorFrames(user, packet.data);
+							SpectatorManager.SpectatorFrames(user, packet.data);
 							break;
 
 						case Packets.Client_StopSpectating:
-							spectatorManager.stopSpectating(user);
+							SpectatorManager.StopSpectating(user);
 							break;
 
 						case Packets.Client_SendPrivateMessage:

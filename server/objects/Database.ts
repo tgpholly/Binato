@@ -1,5 +1,5 @@
-import { Console } from "hsconsole";
 import { createPool, type Pool } from "mariadb";
+import ConsoleHelper from "../../ConsoleHelper";
 
 export type DBInDataType = string | number | Date | null | undefined;
 
@@ -19,7 +19,7 @@ export default class Database {
 			database: databaseName
 		});
 
-		Console.printInfo(`DB connection pool created. MAX_CONNECTIONS = ${Database.CONNECTION_LIMIT}`);
+		ConsoleHelper.printInfo(`DB connection pool created. MAX_CONNECTIONS = ${Database.CONNECTION_LIMIT}`);
 
 		Database.Instance = this;
 	}
@@ -41,7 +41,7 @@ export default class Database {
 				return result !== undefined;
 			}
 		} catch (e) {
-			Console.printError(`MultiProbe server repository error:\n${e}`);
+			ConsoleHelper.printError(`MultiProbe server repository error:\n${e}`);
 			throw e;
 		}
 	}
@@ -63,7 +63,7 @@ export default class Database {
 				return result;
 			}
 		} catch (e) {
-			Console.printError(`MultiProbe server repository error:\n${e}`);
+			ConsoleHelper.printError(`MultiProbe server repository error:\n${e}`);
 			throw e;
 		}
 	}
