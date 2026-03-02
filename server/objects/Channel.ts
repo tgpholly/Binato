@@ -1,9 +1,9 @@
 import osu from "../../osuTyping";
 import Bot from "../Bot";
 import ChatHistory from "../ChatHistory";
-import Shared from "../objects/Shared";
 import DataStream from "./DataStream";
 import User from "./User";
+import Users from "../Users";
 
 export default class Channel {
 	public name: string;
@@ -12,15 +12,15 @@ export default class Channel {
 	public isLocked: boolean = false;
 	public readonly isSpecial: boolean;
 
-	private readonly bot:Bot;
+	private readonly bot: Bot;
 
-	public constructor(shared:Shared, name:string, description:string, stream:DataStream, isSpecial:boolean = false) {
+	public constructor(name:string, description:string, stream:DataStream, isSpecial:boolean = false) {
 		this.name = name;
 		this.description = description;
 		this.stream = stream;
 		this.isSpecial = isSpecial;
 
-		this.bot = shared.bot;
+		this.bot = Users.bot;
 	}
 
 	public get userCount() : number {

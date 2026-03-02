@@ -5,17 +5,23 @@ import { IncomingMessage, ServerResponse } from "http";
 import Packets from "./enums/Packets";
 import { RedisClientType, createClient } from "redis";
 import PrivateMessage from "./packets/PrivateMessage";
-import Shared from "./objects/Shared";
 import SpectatorManager from "./SpectatorManager";
 import osu from "../osuTyping";
 
-const shared:Shared = new Shared();
+ChatManager.AddChatChannel("osu", "The main channel", true);
+ChatManager.AddChatChannel("english", "Talk in exclusively English");
+ChatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
+
+const botUser = Users.add("bot", new User(3, "SillyBot", "bot", Permissions.None));
+botUser.location = new LatLng(50, -32);
+Users.bot = new Bot(botUser);
+
 const database = new Database(Config.database.address, Config.database.port, Config.database.username, Config.database.password, Config.database.name);
 database.execute("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
 database.execute("UPDATE osu_info SET value = 0 WHERE name = 'online_now'");
 
 // Server Setup
-const spectatorManager: SpectatorManager = new SpectatorManager(shared);
+const spectatorManager: SpectatorManager = new SpectatorManager();
 
 let redisClient: RedisClientType;
 
@@ -42,7 +48,7 @@ if (Config.redis.enabled) {
 
 		// Score submit update channel
 		await subscribeToChannel("binato:update_user_stats", (message) => {
-			const user = shared.users.getById(parseInt(message));
+			const user = Users.getById(parseInt(message));
 			if (user != null) {
 				// Update user info
 				user.updateUserInfo(true);
@@ -68,10 +74,17 @@ import MultiplayerInvite from "./packets/MultiplayerInvite";
 import SendPublicMessage from "./packets/SendPublicMessage";
 import Database from "./objects/Database";
 import Config from "./objects/Config";
+import ChatManager from "./ChatManager";
+import MultiplayerManager from "./MultiplayerManager";
+import Bot from "./Bot";
+import LatLng from "./objects/LatLng";
+import Users from "./Users";
+import User from "./objects/User";
+import Permissions from "./enums/Permissions";
 
 // User timeout interval
 setInterval(() => {
-	for (const User of shared.users.getIterableItems()) {
+	for (const User of Users.getIterableItems()) {
 		if (User.uuid == "bot") continue; // Ignore the bot
 
 		// Logout this user, they're clearly gone.
@@ -89,15 +102,15 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 	if (requestTokenString === undefined) {
 		// Client doesn't have a token yet, let's auth them!
 		
-		await LoginProcess(req, res, packet, shared);
-		await Database.Instance.execute("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [shared.users.getLength() - 1]);
+		await LoginProcess(req, res, packet);
+		await Database.Instance.execute("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [Users.length - 1]);
 	} else {
 		let responseData: Buffer = Buffer.alloc(0);
 
 		// Client has a token, let's see what they want.
 		try {
 			// Get the current user
-			const user = shared.users.getByToken(requestTokenString);
+			const user = Users.getByToken(requestTokenString);
 
 			// Make sure the client's token isn't invalid
 			if (user != null) {
@@ -144,19 +157,19 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 							break;
 
 						case Packets.Client_JoinLobby:
-							shared.multiplayerManager.JoinLobby(user);
+							MultiplayerManager.JoinLobby(user);
 							break;
 
 						case Packets.Client_PartLobby:
-							shared.multiplayerManager.LeaveLobby(user);
+							MultiplayerManager.LeaveLobby(user);
 							break;
 
 						case Packets.Client_CreateMatch:
-							await shared.multiplayerManager.CreateMatch(user, packet.data);
+							await MultiplayerManager.CreateMatch(user, packet.data);
 							break;
 
 						case Packets.Client_JoinMatch:
-							shared.multiplayerManager.JoinMatch(user, packet.data);
+							MultiplayerManager.JoinMatch(user, packet.data);
 							break;
 
 						case Packets.Client_MatchChangeSlot:
@@ -176,7 +189,7 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 							break;
 
 						case Packets.Client_PartMatch:
-							await shared.multiplayerManager.LeaveMatch(user);
+							await MultiplayerManager.LeaveMatch(user);
 							break;
 
 						case Packets.Client_MatchLock:

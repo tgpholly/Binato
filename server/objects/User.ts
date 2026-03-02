@@ -3,16 +3,14 @@ import RankingMode from "../enums/RankingMode";
 import Match from "./Match";
 import DataStream from "./DataStream";
 import StatusUpdate from "../packets/StatusUpdate";
-import Shared from "../objects/Shared";
 import Slot from "./Slot";
 import Channel from "./Channel";
 import PresenceData from "../interfaces/packetTypes/PresenceData";
 import Permissions from "../enums/Permissions";
 import UserModesInfoRepository from "../repos/UserModesInfoRepository";
+import ChatManager from "../ChatManager";
 
 export default class User {
-	public shared: Shared;
-
 	public id: number;
 	public username: string;
 	public uuid: string;
@@ -62,13 +60,11 @@ export default class User {
 		return user0.uuid === user1.uuid;
 	}
 
-	public constructor(id:number, username:string, uuid:string, permissions:Permissions, shared:Shared) {
+	public constructor(id: number, username: string, uuid: string, permissions: Permissions) {
 		this.id = id;
 		this.username = username;
 		this.uuid = uuid;
 		this.permissions = permissions;
-
-		this.shared = shared;
 	}
 
 	// Concats new actions to the user's queue
@@ -137,14 +133,14 @@ export default class User {
 	}
 
 	joinChannel(channelName:string) {
-		const channel = this.shared.chatManager.GetChannelByName(channelName);
+		const channel = ChatManager.GetChannelByName(channelName);
 		if (channel instanceof Channel) {
 			channel.Join(this);
 		}
 	}
 
 	leaveChannel(channelName:string) {
-		const channel = this.shared.chatManager.GetChannelByName(channelName);
+		const channel = ChatManager.GetChannelByName(channelName);
 		if (channel instanceof Channel) {
 			channel.Leave(this);
 		}

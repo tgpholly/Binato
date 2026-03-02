@@ -1,5 +1,4 @@
 import Channel from "./objects/Channel";
-import Shared from "./objects/Shared";
 import SlotStatus from "./enums/SlotStatus";
 import DataStream from "./objects/DataStream";
 import Match from "./objects/Match";
@@ -11,24 +10,15 @@ import MatchArray from "./objects/MatchArray";
 import MatchJoinData from "./interfaces/packetTypes/MatchJoinData";
 import MatchData from "./interfaces/packetTypes/MatchData";
 import osu from "../osuTyping";
+import StreamManager from "./StreamManager";
+import ChatManager from "./ChatManager";
 
-export default class MultiplayerManager {
-	private readonly shared:Shared;
-	private matches:MatchArray = new MatchArray();
-	private readonly lobbyStream:DataStream;
-	private readonly lobbyChat:Channel;
+export default abstract class MultiplayerManager {
+	private static matches: MatchArray = new MatchArray();
+	private static readonly lobbyStream: DataStream = StreamManager.CreateStream("multiplayer:lobby", false);
+	private static readonly lobbyChat: Channel = ChatManager.AddChatChannel("lobby", "Talk about multiplayer stuff");
 
-	public constructor(shared:Shared) {
-		this.shared = shared;
-		this.lobbyStream = shared.streams.CreateStream("multiplayer:lobby", false);
-		const channel = this.shared.chatManager.GetChannelByName("#lobby");
-		if (channel === undefined) {
-			throw "Something has gone horribly wrong, the lobby channel does not exist!";
-		}
-		this.lobbyChat = channel;
-	}
-
-	public JoinLobby(user:User) {
+	public static JoinLobby(user:User) {
 		if (user.inMatch) {
 			user.match?.leaveMatch(user);
 		}
@@ -38,11 +28,11 @@ export default class MultiplayerManager {
 		this.lobbyStream.AddUser(user);
 	}
 
-	public LeaveLobby(user:User) {
+	public static LeaveLobby(user:User) {
 		this.lobbyStream.RemoveUser(user);
 	}
 
-	public JoinMatch(user:User, matchData:number | MatchJoinData) {
+	public static JoinMatch(user:User, matchData:number | MatchJoinData) {
 		try {
 			let match:Match | undefined;
 			if (typeof(matchData) === "number") {
@@ -102,13 +92,13 @@ export default class MultiplayerManager {
 		}
 	}
 
-	public UpdateLobbyListing() {
+	public static UpdateLobbyListing() {
 		this.lobbyStream.Send(this.GenerateLobbyListing());
 	}
 
-	public GenerateLobbyListing(user?:User) : Buffer {
+	public static GenerateLobbyListing(user?:User) : Buffer {
 		const osuPacketWriter = osu.Bancho.Writer();
-		let bufferToSend = UserPresenceBundle(this.shared);
+		let bufferToSend = UserPresenceBundle();
 
 		for (const match of this.matches.getIterableItems()) {
 			for (const slot of match.slots) {
@@ -116,8 +106,8 @@ export default class MultiplayerManager {
 					continue;
 				}
 
-				const presenceBuffer = UserPresence(this.shared, slot.player.id);
-				const statusBuffer = StatusUpdate(this.shared, slot.player.id);
+				const presenceBuffer = UserPresence(null, slot.player.id);
+				const statusBuffer = StatusUpdate(null, slot.player.id);
 
 				if (presenceBuffer === undefined || statusBuffer === undefined) {
 					continue;
@@ -139,17 +129,17 @@ export default class MultiplayerManager {
 		return bufferToSend;
 	}
 
-	public GetMatchById(id:number) : Match | undefined {
+	public static GetMatchById(id:number) : Match | undefined {
 		return this.matches.getById(id);
 	}
 
-	public async CreateMatch(user:User, matchData:MatchData) {
-		const match = await Match.createMatch(user, matchData, this.shared);
+	public static async CreateMatch(user:User, matchData:MatchData) {
+		const match = await Match.createMatch(user, matchData);
 		this.matches.add(match.matchId.toString(), match);
 		this.JoinMatch(user, match.matchId);
 	}
 
-	public async LeaveMatch(user:User) {
+	public static async LeaveMatch(user:User) {
 		if (user.match instanceof Match) {
 			user.match.leaveMatch(user);
 			let usersInMatch = false;

@@ -9,13 +9,14 @@ import User from "./objects/User";
 import UserPresenceBundle from "./packets/UserPresenceBundle";
 import UserPresence from "./packets/UserPresence";
 import StatusUpdate from "./packets/StatusUpdate";
-import Shared from "./objects/Shared";
 import osu from "../osuTyping";
 import IpZxqResponse from "./interfaces/IpZxqResponse";
 import { IncomingMessage, ServerResponse } from "http";
 import UserInfoRepository from "./repos/UserInfoRepository";
 import Config from "./objects/Config";
 import Database from "./objects/Database";
+import ChatManager from "./ChatManager";
+import Users from "./Users";
 const { decrypt: aesDecrypt } = require("aes256");
 
 const incorrectLoginResponse:Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
@@ -78,7 +79,7 @@ function TestLogin(loginInfo:LoginInfo) {
 	});
 }
 
-export default async function LoginProcess(req:IncomingMessage, res:ServerResponse, packet:Buffer, shared:Shared) {
+export default async function LoginProcess(req:IncomingMessage, res:ServerResponse, packet:Buffer) {
 	const loginStartTime = Date.now();
 	const loginInfo = LoginInfo.From(packet);
 
@@ -140,13 +141,13 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		const isTourneyClient = loginInfo.version.includes("tourney");
 
 		// Make sure user is not already connected, kick off if so.
-		const connectedUser = shared.users.getByUsername(loginInfo.username);
+		const connectedUser = Users.getByUsername(loginInfo.username);
 		if (connectedUser != null && !isTourneyClient && !connectedUser.isTourneyUser) {
 			Logout(connectedUser);
 		}
 
 		// Retreive the newly created user
-		newUser = shared.users.add(newClientToken, new User(userInfo.id, loginInfo.username, newClientToken, userInfo.tags, shared));
+		newUser = Users.add(newClientToken, new User(userInfo.id, loginInfo.username, newClientToken, userInfo.tags));
 		// Set tourney client flag
 		newUser.isTourneyUser = isTourneyClient;
 		newUser.location = userLocation;
@@ -176,8 +177,8 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 			osuPacketWriter.ChannelListingComplete();
 
 			// Setup chat
-			shared.chatManager.ForceJoinChannels(newUser);
-			shared.chatManager.SendChannelListing(newUser);
+			ChatManager.ForceJoinChannels(newUser);
+			ChatManager.SendChannelListing(newUser);
 
 			// Construct & send user's friends list
 			const friends = await Database.Instance.query("SELECT friendsWith FROM friends WHERE user = ?", [newUser.id]);
@@ -187,9 +188,11 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 				friendsArray.push(friendId);
 
 				// Also fetch presence for friend if they are online
-				if (shared.users.getById(friendId) === undefined) { continue; }
+				if (Users.getById(friendId) === undefined) {
+					continue;
+				}
 
-				const friendPresence = UserPresence(shared, friendId);
+				const friendPresence = UserPresence(null, friendId);
 				if (friendPresence === undefined) {
 					continue;
 				}

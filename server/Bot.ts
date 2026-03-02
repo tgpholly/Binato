@@ -1,6 +1,5 @@
 import ICommand from "./interfaces/ICommand";
 import Channel from "./objects/Channel";
-import Shared from "./objects/Shared";
 import User from "./objects/User";
 
 // Commands
@@ -11,17 +10,17 @@ import HelpCommand from "./commands/Help";
 import RollCommand from "./commands/Roll";
 
 export default class Bot {
-	public user:User;
+	public user: User;
 	private commands:{ [id: string]: ICommand } = {};
 
-	public constructor(shared:Shared, botUser:User) {
+	public constructor(botUser:User) {
 		this.user = botUser;
 		
-		this.commands["help"] = new HelpCommand(shared, this.commands);
-		this.commands["ranking"] = new RankingCommand(shared);
-		this.commands["admin"] = new AdminCommand(shared);
-		this.commands["mp"] = new MultiplayerCommands(shared);
-		this.commands["roll"] = new RollCommand(shared);
+		this.commands["help"] = new HelpCommand(this.commands);
+		this.commands["ranking"] = new RankingCommand();
+		this.commands["admin"] = new AdminCommand();
+		this.commands["mp"] = new MultiplayerCommands();
+		this.commands["roll"] = new RollCommand();
 	}
 
 	public OnMessage(channel:Channel, sender:User, text:string) {

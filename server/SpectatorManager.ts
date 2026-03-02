@@ -1,18 +1,13 @@
 import DataStream from "./objects/DataStream";
-import Shared from "./objects/Shared";
 import User from "./objects/User";
 import osu from "../osuTyping";
 import SpectateFramesData from "./interfaces/packetTypes/SpectateFramesData";
+import StreamManager from "./StreamManager";
+import Users from "./Users";
 
 export default class SpectatorManager {
-	private shared:Shared;
-
-	public constructor(shared:Shared) {
-		this.shared = shared;
-	}
-
 	public startSpectating(user:User, userIdToSpectate:number) {
-		const userToSpectate = this.shared.users.getById(userIdToSpectate);
+		const userToSpectate = Users.getById(userIdToSpectate);
 		if (userToSpectate === undefined) {
 			return;
 		}
@@ -20,7 +15,7 @@ export default class SpectatorManager {
 		// Use existing or create spectator stream
 		let spectateStream:DataStream;
 		if (userToSpectate.spectatorStream === undefined) {
-			user.spectatorStream = spectateStream = userToSpectate.spectatorStream = this.shared.streams.CreateStream(`spectator:${userToSpectate.username}`);
+			user.spectatorStream = spectateStream = userToSpectate.spectatorStream = StreamManager.CreateStream(`spectator:${userToSpectate.username}`);
 
 		} else {
 			user.spectatorStream = spectateStream = userToSpectate.spectatorStream;

@@ -5,11 +5,7 @@
 	"main": "Binato.ts",
 	"scripts": {
 		"dev": "tsx watch Binato.ts",
-		"build": "npm-run-all build:*",
-		"build:clean": "tsc --build --clean",
-		"build:build": "ncc build Binato.ts -o build",
-		"build:mangle": "tsx ./tooling/mangle.ts",
-		"build:cleanup": "tsx ./tooling/cleanup.ts"
+		"build": "tsc --build"
 	},
 	"keywords": [],
 	"author": "",

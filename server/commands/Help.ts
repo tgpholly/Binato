@@ -1,7 +1,6 @@
 import Channel from "../objects/Channel";
 import User from "../objects/User";
 import CommandBase from "./CommandBase";
-import Shared from "../objects/Shared";
 import ICommand from "../interfaces/ICommand";
 
 export default class HelpCommand extends CommandBase {
@@ -10,8 +9,8 @@ export default class HelpCommand extends CommandBase {
 	private readonly commandList:{ [id:string]: ICommand };
 	private commandKeys:Array<string> = new Array<string>();
 
-	public constructor(shared:Shared, commands:{ [id:string]: ICommand }) {
-		super(shared);
+	public constructor(commands: { [id:string]: ICommand }) {
+		super();
 		this.commandList = commands;
 	}
 

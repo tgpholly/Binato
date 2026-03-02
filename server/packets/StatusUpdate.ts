@@ -1,9 +1,9 @@
-import Shared from "../objects/Shared";
 import RankingMode from "../enums/RankingMode";
 import User from "../objects/User";
 import osu from "../../osuTyping";
+import Users from "../Users";
 
-export default function StatusUpdate(arg0:User | Shared, id:number) {
+export default function StatusUpdate(arg0:User | null, id:number) {
 	// Ignore Bot
 	if (id == 3) {
 		return Buffer.alloc(0);
@@ -11,15 +11,9 @@ export default function StatusUpdate(arg0:User | Shared, id:number) {
 
 	// Create new osu packet writer
 	const osuPacketWriter = osu.Bancho.Writer();
-	let shared:Shared;
-	if (arg0 instanceof User) {
-		shared = arg0.shared;
-	} else {
-		shared = arg0;
-	}
 
 	// Get user's class
-	const userData = shared.users.getById(id);
+	const userData = Users.getById(id);
 
 	if (userData == null) {
 		return Buffer.alloc(0);

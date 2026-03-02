@@ -1,7 +1,8 @@
 import User from "../objects/User";
+import MultiplayerManager from "../MultiplayerManager";
 
 export default function TourneyMatchJoinChannel(user: User, matchId: number) {
-	const match = user.shared.multiplayerManager.GetMatchById(matchId);
+	const match = MultiplayerManager.GetMatchById(matchId);
 	if (match === undefined) {
 		return;
 	}

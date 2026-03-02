@@ -1,19 +1,13 @@
 import osu from "../../osuTyping";
-import Shared from "../objects/Shared";
 import User from "../objects/User";
+import Users from "../Users";
 
-export default function UserPresenceBundle(arg0:User | Shared) : Buffer {
+export default function UserPresenceBundle(arg0?: User) : Buffer {
 	const osuPacketWriter = osu.Bancho.Writer();
-	let shared:Shared;
-	if (arg0 instanceof User) {
-		shared = arg0.shared;
-	} else {
-		shared = arg0;
-	}
 
 	const userIds:Array<number> = new Array<number>();
 
-	for (const userData of shared.users.getIterableItems()) {
+	for (const userData of Users.getIterableItems()) {
 		userIds.push(userData.id);
 	}
 

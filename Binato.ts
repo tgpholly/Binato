@@ -28,7 +28,7 @@ const INDEX_PAGE:string = readFileSync("./web/serverPage.html").toString();
 const binatoServer = http.createServer((req, res) => {
 	let packet:Buffer = Buffer.alloc(0);
 	req.on("data", (chunk:Buffer) => packet = Buffer.concat([packet, chunk], packet.length + chunk.length));
-	req.on("end", () => {
+	req.on("end", async () => {
 		switch (req.method) {
 			case "GET":
 				if (req.url == "/" || req.url == "/index.html" || req.url == "/index") {
@@ -39,7 +39,7 @@ const binatoServer = http.createServer((req, res) => {
 				}
 				break;
 			case "POST":
-				HandleRequest(req, res, packet);
+				await HandleRequest(req, res, packet);
 				break;
 			default:
 				res.writeHead(405);

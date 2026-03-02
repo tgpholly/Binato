@@ -1,9 +1,7 @@
 import Channel from "../objects/Channel";
-import Shared from "../objects/Shared";
 import User from "../objects/User";
 
 export default interface ICommand {
-	shared:Shared,
 	adminOnly:boolean,
 	helpText:string,
 	helpDescription:string,

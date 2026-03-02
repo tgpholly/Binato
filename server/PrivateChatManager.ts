@@ -2,26 +2,21 @@ import Channel from "./objects/Channel";
 import ConsoleHelper from "../ConsoleHelper";
 import FunkyArray from "./objects/FunkyArray";
 import User from "./objects/User";
-import Shared from "./objects/Shared";
 import PrivateChannel from "./objects/PrivateChannel";
+import StreamManager from "./StreamManager";
 
-export default class PrivateChatManager {
-	public chatChannels:FunkyArray<PrivateChannel> = new FunkyArray<PrivateChannel>();
-	private readonly shared:Shared;
+export default abstract class PrivateChatManager {
+	public static readonly chatChannels:FunkyArray<PrivateChannel> = new FunkyArray<PrivateChannel>();
 
-	public constructor(shared:Shared) {
-		this.shared = shared;
-	}
-
-	public AddChannel(user0:User, user1:User) : PrivateChannel {
-		const stream = this.shared.streams.CreateStream(`private_channel:${user0.username},${user1.username}`, true);
+	public static AddChannel(user0:User, user1:User) : PrivateChannel {
+		const stream = StreamManager.CreateStream(`private_channel:${user0.username},${user1.username}`, true);
 		const channel = new PrivateChannel(user0, user1, stream);
 		this.chatChannels.add(channel.name, channel);
 		ConsoleHelper.printChat(`Created private chat channel [${channel.name}]`);
 		return channel;
 	}
 
-	public RemoveChannel(channel:PrivateChannel | string) {
+	public static RemoveChannel(channel:PrivateChannel | string) {
 		if (channel instanceof Channel) {
 			channel.stream.Delete();
 			this.chatChannels.remove(channel.stream.name);
@@ -34,7 +29,7 @@ export default class PrivateChatManager {
 		}
 	}
 
-	public GetChannelByName(channelName:string) : PrivateChannel | undefined {
+	public static GetChannelByName(channelName:string) : PrivateChannel | undefined {
 		return this.chatChannels.getByKey(channelName);
 	}
 }

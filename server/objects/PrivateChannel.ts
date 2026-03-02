@@ -8,7 +8,7 @@ export default class PrivateChannel extends Channel {
 	private readonly user1: User;
 
 	public constructor(user0: User, user1: User, stream: DataStream) {
-		super(user0.shared, `${user0.username}${user1.username}`, "", stream);
+		super(`${user0.username}${user1.username}`, "", stream);
 		this.user0 = user0;
 		this.user1 = user1;
 	}

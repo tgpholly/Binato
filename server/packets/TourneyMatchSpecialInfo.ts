@@ -3,9 +3,10 @@ import Match from "../objects/Match";
 import User from "../objects/User";
 import StatusUpdate from "./StatusUpdate";
 import UserPresence from "./UserPresence";
+import MultiplayerManager from "../MultiplayerManager";
 
 export default function TourneyMatchSpecialInfo(user:User, matchId:number) {
-	const match = user.shared.multiplayerManager.GetMatchById(matchId);
+	const match = MultiplayerManager.GetMatchById(matchId);
 	if (!(match instanceof Match)) {
 		return;
 	}

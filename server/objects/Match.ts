@@ -1,5 +1,4 @@
 import Channel from "./Channel";
-import Shared from "../objects/Shared";
 import DataStream from "./DataStream";
 import Slot from "./Slot";
 import User from "./User";
@@ -14,6 +13,10 @@ import { enumHasFlag } from "../Util";
 import osu from "../../osuTyping";
 import ScoreFrameData from "../interfaces/packetTypes/ScoreFrameData";
 import Database from "./Database";
+import ChatManager from "../ChatManager";
+import StreamManager from "../StreamManager";
+import MultiplayerManager from "../MultiplayerManager";
+import Users from "../Users";
 
 // Mods which need to be applied to the match during freemod.
 const matchFreemodGlobalMods:Array<Mods> = [
@@ -54,10 +57,8 @@ export default class Match {
 	public countdownTimer?: NodeJS.Timeout;
 
 	private serialisedMatchJSON: MatchData;
-	private readonly shared: Shared;
 
-	private constructor(matchData:MatchData, shared:Shared) {
-		this.shared = shared;
+	private constructor(matchData:MatchData) {
 		this.matchId = matchData.matchId;
 
 		this.inProgress = matchData.inProgress;
@@ -79,11 +80,11 @@ export default class Match {
 			if (slot.playerId === -1) {
 				this.slots.push(new Slot(i, slot.status, slot.team, undefined, slot.mods));
 			} else {
-				this.slots.push(new Slot(i, slot.status, slot.team, shared.users.getById(slot.playerId), slot.mods));
+				this.slots.push(new Slot(i, slot.status, slot.team, Users.getById(slot.playerId), slot.mods));
 			}
 		}
 
-		const hostUser = shared.users.getById(matchData.host);
+		const hostUser = Users.getById(matchData.host);
 		if (hostUser === undefined) {
 			// NOTE: This should never be possible to hit
 			//       since this user JUST made the match.
@@ -99,8 +100,8 @@ export default class Match {
 
 		this.seed = matchData.seed;
 
-		this.matchStream = shared.streams.CreateStream(`multiplayer:match_${this.matchId}`, false);
-		this.matchChatChannel = shared.chatManager.AddSpecialChatChannel("multiplayer", `mp_${this.matchId}`);
+		this.matchStream = StreamManager.CreateStream(`multiplayer:match_${this.matchId}`, false);
+		this.matchChatChannel = ChatManager.AddSpecialChatChannel("multiplayer", `mp_${this.matchId}`);
 
 		this.serialisedMatchJSON = matchData;
 
@@ -110,7 +111,7 @@ export default class Match {
 		//this.tourneyClientUsers = [];
 	}
 
-	public static createMatch(matchHost:User, matchData:MatchData, shared:Shared) : Promise<Match> {
+	public static createMatch(matchHost:User, matchData:MatchData) : Promise<Match> {
 		return new Promise<Match>(async (resolve, reject) => {
 			try {
 				matchData.matchId = (await Database.Instance.query(
@@ -118,7 +119,7 @@ export default class Match {
 					[matchData.gameName, matchData.seed]
 				))[0]["id"];
 	
-				const matchInstance = new Match(matchData, shared);
+				const matchInstance = new Match(matchData);
 	
 				// Update the status of the current user
 				StatusUpdate(matchHost, matchHost.id);
@@ -128,8 +129,8 @@ export default class Match {
 				osuPacketWriter.MatchNew(matchInstance.serialiseMatch());
 	
 				matchHost.addActionToQueue(osuPacketWriter.toBuffer);
-	
-				shared.multiplayerManager.UpdateLobbyListing();
+
+				MultiplayerManager.UpdateLobbyListing();
 	
 				resolve(matchInstance);
 			} catch (e) {
@@ -216,7 +217,7 @@ export default class Match {
 		this.beatmapChecksum = matchData.beatmapChecksum;
 
 		if (matchData.host !== this.host.id) {
-			const hostUser = this.shared.users.getById(matchData.host);
+			const hostUser = Users.getById(matchData.host);
 			if (hostUser === undefined) {
 				// NOTE: This should never be possible to hit
 				throw "Host User of match was undefined";
@@ -252,7 +253,7 @@ export default class Match {
 		this.sendMatchUpdate();
 
 		// Update the match listing in the lobby to reflect these changes
-		this.shared.multiplayerManager.UpdateLobbyListing();
+		MultiplayerManager.UpdateLobbyListing();
 	}
 
 	public sendMatchUpdate() {
@@ -278,7 +279,7 @@ export default class Match {
 
 		this.sendMatchUpdate();
 
-		this.shared.multiplayerManager.UpdateLobbyListing();
+		MultiplayerManager.UpdateLobbyListing();
 	}
 
 	public changeTeam(user: User) {
@@ -333,7 +334,7 @@ export default class Match {
 			slot.reset();
 
 			// Kick player
-			await this.shared.multiplayerManager.LeaveMatch(kickedPlayer);
+			await MultiplayerManager.LeaveMatch(kickedPlayer);
 
 			this.sendMatchUpdate();
 		} else { // Lock / Unlock
@@ -342,7 +343,7 @@ export default class Match {
 			this.sendMatchUpdate();
 		}
 
-		this.shared.multiplayerManager.UpdateLobbyListing();
+		MultiplayerManager.UpdateLobbyListing();
 	}
 
 	public missingBeatmap(user: User) {
@@ -466,7 +467,7 @@ export default class Match {
 			this.sendMatchUpdate();
 		}
 
-		this.shared.multiplayerManager.UpdateLobbyListing();
+		MultiplayerManager.UpdateLobbyListing();
 	}
 
 	startMatch() {
@@ -506,7 +507,7 @@ export default class Match {
 		this.sendMatchUpdate();
 
 		// Update match listing in lobby to show the game is in progress
-		this.shared.multiplayerManager.UpdateLobbyListing();
+		MultiplayerManager.UpdateLobbyListing();
 	}
 
 	public matchPlayerLoaded(user:User) {
@@ -641,7 +642,7 @@ export default class Match {
 		// Update all users in the match with new info
 		this.sendMatchUpdate();
 
-		this.shared.multiplayerManager.UpdateLobbyListing();
+		MultiplayerManager.UpdateLobbyListing();
 
 		// TODO: Re-implement multiplayer extras
 		//if (this.multiplayerExtras != null) this.multiplayerExtras.onMatchFinished(JSON.parse(JSON.stringify(this.playerScores)));

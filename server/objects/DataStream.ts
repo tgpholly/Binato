@@ -1,21 +1,19 @@
 import ConsoleHelper from "../../ConsoleHelper";
 import Constants from "../../Constants";
-import DataStreamArray from "./DataStreamArray";
+import StreamManager from "../StreamManager";
 import User from "./User";
-import UserArray from "./UserArray";
 import { hexlify } from "../Util";
+import FunkyArray from "./FunkyArray";
 
 export default class DataStream {
-	private users: UserArray = new UserArray();
+	private readonly users: FunkyArray<User> = new FunkyArray<User>();
 	public readonly name: string;
-	private readonly parent: DataStreamArray;
 	private readonly removeWhenEmpty: boolean;
 	private inactive: boolean = false;
 	public onDelete?: (dataStream: DataStream) => void;
 
-	public constructor(name: string, parent: DataStreamArray, removeWhenEmpty: boolean) {
+	public constructor(name: string, removeWhenEmpty: boolean) {
 		this.name = name;
-		this.parent = parent;
 		this.removeWhenEmpty = removeWhenEmpty;
 	}
 
@@ -62,7 +60,7 @@ export default class DataStream {
 		if (typeof(this.onDelete) === "function") {
 			this.onDelete(this);
 		}
-		this.parent.DeleteStream(this);
+		StreamManager.DeleteStream(this);
 	}
 
 	public Deactivate() {
