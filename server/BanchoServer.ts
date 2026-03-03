@@ -82,12 +82,15 @@ import Permissions from "./enums/Permissions";
 
 // User timeout interval
 setInterval(() => {
-	for (const User of Users.getIterableItems()) {
-		if (User.uuid == "bot") continue; // Ignore the bot
+	for (const user of Users.getIterableItems()) {
+		// Ignore the bot
+		if (user.uuid == "bot") {
+			continue;
+		}
 
 		// Logout this user, they're clearly gone.
-		if (Date.now() >= User.timeoutTime) {
-			Logout(User);
+		if (Date.now() >= user.timeoutTime) {
+			Logout(user);
 		}
 	}
 }, 10000);
@@ -299,7 +302,7 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 				responseData = user.queue;
 				user.clearQueue();
 			} else {
-				// User's token is invlid, force a reconnect
+				// User's token is invalid, force a reconnect
 				ConsoleHelper.printBancho(`Forced client re-connect (Token is invalid)`);
 				const osuPacketWriter = osu.Bancho.Writer();
 				osuPacketWriter.Announce("Reconnecting...");
