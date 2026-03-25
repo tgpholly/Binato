@@ -2,19 +2,19 @@
 	"compilerOptions": {
 		"esModuleInterop": true,
 		"resolveJsonModule": true,
-		"rootDir": "./",
 		"outDir": "./build",
 
 		// Enable latest features
 		"lib": ["ESNext"],
 		"target": "ESNext",
-		"module": "commonjs",
+		"module": "NodeNext",
 		"moduleDetection": "force",
 		"allowJs": true,
 
-		// Bundler mode
-		"moduleResolution": "node",
+		// Node ESM/CJS interop mode
+		"moduleResolution": "NodeNext",
 		"allowImportingTsExtensions": false,
+		"types": ["node"],
 
 		// Best practices
 		"strict": true,
@@ -26,6 +26,7 @@
 		"noUnusedParameters": true,
 		"noPropertyAccessFromIndexSignature": true,
 
-		"experimentalDecorators": true
+		"experimentalDecorators": true,
+		"declaration": false
 	}
 }
