@@ -1,9 +1,9 @@
 export default class FunkyArray<T> {
-	private items:{ [id: string]: T } = {};
-	private itemKeys:Array<string> = Object.keys(this.items);
-	private iterableArray:Array<T> = new Array<T>();
+	private items: { [id: string]: T } = {};
+	private itemKeys: Array<string> = [];
+	private iterableArray: Array<T> = [];
 
-	public add(key:string, item:T, regenerate:boolean = true) : T {
+	public add(key: string, item: T, regenerate: boolean = true) : T {
 		this.items[key] = item;
 
 		if (regenerate) {
@@ -14,7 +14,7 @@ export default class FunkyArray<T> {
 		return this.items[key];
 	}
 
-	public remove(key:string, regenerate:boolean = true) {
+	public remove(key: string, regenerate: boolean = true) {
 		delete this.items[key];
 		if (regenerate) {
 			this.itemKeys = Object.keys(this.items);
@@ -22,7 +22,7 @@ export default class FunkyArray<T> {
 		}
 	}
 
-	public removeFirstItem(regenerate:boolean = true) : void {
+	public removeFirstItem(regenerate: boolean = true) : void {
 		delete this.items[this.itemKeys[0]];
 		this.itemKeys = Object.keys(this.items);
 		if (regenerate) this.regenerateIterableArray();
@@ -44,15 +44,15 @@ export default class FunkyArray<T> {
 		return this.itemKeys.length;
 	}
 
-	public getKeyById(id:number) : string {
+	public getKeyById(id: number) : string {
 		return this.itemKeys[id];
 	}
 
-	public getById(id:number) : T | undefined {
+	public getById(id: number) : T | undefined {
 		return this.items[this.itemKeys[id]];
 	}
 
-	public getByKey(key:string) : T | undefined {
+	public getByKey(key: string) : T | undefined {
 		if (key in this.items) {
 			return this.items[key];
 		}

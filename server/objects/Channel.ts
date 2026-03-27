@@ -1,6 +1,6 @@
 import osu from "../../osuTyping";
 import Bot from "../Bot";
-import ChatHistory from "../ChatHistory";
+import ChatHistory from "../managers/ChatHistory";
 import DataStream from "./DataStream";
 import User from "./User";
 import Users from "../Users";
@@ -14,7 +14,7 @@ export default class Channel {
 
 	private readonly bot: Bot;
 
-	public constructor(name:string, description:string, stream:DataStream, isSpecial:boolean = false) {
+	public constructor(name: string, description: string, stream: DataStream, isSpecial: boolean = false) {
 		this.name = name;
 		this.description = description;
 		this.stream = stream;
@@ -27,7 +27,7 @@ export default class Channel {
 		return this.stream.userCount;
 	}
 
-	public SendMessage(sender:User, message:string) {
+	public SendMessage(sender: User, message: string) {
 		if (!this.isLocked) {
 			const osuPacketWriter = osu.Bancho.Writer();
 			osuPacketWriter.SendMessage({
@@ -49,7 +49,7 @@ export default class Channel {
 		}
 	}
 
-	public SendBotMessage(message:string, sendTo?:User) {
+	public SendBotMessage(message: string, sendTo?: User) {
 		const osuPacketWriter = osu.Bancho.Writer();
 		osuPacketWriter.SendMessage({
 			sendingClient: this.bot.user.username,
@@ -58,7 +58,7 @@ export default class Channel {
 			senderId: this.bot.user.id
 		});
 
-		if (sendTo instanceof User) {
+		if (sendTo) {
 			sendTo.addActionToQueue(osuPacketWriter.toBuffer);
 		} else {
 			this.stream.Send(osuPacketWriter.toBuffer);
@@ -69,7 +69,7 @@ export default class Channel {
 		}
 	}
 
-	public SendSystemMessage(message:string, sendTo?:User) {
+	public SendSystemMessage(message: string, sendTo?: User) {
 		const osuPacketWriter = osu.Bancho.Writer();
 		osuPacketWriter.SendMessage({
 			sendingClient: "System",
@@ -78,21 +78,21 @@ export default class Channel {
 			senderId: 1
 		});
 
-		if (sendTo instanceof User) {
+		if (sendTo) {
 			sendTo.addActionToQueue(osuPacketWriter.toBuffer);
 		} else {
 			this.stream.Send(osuPacketWriter.toBuffer);
 		}
 	}
 
-	public Join(user:User) {
+	public Join(user: User) {
 		this.stream.AddUser(user);
 		const osuPacketWriter = osu.Bancho.Writer();
 		osuPacketWriter.ChannelJoinSuccess(this.name);
 		user.addActionToQueue(osuPacketWriter.toBuffer);
 	}
 
-	public Leave(user:User) {
+	public Leave(user: User) {
 		this.stream.RemoveUser(user);
 		const osuPacketWriter = osu.Bancho.Writer();
 		osuPacketWriter.ChannelRevoked(this.name);

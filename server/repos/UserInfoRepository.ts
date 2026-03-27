@@ -1,8 +1,8 @@
-import UserInfo from "../objects/database/UserInfo";
+import UserInfo from "../entities/UserInfo";
 import Database from "../objects/Database";
 
 export default abstract class UserInfoRepository {
-	public static async selectById(id:number) {
+	public static async selectById(id: number) {
 		const query = await Database.Instance.query("CALL SelectUserInfoById(?)", [id]);
 		if (query != null) {
 			const userInfo = new UserInfo();
@@ -14,7 +14,7 @@ export default abstract class UserInfoRepository {
 		return null;
 	}
 
-	public static async selectByUsername(username:string) {
+	public static async selectByUsername(username: string) {
 		const query = await Database.Instance.query("CALL SelectUserInfoByUsername(?)", [username]);
 		if (query != null) {
 			const userInfo = new UserInfo();

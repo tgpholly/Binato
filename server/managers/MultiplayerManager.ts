@@ -1,18 +1,18 @@
-import Channel from "./objects/Channel";
-import SlotStatus from "./enums/SlotStatus";
-import DataStream from "./objects/DataStream";
-import Match from "./objects/Match";
-import User from "./objects/User";
-import StatusUpdate from "./packets/StatusUpdate";
-import UserPresence from "./packets/UserPresence";
-import UserPresenceBundle from "./packets/UserPresenceBundle";
-import MatchArray from "./objects/MatchArray";
-import MatchJoinData from "./interfaces/packetTypes/MatchJoinData";
-import MatchData from "./interfaces/packetTypes/MatchData";
-import osu from "../osuTyping";
+import Channel from "../objects/Channel";
+import SlotStatus from "../enums/SlotStatus";
+import DataStream from "../objects/DataStream";
+import Match from "../objects/Match";
+import User from "../objects/User";
+import StatusUpdate from "../packets/StatusUpdate";
+import UserPresence from "../packets/UserPresence";
+import UserPresenceBundle from "../packets/UserPresenceBundle";
+import MatchArray from "../objects/MatchArray";
+import MatchJoinData from "../interfaces/packetTypes/MatchJoinData";
+import MatchData from "../interfaces/packetTypes/MatchData";
+import osu from "../../osuTyping";
 import StreamManager from "./StreamManager";
 import ChatManager from "./ChatManager";
-import ConsoleHelper from "../ConsoleHelper";
+import ConsoleHelper from "../../ConsoleHelper";
 
 export default abstract class MultiplayerManager {
 	private static matches: MatchArray = new MatchArray();

@@ -11,9 +11,9 @@ import RollCommand from "./commands/Roll";
 
 export default class Bot {
 	public user: User;
-	private commands:{ [id: string]: ICommand } = {};
+	private commands: { [id: string]: ICommand } = {};
 
-	public constructor(botUser:User) {
+	public constructor(botUser: User) {
 		this.user = botUser;
 		
 		this.commands["help"] = new HelpCommand(this.commands);
@@ -23,7 +23,7 @@ export default class Bot {
 		this.commands["roll"] = new RollCommand();
 	}
 
-	public OnMessage(channel:Channel, sender:User, text:string) {
+	public OnMessage(channel: Channel, sender: User, text: string) {
 		const args = text.split(" ");
 		const command = this.commands[`${args.shift()?.replace("!", "").toLowerCase()}`];
 		if (command) {

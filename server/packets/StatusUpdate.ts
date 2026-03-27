@@ -3,7 +3,7 @@ import User from "../objects/User";
 import osu from "../../osuTyping";
 import Users from "../Users";
 
-export default function StatusUpdate(arg0:User | null, id:number) {
+export default function StatusUpdate(user: User | null, id: number) {
 	// Ignore Bot
 	if (id == 3) {
 		return Buffer.alloc(0);
@@ -28,7 +28,7 @@ export default function StatusUpdate(arg0:User | null, id:number) {
 		playMode: userData.playMode,
 		beatmapId: userData.beatmapID,
 		rankedScore: userData.rankedScore,
-		accuracy: userData.accuracy * 0.01, // Scale from 0:100 to 0:1
+		accuracy: userData.accuracy * 0.01, // Scale from 0-100 to 0-1
 		playCount: userData.playCount,
 		totalScore: userData.totalScore,
 		rank: userData.rank, 
@@ -36,8 +36,8 @@ export default function StatusUpdate(arg0:User | null, id:number) {
 	});
 
 	// Send data to user's queue
-	if (arg0 instanceof User) {
-		arg0.addActionToQueue(osuPacketWriter.toBuffer);
+	if (user) {
+		user.addActionToQueue(osuPacketWriter.toBuffer);
 	}
 	
 	return osuPacketWriter.toBuffer;

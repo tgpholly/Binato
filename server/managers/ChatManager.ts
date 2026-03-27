@@ -1,9 +1,9 @@
-import Channel from "./objects/Channel";
-import ConsoleHelper from "../ConsoleHelper";
-import FunkyArray from "./objects/FunkyArray";
-import User from "./objects/User";
-import osu from "../osuTyping";
-import PrivateChannel from "./objects/PrivateChannel";
+import Channel from "../objects/Channel";
+import ConsoleHelper from "../../ConsoleHelper";
+import FunkyArray from "../objects/FunkyArray";
+import User from "../objects/User";
+import osu from "../../osuTyping";
+import PrivateChannel from "../objects/PrivateChannel";
 import StreamManager from "./StreamManager";
 
 export default abstract class ChatManager {
@@ -47,7 +47,7 @@ export default abstract class ChatManager {
 		}
 	}
 
-	public static AddPrivateChatChannel(user0:User, user1:User) {
+	public static AddPrivateChatChannel(user0: User, user1: User) {
 		const stream = StreamManager.CreateStream(`private_channel:${user0.username},${user1.username}`, true);
 		const channel = new PrivateChannel(user0, user1, stream);
 		this.chatChannels.add(channel.name, channel);
@@ -55,7 +55,7 @@ export default abstract class ChatManager {
 		return channel;
 	}
 
-	public static GetChannelByName(channelName:string) : Channel | undefined {
+	public static GetChannelByName(channelName: string) : Channel | undefined {
 		return this.chatChannels.getByKey(channelName);
 	}
 
@@ -68,7 +68,6 @@ export default abstract class ChatManager {
 			channel.Join(user);
 		}
 	}
-	
 
 	public static SendChannelListing(user: User) {
 		const osuPacketWriter = osu.Bancho.Writer();

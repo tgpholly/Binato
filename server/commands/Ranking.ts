@@ -4,13 +4,13 @@ import RankingMode from "../enums/RankingMode";
 import CommandBase from "./CommandBase";
 
 export default class RankingCommand extends CommandBase {
-	public readonly helpText:string = `Ranking Modes:
+	public readonly helpText: string = `Ranking Modes:
 !ranking pp - Sets your ranking mode to pp
 !ranking score - Sets your ranking mode to score
 !ranking acc - Sets your ranking mode to accuracy`;
-	public readonly helpDescription:string = "Sets your prefered ranking type";
+	public readonly helpDescription: string = "Sets your prefered ranking type";
 
-	public exec(channel:Channel, sender:User, args:Array<string>) {
+	public exec(channel: Channel, sender: User, args: string[]) {
 		if (args.length === 0) {
 			channel.SendBotMessage("You must specify a ranking mode, use \"!help ranking\" to see the options.");
 			return;

@@ -6,7 +6,7 @@ export default class LoginInfo {
 	// TODO: Parse client data
 	public clientData: string;
 
-	private constructor(username:string, password:string, version:string, timeOffset:number, clientData:string) {
+	private constructor(username: string, password: string, version: string, timeOffset: number, clientData: string) {
 		this.username = username;
 		this.password = password;
 		this.version = version;
@@ -14,7 +14,7 @@ export default class LoginInfo {
 		this.clientData = clientData;
 	}
 
-	public static From(data:Buffer | string) : LoginInfo | undefined {
+	public static From(data: Buffer | string) : LoginInfo | undefined {
 		if (typeof(data) !== "string") {
 			data = data.toString();
 		}

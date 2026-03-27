@@ -1,6 +1,6 @@
 import ConsoleHelper from "../../ConsoleHelper";
 import Constants from "../../Constants";
-import StreamManager from "../StreamManager";
+import StreamManager from "../managers/StreamManager";
 import User from "./User";
 import { hexlify } from "../Util";
 import FunkyArray from "./FunkyArray";
@@ -31,11 +31,11 @@ export default class DataStream {
 		return this.users.getLength();
 	}
 
-	public HasUser(user:User) : boolean {
+	public HasUser(user: User) : boolean {
 		return this.users.getByKey(user.uuid) !== undefined;
 	}
 
-	public AddUser(user:User) : void {
+	public AddUser(user: User) : void {
 		this.checkInactive();
 
 		if (!(user.uuid in this.users.getItems())) {
@@ -44,7 +44,7 @@ export default class DataStream {
 		}
 	}
 
-	public RemoveUser(user:User) : void {
+	public RemoveUser(user: User) : void {
 		this.checkInactive();
 
 		if (user.uuid in this.users.getItems()) {
@@ -67,7 +67,7 @@ export default class DataStream {
 		this.inactive = true;
 	}
 
-	public Send(data:Buffer) {
+	public Send(data: Buffer) {
 		this.checkInactive();
 
 		for (const user of this.users.getIterableItems()) {
@@ -78,7 +78,7 @@ export default class DataStream {
 		}
 	}
 
-	public SendWithExclusion(data:Buffer, exclude:User) {
+	public SendWithExclusion(data: Buffer, exclude: User) {
 		this.checkInactive();
 
 		for (const user of this.users.getIterableItems()) {

@@ -1,7 +1,7 @@
 import ConsoleHelper from "../../ConsoleHelper";
 import Database from "../objects/Database";
 import User from "../objects/User";
-import StreamManager from "../StreamManager";
+import StreamManager from "../managers/StreamManager";
 import Users from "../Users";
 
 export default async function Logout(user: User) {

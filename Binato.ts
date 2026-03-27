@@ -1,6 +1,6 @@
 import Config from "./server/objects/Config";
 import ConsoleHelper from "./ConsoleHelper";
-import ChatHistory from "./server/ChatHistory";
+import ChatHistory from "./server/managers/ChatHistory";
 import HandleRequest from "./server/BanchoServer";
 import http from "http";
 import { Registry, collectDefaultMetrics } from "prom-client";

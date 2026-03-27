@@ -15,9 +15,10 @@ import { IncomingMessage, ServerResponse } from "http";
 import UserInfoRepository from "./repos/UserInfoRepository";
 import Config from "./objects/Config";
 import Database from "./objects/Database";
-import ChatManager from "./ChatManager";
+import ChatManager from "./managers/ChatManager";
 import Users from "./Users";
 import OsuPacketWriter from "./interfaces/OsuPacketWriter";
+import Constants from "../Constants";
 const { decrypt: aesDecrypt } = require("aes256");
 
 const incorrectLoginResponse: Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
@@ -83,7 +84,7 @@ function TestLogin(loginInfo: LoginInfo) {
 function sendUserDetails(osuPacketWriter: OsuPacketWriter, newUser: User, loginInfo: LoginInfo) {
 	// The reply id is the user's id in any other case than an error in which case negative numbers are used
 	osuPacketWriter.LoginReply(newUser.id);
-	osuPacketWriter.ProtocolNegotiation(19);
+	osuPacketWriter.ProtocolNegotiation(Constants.PROTOCOL_VERSION);
 	// Permission level 4 is osu!supporter
 	osuPacketWriter.LoginPermissions(4);
 
@@ -214,7 +215,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 	res.removeHeader('X-Powered-By');
 	res.removeHeader('Date');
 	// Complete / Fail login
-	const writerBuffer: Buffer = osuPacketWriter.toBuffer;
+	const loginData: Buffer = osuPacketWriter.toBuffer;
 	if (newUser === undefined) {
 		res.writeHead(200, {
 			"cho-token": "no", // NOTE: You have to specify a token even if it's an incorrect login for some reason.
@@ -239,7 +240,7 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 			"Connection": "keep-alive",
 			"Keep-Alive": "timeout=5, max=100",
 		});
-		res.end(writerBuffer, () => {
+		res.end(loginData, () => {
 			ConsoleHelper.printBancho(`User login finished, took ${Date.now() - loginStartTime}ms. [User: ${loginInfo.username}]`);
 		});
 	}

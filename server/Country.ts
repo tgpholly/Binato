@@ -1,4 +1,4 @@
-const countryCodes:{ [id: string]: number } = {
+const countryCodes: { [id: string]: number } = {
 	"LV": 132,
 	"AD":  3,
 	"LT": 130,

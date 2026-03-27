@@ -8,7 +8,7 @@ export default class AdminCommand extends CommandBase {
 	public readonly adminOnly:boolean = true;
 	public readonly helpDescription:string = "Locks/Unlocks a channel and limits conversation to mods and above.";
 
-	public exec(channel:Channel, sender:User, args:Array<string>) {
+	public exec(channel: Channel, sender: User, args: string[]) {
 		if (!enumHasFlag(sender.permissions, Permissions.Admin) || !enumHasFlag(sender.permissions, Permissions.Peppy)) {
 			channel.SendBotMessage("You don't have permission to execute that command.");
 			return;
@@ -24,7 +24,7 @@ export default class AdminCommand extends CommandBase {
 	}
 }
 
-function adminLock(channel:Channel) {
+function adminLock(channel: Channel) {
 	if (channel.isSpecial) {
 		channel.SendBotMessage("Multiplayer channels cannot be locked");
 		return;

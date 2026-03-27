@@ -1,13 +1,12 @@
 import osu from "../../osuTyping";
-import Match from "../objects/Match";
 import User from "../objects/User";
 import StatusUpdate from "./StatusUpdate";
 import UserPresence from "./UserPresence";
-import MultiplayerManager from "../MultiplayerManager";
+import MultiplayerManager from "../managers/MultiplayerManager";
 
-export default function TourneyMatchSpecialInfo(user:User, matchId:number) {
+export default function TourneyMatchSpecialInfo(user: User, matchId: number) {
 	const match = MultiplayerManager.GetMatchById(matchId);
-	if (!(match instanceof Match)) {
+	if (!match) {
 		return;
 	}
 
@@ -15,7 +14,7 @@ export default function TourneyMatchSpecialInfo(user:User, matchId:number) {
 	osuPacketWriter.MatchUpdate(match.serialiseMatch());
 
 	for (const slot of match.slots) {
-		if (slot.player === undefined) {
+		if (!slot.player) {
 			continue;
 		}
 

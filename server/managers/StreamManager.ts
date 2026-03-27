@@ -1,7 +1,7 @@
-import ConsoleHelper from "../ConsoleHelper";
-import DataStream from "./objects/DataStream";
-import FunkyArray from "./objects/FunkyArray";
-import User from "./objects/User";
+import ConsoleHelper from "../../ConsoleHelper";
+import DataStream from "../objects/DataStream";
+import FunkyArray from "../objects/FunkyArray";
+import User from "../objects/User";
 
 export default abstract class StreamManager {
 	private static readonly streams: FunkyArray<DataStream> = new FunkyArray<DataStream>();

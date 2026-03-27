@@ -3,10 +3,10 @@ import User from "../objects/User";
 import CommandBase from "./CommandBase";
 
 export default class RollCommand extends CommandBase {
-	public readonly helpDescription:string = "Roll some dice and get a random number between 1 and a number (default 100)";
-	public readonly helpArguments:Array<string> = ["number"];
+	public readonly helpDescription: string = "Roll some dice and get a random number between 1 and a number (default 100)";
+	public readonly helpArguments: string[] = ["number"];
 
-	public exec(channel:Channel, sender:User, args:Array<string>) {
+	public exec(channel: Channel, sender: User, args: string[]) {
 		let limit = 99;
 		if (args.length === 1) {
 			const userLimit = parseInt(args[0]);

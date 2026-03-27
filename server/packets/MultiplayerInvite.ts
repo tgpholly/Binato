@@ -1,6 +1,6 @@
 import PrivateChannel from "../objects/PrivateChannel";
 import User from "../objects/User";
-import PrivateChatManager from "../PrivateChatManager";
+import PrivateChatManager from "../managers/PrivateChatManager";
 import Users from "../Users";
 
 export default function MultiplayerInvite(user: User, invitedUserId: number) {

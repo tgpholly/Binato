@@ -8,7 +8,7 @@ import Channel from "./Channel";
 import PresenceData from "../interfaces/packetTypes/PresenceData";
 import Permissions from "../enums/Permissions";
 import UserModesInfoRepository from "../repos/UserModesInfoRepository";
-import ChatManager from "../ChatManager";
+import ChatManager from "../managers/ChatManager";
 
 export default class User {
 	public id: number;

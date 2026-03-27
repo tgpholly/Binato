@@ -1,9 +1,9 @@
-import DataStream from "./objects/DataStream";
-import User from "./objects/User";
-import osu from "../osuTyping";
-import SpectateFramesData from "./interfaces/packetTypes/SpectateFramesData";
+import DataStream from "../objects/DataStream";
+import User from "../objects/User";
+import osu from "../../osuTyping";
+import SpectateFramesData from "../interfaces/packetTypes/SpectateFramesData";
 import StreamManager from "./StreamManager";
-import Users from "./Users";
+import Users from "../Users";
 
 export default abstract class SpectatorManager {
 	public static StartSpectating(user: User, userIdToSpectate: number) {

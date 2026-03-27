@@ -4,12 +4,12 @@ import CommandBase from "./CommandBase";
 import ICommand from "../interfaces/ICommand";
 
 export default class HelpCommand extends CommandBase {
-	public readonly helpDescription:string = "Shows this message! :)";
+	public readonly helpDescription: string = "Shows this message! :)";
 
-	private readonly commandList:{ [id:string]: ICommand };
-	private commandKeys:Array<string> = new Array<string>();
+	private readonly commandList: { [id: string]: ICommand };
+	private commandKeys: string[] = [];
 
-	public constructor(commands: { [id:string]: ICommand }) {
+	public constructor(commands: { [id: string]: ICommand }) {
 		super();
 		this.commandList = commands;
 	}

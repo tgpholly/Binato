@@ -13,9 +13,9 @@ import { enumHasFlag } from "../Util";
 import osu from "../../osuTyping";
 import ScoreFrameData from "../interfaces/packetTypes/ScoreFrameData";
 import Database from "./Database";
-import ChatManager from "../ChatManager";
-import StreamManager from "../StreamManager";
-import MultiplayerManager from "../MultiplayerManager";
+import ChatManager from "../managers/ChatManager";
+import StreamManager from "../managers/StreamManager";
+import MultiplayerManager from "../managers/MultiplayerManager";
 import Users from "../Users";
 
 // Mods which need to be applied to the match during freemod.

@@ -4,15 +4,15 @@ import Match from "../objects/Match";
 import CommandBase from "./CommandBase";
 
 export default class MultiplayerCommands extends CommandBase {
-	public readonly helpText:string = `Multiplayer Subcommands:
+	public readonly helpText: string = `Multiplayer Subcommands:
 !mp start - Starts a multiplayer match with a delay (optional)
 !mp abort - Aborts the currently running round / countdown`;
-	public readonly helpDescription:string = "Command for use in multiplayer matches.";
-	public readonly helpArguments:Array<string> = ["subCommand"];
+	public readonly helpDescription: string = "Command for use in multiplayer matches.";
+	public readonly helpArguments: string[] = ["subCommand"];
 
-	public exec(channel:Channel, sender:User, args:Array<string>) {
+	public exec(channel: Channel, sender: User, args: string[]) {
 		// TODO: Determine if this check is correct
-		if (sender.match == undefined || channel.name != "#multiplayer") {
+		if (!sender.match || channel.name != "#multiplayer") {
 			channel.SendBotMessage("You must be in a multiplayer match to use this command");
 			return;
 		}

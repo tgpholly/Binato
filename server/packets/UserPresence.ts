@@ -2,28 +2,27 @@ import osu from "../../osuTyping";
 import User from "../objects/User";
 import Users from "../Users";
 
-export default function UserPresence(arg0: User | null, id: number) {
+export default function UserPresence(user: User | null, id: number) {
 	const osuPacketWriter = osu.Bancho.Writer();
 
-	const userData = Users.getById(id);
-
-	if (!userData) {
+	const targetUser = Users.getById(id);
+	if (!targetUser) {
 		return;
 	}
 
 	osuPacketWriter.UserPresence({
 		userId: id,
-		username: userData.username,
+		username: targetUser.username,
 		timezone: 0,
-		countryId: userData.countryID,
+		countryId: targetUser.countryID,
 		permissions: 4,
-		longitude: userData.location.longitude,
-		latitude: userData.location.latitude,
-		rank: userData.rank
+		longitude: targetUser.location.longitude,
+		latitude: targetUser.location.latitude,
+		rank: targetUser.rank
 	});
 
-	if (arg0 instanceof User) {
-		arg0.addActionToQueue(osuPacketWriter.toBuffer);
+	if (user) {
+		user.addActionToQueue(osuPacketWriter.toBuffer);
 	}
 	
 	return osuPacketWriter.toBuffer;

@@ -1,4 +1,4 @@
-import Permissions from "../../enums/Permissions";
+import Permissions from "../enums/Permissions";
 
 export default class UserInfo {
 	id: number = Number.MIN_VALUE;

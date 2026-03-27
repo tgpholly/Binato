@@ -12,7 +12,7 @@ export function generateSession() : Promise<string> {
 	});
 }
 
-export function hexlify(data:Buffer) : string {
+export function hexlify(data: Buffer) : string {
 	let out:string = "";
 	for (let i = 0; i < data.length; i++) {
 		const hex = data[i].toString(16);
@@ -26,7 +26,7 @@ export function hexlify(data:Buffer) : string {
 	return out.slice(0, out.length - 1);
 }
 
-export function isNullOrEmpty(str:string | undefined | null) {
+export function isNullOrEmpty(str: string | undefined | null) {
 	if (typeof(str) === "string") {
 		return str !== "";
 	}
@@ -34,6 +34,6 @@ export function isNullOrEmpty(str:string | undefined | null) {
 	return false;
 }
 
-export function enumHasFlag(value:number, flag:number) : boolean {
+export function enumHasFlag(value: number, flag: number) : boolean {
 	return (value & flag) === flag;
 }

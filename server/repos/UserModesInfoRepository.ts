@@ -1,9 +1,9 @@
 import Database from "../objects/Database";
-import UserModeInfo from "../objects/database/UserModeInfo";
+import UserModeInfo from "../entities/UserModeInfo";
 import RankingMode from "../enums/RankingMode";
 
 export default abstract class UserModesInfoRepository {
-	public static async selectByUserIdModeId(id:number, mode: RankingMode) {
+	public static async selectByUserIdModeId(id: number, mode: RankingMode) {
 		const query = await Database.Instance.query("CALL SelectUserModesInfoByUserIdModeId(?,?)", [id, mode]);
 		if (query != null) {
 			const userModeInfo = new UserModeInfo();
@@ -15,7 +15,7 @@ export default abstract class UserModesInfoRepository {
 		return null;
 	}
 
-	public static async selectRankByIdModeIdRankingMode(id:number, mode: RankingMode, rankingMode:RankingMode) : Promise<number | null> {
+	public static async selectRankByIdModeIdRankingMode(id: number, mode: RankingMode, rankingMode: RankingMode) : Promise<number | null> {
 		let query: any;
 		switch (rankingMode) {
 			case RankingMode.RANKED_SCORE:
@@ -40,7 +40,7 @@ export default abstract class UserModesInfoRepository {
 	}
 }
 
-function populateUserModeInfoFromRowDataPacket(userModeInfo:UserModeInfo, rowDataPacket: any) {
+function populateUserModeInfoFromRowDataPacket(userModeInfo: UserModeInfo, rowDataPacket: any) {
 	userModeInfo.n = rowDataPacket["n"];
 	userModeInfo.user_id = rowDataPacket["user_id"];
 	userModeInfo.mode_id = rowDataPacket["mode_id"];
