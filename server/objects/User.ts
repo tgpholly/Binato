@@ -95,9 +95,9 @@ export default class User {
 		const userScoreDB = await UserModesInfoRepository.selectByUserIdModeId(this.id, this.playMode);
 		const userRank = await UserModesInfoRepository.selectRankByIdModeIdRankingMode(this.id, this.playMode, this.rankingMode);
 
-		if (userScoreDB == null || userRank == null) throw "fuck";
+		if (userScoreDB == null) throw "fuck";
 
-		this.rank = userRank;
+		this.rank = Number(userRank ?? -1);
 
 		// Handle "if we should update" checks for each rankingMode
 		let userScoreUpdate = false;

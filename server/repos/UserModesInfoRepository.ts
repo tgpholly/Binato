@@ -32,8 +32,8 @@ export default abstract class UserModesInfoRepository {
 				break;
 		}
 
-		if (query != null && query.length != 0) {
-			return query[0][0].rank;
+		if (query != null && query.length != 0 && query[0].length !== 0) {
+			return Number(query[0][0].rank);
 		}
 
 		return null;

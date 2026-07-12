@@ -31,7 +31,7 @@ export default function StatusUpdate(user: User | null, id: number) {
 		accuracy: userData.accuracy * 0.01, // Scale from 0-100 to 0-1
 		playCount: userData.playCount,
 		totalScore: userData.totalScore,
-		rank: userData.rank, 
+		rank: Number(userData.rank),
 		performance: (userData.rankingMode == RankingMode.PP ? userData.pp : 0)
 	});
 

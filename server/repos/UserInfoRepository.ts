@@ -4,7 +4,7 @@ import Database from "../objects/Database";
 export default abstract class UserInfoRepository {
 	public static async selectById(id: number) {
 		const query = await Database.Instance.query("CALL SelectUserInfoById(?)", [id]);
-		if (query != null) {
+		if (query != null && query[0].length !== 0) {
 			const userInfo = new UserInfo();
 			populateUserInfoFromRowDataPacket(userInfo, query[0][0]);
 
@@ -16,7 +16,7 @@ export default abstract class UserInfoRepository {
 
 	public static async selectByUsername(username: string) {
 		const query = await Database.Instance.query("CALL SelectUserInfoByUsername(?)", [username]);
-		if (query != null) {
+		if (query != null && query[0].length !== 0) {
 			const userInfo = new UserInfo();
 			populateUserInfoFromRowDataPacket(userInfo, query[0][0]);
 

@@ -18,7 +18,7 @@ export default function UserPresence(user: User | null, id: number) {
 		permissions: 4,
 		longitude: targetUser.location.longitude,
 		latitude: targetUser.location.latitude,
-		rank: targetUser.rank
+		rank: Number(targetUser.rank)
 	});
 
 	if (user) {
