@@ -688,7 +688,7 @@ export default class Match {
 			return;
 		}
 
-		osuPacketWriter.MatchPlayerFailed(user.id);
+		osuPacketWriter.MatchPlayerFailed(user.matchSlot.slotId);
 
 		this.matchStream.Send(osuPacketWriter.toBuffer);
 	}
