@@ -73,6 +73,7 @@ export default class DataStream {
 		for (const user of this.users.getIterableItems()) {
 			user.addActionToQueue(data);
 		}
+
 		if (Constants.DEBUG) {
 			ConsoleHelper.printStream(`Sent Buffer<${hexlify(data)}> to all users in stream [${this.name}]`);
 		}

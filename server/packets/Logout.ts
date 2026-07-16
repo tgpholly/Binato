@@ -1,6 +1,7 @@
 import ConsoleHelper from "../../ConsoleHelper";
 import Database from "../objects/Database";
 import User from "../objects/User";
+import MultiplayerManager from "../managers/MultiplayerManager";
 import StreamManager from "../managers/StreamManager";
 import Users from "../Users";
 
@@ -11,6 +12,8 @@ export default async function Logout(user: User) {
 	}
 
 	const logoutStartTime = Date.now();
+
+	MultiplayerManager.LeaveMatch(user);
 
 	StreamManager.RemoveUserFromAllStreams(user);
 	Users.remove(user.uuid);

@@ -28,7 +28,6 @@ export default class User {
 	public playMode: number = 0;
 	public countryID: number = 0;
 	public location: LatLng = new LatLng(0, 0);
-	public joinedChannels: Array<string> = new Array<string>();
 
 	// Presence data
 	public actionID: number = 0;
@@ -53,7 +52,6 @@ export default class User {
 		return this.match instanceof Match;
 	}
 
-	// Tournament client flag
 	public isTourneyUser: boolean = false;
 
 	static Equals(user0:User, user1:User) {
@@ -67,7 +65,6 @@ export default class User {
 		this.permissions = permissions;
 	}
 
-	// Concats new actions to the user's queue
 	public addActionToQueue(newData:Buffer) {
 		this.queue = Buffer.concat([this.queue, newData], this.queue.length + newData.length);
 	}
@@ -124,8 +121,11 @@ export default class User {
 		this.playCount = userScoreDB.playcount;
 
 		// Set PP to none if ranking mode is not PP
-		if (this.rankingMode == 0) this.pp = userScoreDB.pp_raw;
-		else this.pp = 0;
+		if (this.rankingMode == 0) {
+			this.pp = userScoreDB.pp_raw;
+		} else {
+			this.pp = 0;
+		}
 
 		if (userScoreUpdate || forceUpdate) {
 			StatusUpdate(this, this.id);

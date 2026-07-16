@@ -11,16 +11,17 @@ export default class MultiplayerCommands extends CommandBase {
 	public readonly helpArguments: string[] = ["subCommand"];
 
 	public exec(channel: Channel, sender: User, args: string[]) {
-		// TODO: Determine if this check is correct
 		if (!sender.match || channel.name != "#multiplayer") {
 			channel.SendBotMessage("You must be in a multiplayer match to use this command");
 			return;
 		}
+
 		// Check if sender is match host
 		if (!User.Equals(sender, sender.match.host)) {
 			channel.SendBotMessage("You must be the match host to use multiplayer commands");
 			return;
 		}
+
 		if (args.length === 0) {
 			channel.SendBotMessage("You must specify a sub command, use \"!help mp\" to see a list of them.");
 			return;
@@ -80,9 +81,10 @@ function mpAbort(channel:Channel, match:Match) {
 		clearInterval(match.countdownTimer);
 		match.countdownTimer = undefined;
 		channel.SendBotMessage("Aborted countdown");
-	} else {
-		// TODO: Determine the correct way to abort a round
-		match.finishMatch();
+	} else if (match.inProgress) {
+		match.abortMatch();
 		channel.SendBotMessage("Aborted current round");
+	} else {
+		channel.SendBotMessage("There is no countdown or round in progress to abort");
 	}
 }

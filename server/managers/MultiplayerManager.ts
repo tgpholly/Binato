@@ -21,7 +21,7 @@ export default abstract class MultiplayerManager {
 
 	public static JoinLobby(user: User) {
 		if (user.inMatch) {
-			user.match?.leaveMatch(user);
+			this.LeaveMatch(user);
 		}
 
 		this.lobbyChat.Join(user);
@@ -80,6 +80,23 @@ export default abstract class MultiplayerManager {
 			if (matchFull) {
 				this.MatchJoinFail(user);
 				return;
+			}
+
+			// Tell the users in the match who the joiner is
+			const joinerPresence = UserPresence(null, user.id);
+			const joinerStatus = StatusUpdate(null, user.id);
+			if (joinerPresence !== undefined && joinerStatus !== undefined) {
+				match.matchStream.Send(Buffer.concat([joinerPresence, joinerStatus], joinerPresence.length + joinerStatus.length));
+			}
+
+			// Tell the joiner who the people in the match are
+			for (const slot of match.slots) {
+				if (!(slot.player instanceof User) || User.Equals(slot.player, user)) {
+					continue;
+				}
+
+				UserPresence(user, slot.player.id);
+				StatusUpdate(user, slot.player.id);
 			}
 
 			// Inform users in the match that somebody has joined
@@ -149,19 +166,23 @@ export default abstract class MultiplayerManager {
 		this.JoinMatch(user, match.matchId);
 	}
 
-	public static async LeaveMatch(user: User) {
-		if (user.match instanceof Match) {
-			user.match.leaveMatch(user);
+	public static LeaveMatch(user: User) {
+		const match = user.match;
+		if (match instanceof Match) {
+			match.leaveMatch(user);
+
 			let usersInMatch = false;
-			for (const slot of user.match.slots) {
+			for (const slot of match.slots) {
 				if (slot.player !== undefined) {
 					usersInMatch = true;
 					break;
 				}
 			}
+
 			if (!usersInMatch) {
-				this.matches.remove(user.match.matchId.toString());
+				this.matches.remove(match.matchId.toString());
 			}
+
 			this.UpdateLobbyListing();
 		}
 	}

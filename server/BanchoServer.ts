@@ -60,7 +60,7 @@ if (Config.redis.enabled) {
 // Import packets
 import ChangeAction from "./packets/ChangeAction";
 import Logout from "./packets/Logout";
-import UserPresence from "./packets/UserPresence";
+import UserPresenceRequest from "./packets/UserPresenceRequest";
 import UserStatsRequest from "./packets/UserStatsRequest";
 import UserPresenceBundle from "./packets/UserPresenceBundle";
 import TourneyMatchSpecialInfo from "./packets/TourneyMatchSpecialInfo";
@@ -241,6 +241,14 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 							user.match?.changeTeam(user);
 							break;
 
+						case Packets.Client_MatchChangePassword:
+							user.match?.changePassword(user, packet.data);
+							break;
+
+						case Packets.Client_MatchAbort:
+							user.match?.abortMatch();
+							break;
+
 						case Packets.Client_ChannelJoin:
 							user.joinChannel(packet.data);
 							break;
@@ -282,7 +290,7 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 							break;
 
 						case Packets.Client_UserPresenceRequest:
-							UserPresence(user, user.id);
+							UserPresenceRequest(user, packet.data);
 							break;
 
 						// Ignored packets

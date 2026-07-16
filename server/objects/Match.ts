@@ -18,10 +18,12 @@ import StreamManager from "../managers/StreamManager";
 import MultiplayerManager from "../managers/MultiplayerManager";
 import Users from "../Users";
 
-// Mods which need to be applied to the match during freemod.
+// Mods that need to be applied to the match during freemod.
 const matchFreemodGlobalMods:Array<Mods> = [
 	Mods.DoubleTime, Mods.Nightcore, Mods.HalfTime
 ]
+
+const matchAbortPacket = Buffer.from([106, 0, 0, 0, 0, 0, 0]);
 
 export default class Match {
 	// osu! Data
@@ -44,7 +46,6 @@ export default class Match {
 
 	// Binato data
 	public roundId: number = 0;
-	public matchStartCountdownActive: boolean = false;
 	public matchStream: DataStream;
 	public matchChatChannel: Channel;
 
@@ -56,7 +57,7 @@ export default class Match {
 	public countdownTime:number = 0;
 	public countdownTimer?: NodeJS.Timeout;
 
-	private serialisedMatchJSON: MatchData;
+	private readonly serialisedMatchJSON: MatchData;
 
 	private constructor(matchData:MatchData) {
 		this.matchId = matchData.matchId;
@@ -67,13 +68,7 @@ export default class Match {
 
 		this.activeMods = matchData.activeMods;
 
-		this.gameName = matchData.gameName;
-		if (matchData.gamePassword == '') matchData.gamePassword == null;
-		this.gamePassword = matchData.gamePassword;
-
-		this.beatmapName = matchData.beatmapName;
-		this.beatmapId = matchData.beatmapId;
-		this.beatmapChecksum = matchData.beatmapChecksum;
+		this.updateMatchInternal(matchData);
 
 		for (let i = 0; i < matchData.slots.length; i++) {
 			const slot = matchData.slots[i];
@@ -86,8 +81,7 @@ export default class Match {
 
 		const hostUser = Users.getById(matchData.host);
 		if (hostUser === undefined) {
-			// NOTE: This should never be possible to hit
-			//       since this user JUST made the match.
+			// This should never be possible to hit since this user JUST made the match.
 			throw "Host User of match was undefined";
 		}
 		this.host = hostUser;
@@ -181,29 +175,38 @@ export default class Match {
 			return;
 		}
 
-		// Set the slot's status to avaliable
+		// Set the slot's status to available
 		user.matchSlot.status = SlotStatus.Empty;
 		user.matchSlot.team = 0;
 		user.matchSlot.player = undefined;
 		user.matchSlot.mods = 0;
 
+		user.match = undefined;
+		user.matchSlot = undefined;
+
 		// Remove the leaving user from the match's stream
 		this.matchStream.RemoveUser(user);
 		this.matchChatChannel.Leave(user);
+
+		// Hand the match over to the next player if the host left
+		if (User.Equals(user, this.host)) {
+			for (const slot of this.slots) {
+				if (slot.player instanceof User) {
+					this.host = slot.player;
+
+					const osuPacketWriter = osu.Bancho.Writer();
+					osuPacketWriter.MatchTransferHost();
+					this.host.addActionToQueue(osuPacketWriter.toBuffer);
+					break;
+				}
+			}
+		}
 
 		// Send this after removing the user from match streams to avoid a leave notification for self?
 		this.sendMatchUpdate();
 	}
 
-	public async updateMatch(_user: User, matchData: MatchData) {
-		// Update match with new data
-		this.inProgress = matchData.inProgress;
-
-		this.matchType = matchData.matchType;
-
-		this.activeMods = matchData.activeMods;
-
-		const gameNameChanged = this.gameName !== matchData.gameName;
+	private updateMatchInternal(matchData: MatchData) {
 		this.gameName = matchData.gameName;
 
 		if (matchData.gamePassword === "") {
@@ -215,6 +218,18 @@ export default class Match {
 		this.beatmapName = matchData.beatmapName;
 		this.beatmapId = matchData.beatmapId;
 		this.beatmapChecksum = matchData.beatmapChecksum;
+	}
+
+	public async updateMatch(_user: User, matchData: MatchData) {
+		// Update match with new data
+		this.inProgress = matchData.inProgress;
+
+		this.matchType = matchData.matchType;
+
+		this.activeMods = matchData.activeMods;
+
+		const gameNameChanged = this.gameName !== matchData.gameName;
+		this.updateMatchInternal(matchData);
 
 		if (matchData.host !== this.host.id) {
 			const hostUser = Users.getById(matchData.host);
@@ -323,21 +338,18 @@ export default class Match {
 		}
 
 		const slot = this.slots[slotToActionOn];
-		if (slot.player instanceof User) { // Kick
+		if (slot.player instanceof User) {
+			// Kick
 			const kickedPlayer = slot.player;
 
-			// Remove player's refs to the match & slot
-			kickedPlayer.match = undefined;
-			kickedPlayer.matchSlot = undefined;
+			MultiplayerManager.LeaveMatch(kickedPlayer);
 
-			// Nuke all slot properties
-			slot.reset();
-
-			// Kick player
-			await MultiplayerManager.LeaveMatch(kickedPlayer);
-
-			this.sendMatchUpdate();
-		} else { // Lock / Unlock
+			// Inform the kicked player's client that it is no longer part of the match
+			const osuPacketWriter = osu.Bancho.Writer();
+			osuPacketWriter.MatchUpdate(this.serialiseMatch());
+			kickedPlayer.addActionToQueue(osuPacketWriter.toBuffer);
+		} else {
+			// Lock / Unlock
 			slot.status = slot.status === SlotStatus.Empty ? SlotStatus.Locked : SlotStatus.Empty;
 
 			this.sendMatchUpdate();
@@ -388,7 +400,7 @@ export default class Match {
 
 		let allSkipped = true;
 		for (const skippedSlot of this.matchSkippedSlots) {
-			// If loadslot belongs to this user then set loaded to true
+			// If load slot belongs to this user then set loaded to true
 			if (skippedSlot.playerId === user.id) {
 				skippedSlot.flag = true;
 			}
@@ -423,14 +435,37 @@ export default class Match {
 		}
 	}
 
-	public transferHost(_user: User, slotIDToTransferTo: number) {
+	public transferHost(user: User, slotIDToTransferTo: number) {
+		// Make sure the user transferring host is the current host
+		if (!User.Equals(user, this.host)) {
+			return;
+		}
+
 		// Set the lobby's host to the new user
-		const newHost = this.slots[slotIDToTransferTo].player;
+		const newHost = this.slots[slotIDToTransferTo]?.player;
 		if (newHost) {
 			this.host = newHost;
 
+			const osuPacketWriter = osu.Bancho.Writer();
+			osuPacketWriter.MatchTransferHost();
+			this.host.addActionToQueue(osuPacketWriter.toBuffer);
+
 			this.sendMatchUpdate();
 		}
+	}
+
+	public changePassword(user: User, matchData: MatchData) {
+		// Make sure the user changing the password is the host
+		if (!User.Equals(user, this.host)) {
+			return;
+		}
+
+		this.gamePassword = matchData.gamePassword === "" ? undefined : matchData.gamePassword;
+
+		// Inform users in the match of the change
+		const osuPacketWriter = osu.Bancho.Writer();
+		osuPacketWriter.MatchChangePassword(this.gamePassword ?? "");
+		this.matchStream.Send(osuPacketWriter.toBuffer);
 	}
 
 	public updateMods(user:User, mods:Mods) {
@@ -589,6 +624,35 @@ export default class Match {
 		}
 	}
 
+	public abortMatch() {
+		// Make sure there is a round to abort
+		if (!this.inProgress) {
+			return;
+		}
+
+		this.inProgress = false;
+		this.matchLoadSlots = undefined;
+		this.matchSkippedSlots = undefined;
+		this.playerScores = undefined;
+
+		// Inform the client of every playing user that the round was
+		// aborted, quitting them out of gameplay and back to the match
+		for (const slot of this.slots) {
+			if (slot.player === undefined || slot.status !== SlotStatus.Playing) {
+				continue;
+			}
+
+			slot.player.addActionToQueue(matchAbortPacket);
+			slot.status = SlotStatus.NotReady;
+		}
+
+		// Update all users in the match with new info
+		this.sendMatchUpdate();
+
+		// Update the match listing in the lobby to reflect that the round is over
+		MultiplayerManager.UpdateLobbyListing();
+	}
+
 	public async finishMatch() {
 		if (!this.inProgress) {
 			return;
@@ -622,12 +686,18 @@ export default class Match {
 				continue;
 			}
 
+			let scorePushed = false;
 			for (const _playerScore of this.playerScores) {
 				if (_playerScore.player?.id === slot.player?.id && _playerScore._raw !== undefined) {
 					const score = _playerScore._raw;
 					queryData.push(`${slot.player?.id}|${score.totalScore}|${score.maxCombo}|${score.count300}|${score.count100}|${score.count50}|${score.countGeki}|${score.countKatu}|${score.countMiss}|${(score.currentHp == 254) ? 1 : 0}${(this.specialModes === 1) ? `|${slot.mods}` : ""}|${score.usingScoreV2 ? 1 : 0}${score.usingScoreV2 ? `|${score.comboPortion}|${score.bonusPortion}` : ""}`);
+					scorePushed = true;
 					break;
 				}
+			}
+
+			if (!scorePushed) {
+				queryData.push(null);
 			}
 
 			slot.status = SlotStatus.NotReady;
@@ -639,6 +709,7 @@ export default class Match {
 
 		// Inform all users in the match that it is complete
 		this.matchStream.Send(osuPacketWriter.toBuffer);
+
 		// Update all users in the match with new info
 		this.sendMatchUpdate();
 
