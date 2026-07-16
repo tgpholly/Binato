@@ -12,15 +12,16 @@ export default class Channel {
 	public isLocked: boolean = false;
 	public readonly isSpecial: boolean;
 
-	private readonly bot: Bot;
+	// HSNOTE: Bot must be lazy read cuz it might not exist when the Channel is created.
+	private get bot() : Bot {
+		return Users.bot;
+	}
 
 	public constructor(name: string, description: string, stream: DataStream, isSpecial: boolean = false) {
 		this.name = name;
 		this.description = description;
 		this.stream = stream;
 		this.isSpecial = isSpecial;
-
-		this.bot = Users.bot;
 	}
 
 	public get userCount() : number {

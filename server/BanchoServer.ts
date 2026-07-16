@@ -8,13 +8,13 @@ import PrivateMessage from "./packets/PrivateMessage";
 import SpectatorManager from "./managers/SpectatorManager";
 import osu from "../osuTyping";
 
-ChatManager.AddChatChannel("osu", "The main channel", true);
-ChatManager.AddChatChannel("english", "Talk in exclusively English");
-ChatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
-
 const botUser = Users.add("bot", new User(3, "SillyBot", "bot", Permissions.None));
 botUser.location = new LatLng(50, -32);
 Users.bot = new Bot(botUser);
+
+ChatManager.AddChatChannel("osu", "The main channel", true);
+ChatManager.AddChatChannel("english", "Talk in exclusively English");
+ChatManager.AddChatChannel("japanese", "Talk in exclusively Japanese");
 
 const database = new Database(Config.database.address, Config.database.port, Config.database.username, Config.database.password, Config.database.name);
 database.execute("UPDATE mp_matches SET close_time = UNIX_TIMESTAMP() WHERE close_time IS NULL");
