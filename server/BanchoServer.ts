@@ -314,7 +314,7 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 				throw e;
 			}
 
-			ConsoleHelper.printError(`${e}`);
+			ConsoleHelper.printError(e);
 		} finally {
 			res.writeHead(200, {
 				"Connection": "keep-alive",

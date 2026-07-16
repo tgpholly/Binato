@@ -40,36 +40,48 @@ function log(tag: string, log: string, logType: LogType = LogType.INFO) : void {
 	}
 }
 
+function formatType(typ: any) {
+	if (typ instanceof Error) {
+		let text = typ.stack ?? `${typ.name}: ${typ.message}`;
+		if (typ.cause) {
+			text += `\nCaused by: ${formatType(typ.cause)}`;
+		}
+		return text;
+	}
+
+	return typ;
+}
+
 export default class ConsoleHelper {
-	public static printWebReq(s: string) : void {
-		log(LogTags.WEBREQ, s);
+	public static printWebReq(s: any) : void {
+		log(LogTags.WEBREQ, formatType(s));
 	}
 
-	public static printStream(s: string) : void {
-		log(LogTags.STREAM, s);
+	public static printStream(s: any) : void {
+		log(LogTags.STREAM, formatType(s));
 	}
 
-	public static printInfo(s: string) : void {
-		log(LogTags.INFO, s);
+	public static printInfo(s: any) : void {
+		log(LogTags.INFO, formatType(s));
 	}
 
-	public static printBancho(s: string) : void {
-		log(LogTags.BANCHO, s);
+	public static printBancho(s: any) : void {
+		log(LogTags.BANCHO, formatType(s));
 	}
 
-	public static printRedis(s: string) : void {
-		log(LogTags.REDIS, s);
+	public static printRedis(s: any) : void {
+		log(LogTags.REDIS, formatType(s));
 	}
 
-	public static printChat(s: string) : void {
-		log(LogTags.CHAT, s);
+	public static printChat(s: any) : void {
+		log(LogTags.CHAT, formatType(s));
 	}
 
-	public static printWarn(s: string) : void {
-		log(LogTags.WARN, s);
+	public static printWarn(s: any) : void {
+		log(LogTags.WARN, formatType(s));
 	}
 
-	public static printError(s: string) : void {
-		log(LogTags.ERROR, s);
+	public static printError(s: any) : void {
+		log(LogTags.ERROR, formatType(s));
 	}
 }
