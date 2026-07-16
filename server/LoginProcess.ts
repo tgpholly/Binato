@@ -19,7 +19,6 @@ import ChatManager from "./managers/ChatManager";
 import Users from "./Users";
 import OsuPacketWriter from "./interfaces/OsuPacketWriter";
 import Constants from "../Constants";
-const { decrypt: aesDecrypt } = require("aes256");
 
 const incorrectLoginResponse: Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
 
@@ -68,9 +67,6 @@ function TestLogin(loginInfo: LoginInfo) {
 				});
 				break;
 			case LoginTypes.OLD_AES:
-				if (aesDecrypt(Config.database.key, userDBData.password_hash) !== loginInfo.password) {
-					return resolve(LoginResult.INCORRECT);
-				}
 				return resolve(LoginResult.MIGRATION);
 			case LoginTypes.OLD_MD5:
 				if (userDBData.password_hash !== loginInfo.password) {
@@ -85,8 +81,7 @@ function sendUserDetails(osuPacketWriter: OsuPacketWriter, newUser: User, loginI
 	// The reply id is the user's id in any other case than an error in which case negative numbers are used
 	osuPacketWriter.LoginReply(newUser.id);
 	osuPacketWriter.ProtocolNegotiation(Constants.PROTOCOL_VERSION);
-	// Permission level 4 is osu!supporter
-	osuPacketWriter.LoginPermissions(4);
+	osuPacketWriter.LoginPermissions(newUser.permissions);
 
 	// Set title screen image
 	//osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
