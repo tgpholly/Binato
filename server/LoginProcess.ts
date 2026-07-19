@@ -17,8 +17,13 @@ import Config from "./objects/Config";
 import Database from "./objects/Database";
 import ChatManager from "./managers/ChatManager";
 import Users from "./Users";
-import OsuPacketWriter from "./interfaces/OsuPacketWriter";
 import Constants from "../Constants";
+import { Socket } from "node:net";
+import SocketInfo from "./objects/SocketInfo";
+import LoginReply from "./packets/LoginReply";
+import ProtocolNegotiation from "./packets/ProtocolNegotiation";
+import LoginPermissions from "./packets/LoginPermissions";
+import Announce from "./packets/Announce";
 
 const incorrectLoginResponse: Buffer = osu.Bancho.Writer().LoginReply(-1).toBuffer;
 
@@ -77,11 +82,11 @@ function TestLogin(loginInfo: LoginInfo) {
 	});
 }
 
-function sendUserDetails(osuPacketWriter: OsuPacketWriter, newUser: User, loginInfo: LoginInfo) {
+function sendUserDetails(newUser: User, loginInfo: LoginInfo) {
 	// The reply id is the user's id in any other case than an error in which case negative numbers are used
-	osuPacketWriter.LoginReply(newUser.id);
-	osuPacketWriter.ProtocolNegotiation(Constants.PROTOCOL_VERSION);
-	osuPacketWriter.LoginPermissions(newUser.permissions);
+	LoginReply(newUser);
+	ProtocolNegotiation(newUser, Constants.PROTOCOL_VERSION);
+	LoginPermissions(newUser, newUser.permissions);
 
 	// Set title screen image
 	//osuPacketWriter.TitleUpdate("http://puu.sh/jh7t7/20c04029ad.png|https://osu.ppy.sh/news/123912240253");
@@ -90,7 +95,7 @@ function sendUserDetails(osuPacketWriter: OsuPacketWriter, newUser: User, loginI
 	UserPresence(newUser, newUser.id);
 	StatusUpdate(newUser, newUser.id);
 
-	osuPacketWriter.Announce(`Welcome back ${loginInfo.username}!`);
+	Announce(newUser, `Welcome back ${loginInfo.username}!`);
 }
 
 async function constructFriendsList(newUser: User) {
@@ -120,9 +125,97 @@ async function constructFriendsList(newUser: User) {
 	newUser.addActionToQueue(friendData);
 }
 
-export default async function LoginProcess(req:IncomingMessage, res:ServerResponse, packet:Buffer) {
+async function processLogin(loginInfo: LoginInfo, socketInfo: SocketInfo, requestIP: string) {
+	let userCountryCode:string, userLocation:LatLng;
+	// Check if it is a local or null IP
+	if (requestIP.includes("192.168.") || requestIP.includes("127.0.") || requestIP === "") {
+		// Set location to null island
+		userCountryCode = "XX";
+		userLocation = new LatLng(0, 0);
+	} else {
+		// Get user's location using zxq
+		const userLocationRequest = await fetch(`https://ip.zxq.co/${requestIP}`);
+		const userLocationData: IpZxqResponse = await userLocationRequest.json() as IpZxqResponse;
+		const userLatLng = userLocationData.loc.split(",");
+		userCountryCode = userLocationData.country;
+		userLocation = new LatLng(parseFloat(userLatLng[0]), parseFloat(userLatLng[1]));
+	}
+
+	// Get information about the user from the database
+	const userInfo = await UserInfoRepository.selectByUsername(loginInfo.username);
+	if (userInfo == null) {
+		return;
+	}
+
+	const newClientToken:string = await generateSession();
+	const isTourneyClient = loginInfo.version.includes("tourney");
+
+	// Make sure user is not already connected, kick off if so.
+	const connectedUser = Users.getByUsername(loginInfo.username);
+	if (connectedUser != null && !isTourneyClient && !connectedUser.isTourneyUser) {
+		await Logout(connectedUser);
+	}
+
+	let newUser = Users.add(newClientToken, new User(userInfo.id, loginInfo.username, newClientToken, userInfo.tags, socketInfo));
+	newUser.isTourneyUser = isTourneyClient;
+	newUser.location = userLocation;
+	// Populate this new user with info from the DB
+	await newUser.updateUserInfo();
+
+	try {
+		newUser.countryID = getCountryID(userCountryCode);
+
+		// We're ready to start putting together a login response
+		sendUserDetails(newUser, loginInfo);
+
+		// Setup chat
+		ChatManager.ForceJoinChannels(newUser);
+		ChatManager.SendChannelListing(newUser);
+
+		// Send user their friends list
+		await constructFriendsList(newUser);
+
+		// After sending the user their friends list send them the online users
+		UserPresenceBundle(newUser);
+
+		return newUser;
+	} catch (err) {
+		console.error(err);
+	}
+}
+
+export async function LoginProcessLegacy(socket: Socket, username: string, passwordHash: string, clientDetails: string, clientIp: string) {
 	const loginStartTime = Date.now();
-	const loginInfo = LoginInfo.From(packet);
+	let loginInfo = LoginInfo.FromLegacy(username, passwordHash, clientDetails);
+
+	// Send back no data if there's no loginInfo
+	// Somebody is doing something funky
+	if (loginInfo === undefined) {
+		return null;
+	}
+
+	const loginResult: LoginResult = await TestLogin(loginInfo);
+	let newUser: User | undefined;
+
+	if (loginResult === LoginResult.VALID) {
+		ConsoleHelper.printBancho(`New client connection. [User: ${loginInfo.username}]`);
+
+		newUser = await processLogin(loginInfo, new SocketInfo(true, socket), clientIp);
+
+		if (newUser != null) {
+			ConsoleHelper.printBancho(`User login finished, took ${Date.now() - loginStartTime}ms. [User: ${loginInfo.username}]`);
+
+			return newUser;
+		}
+	}
+
+	ConsoleHelper.printBancho(`User login failed (Incorrect Password) took ${Date.now() - loginStartTime}ms. [User: ${loginInfo.username}]`);
+	return incorrectLoginResponse;
+}
+
+export async function LoginProcessHttp(req:IncomingMessage, res:ServerResponse, packet:Buffer) {
+	const loginStartTime = Date.now();
+	let loginInfo = LoginInfo.FromHttp(packet);
 
 	// Send back no data if there's no loginInfo
 	// Somebody is doing something funky
@@ -131,7 +224,6 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 	}
 
 	const loginResult: LoginResult = await TestLogin(loginInfo);
-	const osuPacketWriter = osu.Bancho.Writer();
 	let newUser: User | undefined;
 
 	if (loginResult === LoginResult.VALID) {
@@ -150,67 +242,17 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 		if (requestIP === undefined) {
 			requestIP = "";
 		}
-		
-		let userCountryCode:string, userLocation:LatLng;
-		// Check if it is a local or null IP
-		if (requestIP.includes("192.168.") || requestIP.includes("127.0.") || requestIP === "") {
-			// Set location to null island
-			userCountryCode = "XX";
-			userLocation = new LatLng(0, 0);
+
+		if (requestIP === "") {
+			newUser = undefined;
 		} else {
-			// Get user's location using zxq
-			const userLocationRequest = await fetch(`https://ip.zxq.co/${requestIP}`);
-			const userLocationData: IpZxqResponse = await userLocationRequest.json() as IpZxqResponse;
-			const userLatLng = userLocationData.loc.split(",");
-			userCountryCode = userLocationData.country;
-			userLocation = new LatLng(parseFloat(userLatLng[0]), parseFloat(userLatLng[1]));
-		}
-
-		// Get information about the user from the database
-		const userInfo = await UserInfoRepository.selectByUsername(loginInfo.username);
-		if (userInfo == null) {
-			return;
-		}
-
-		const newClientToken:string = await generateSession();
-		const isTourneyClient = loginInfo.version.includes("tourney");
-
-		// Make sure user is not already connected, kick off if so.
-		const connectedUser = Users.getByUsername(loginInfo.username);
-		if (connectedUser != null && !isTourneyClient && !connectedUser.isTourneyUser) {
-			await Logout(connectedUser);
-		}
-
-		newUser = Users.add(newClientToken, new User(userInfo.id, loginInfo.username, newClientToken, userInfo.tags));
-		newUser.isTourneyUser = isTourneyClient;
-		newUser.location = userLocation;
-		// Populate this new user with info from the DB
-		await newUser.updateUserInfo();
-
-		try {
-			newUser.countryID = getCountryID(userCountryCode);
-
-			// We're ready to start putting together a login response
-			sendUserDetails(osuPacketWriter, newUser, loginInfo);
-
-			// Setup chat
-			ChatManager.ForceJoinChannels(newUser);
-			ChatManager.SendChannelListing(newUser);
-
-			// Send user their friends list
-			await constructFriendsList(newUser);
-
-			// After sending the user their friends list send them the online users
-			UserPresenceBundle(newUser);
-		} catch (err) {
-			console.error(err);
+			newUser = await processLogin(loginInfo, new SocketInfo(false), String(requestIP));
 		}
 	}
 
 	res.removeHeader('X-Powered-By');
 	res.removeHeader('Date');
 	// Complete / Fail login
-	const loginData: Buffer = osuPacketWriter.toBuffer;
 	if (newUser === undefined) {
 		res.writeHead(200, {
 			"cho-token": "no", // NOTE: You have to specify a token even if it's an incorrect login for some reason.
@@ -235,6 +277,8 @@ export default async function LoginProcess(req:IncomingMessage, res:ServerRespon
 			"Connection": "keep-alive",
 			"Keep-Alive": "timeout=5, max=100",
 		});
+		const loginData = newUser.queue;
+		newUser.clearQueue();
 		res.end(loginData, () => {
 			ConsoleHelper.printBancho(`User login finished, took ${Date.now() - loginStartTime}ms. [User: ${loginInfo.username}]`);
 		});

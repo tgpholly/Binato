@@ -9,6 +9,7 @@ import PresenceData from "../interfaces/packetTypes/PresenceData";
 import Permissions from "../enums/Permissions";
 import UserModesInfoRepository from "../repos/UserModesInfoRepository";
 import ChatManager from "../managers/ChatManager";
+import SocketInfo from "./SocketInfo";
 
 export default class User {
 	public id: number;
@@ -58,14 +59,21 @@ export default class User {
 		return user0.uuid === user1.uuid;
 	}
 
-	public constructor(id: number, username: string, uuid: string, permissions: Permissions) {
+	public readonly socketInfo?: SocketInfo;
+
+	public constructor(id: number, username: string, uuid: string, permissions: Permissions, socketInfo?: SocketInfo) {
 		this.id = id;
 		this.username = username;
 		this.uuid = uuid;
 		this.permissions = permissions;
+		this.socketInfo = socketInfo;
 	}
 
 	public addActionToQueue(newData:Buffer) {
+		if (this.socketInfo && this.socketInfo.isLegacy) {
+			this.socketInfo.socket?.write(newData);
+			return;
+		}
 		this.queue = Buffer.concat([this.queue, newData], this.queue.length + newData.length);
 	}
 

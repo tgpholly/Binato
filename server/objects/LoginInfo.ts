@@ -14,7 +14,7 @@ export default class LoginInfo {
 		this.clientData = clientData;
 	}
 
-	public static From(data: Buffer | string) : LoginInfo | undefined {
+	public static FromHttp(data: Buffer | string) : LoginInfo | undefined {
 		if (typeof(data) !== "string") {
 			data = data.toString();
 		}
@@ -29,5 +29,11 @@ export default class LoginInfo {
 		// TODO: Parse client data
 
 		return new LoginInfo(loginData[0], loginData[1], extraData[0], parseInt(extraData[1]), extraData[3].split(":")[2]);
+	}
+
+	public static FromLegacy(username: string, password: string, clientDetails: string) {
+		const extraData:Array<string> = clientDetails.split("|");
+
+		return new LoginInfo(username, password, extraData[0], parseInt(extraData[1]), extraData[2]);
 	}
 }

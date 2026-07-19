@@ -11,6 +11,7 @@ const config = JSON.parse(readFileSync("./config.json").toString());
 
 export default abstract class Config {
 	public static http: HttpConfigSection = config.http;
+	public static legacy: LegacyConfigSection = config.legacy;
 	public static prometheus: PrometheusConfigSection = config.prometheus;
 	public static redis: RedisConfigSection = config.redis;
 	public static database: DatabaseConfigSection = config.database;
@@ -19,6 +20,11 @@ export default abstract class Config {
 interface HttpConfigSection {
 	port:number,
 	compression:boolean
+}
+
+interface LegacyConfigSection {
+	enabled:boolean,
+	port:number
 }
 
 interface PrometheusConfigSection {

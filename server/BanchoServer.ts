@@ -1,12 +1,13 @@
 import ConsoleHelper from "../ConsoleHelper";
 import Constants from "../Constants";
-import LoginProcess from "./LoginProcess";
+import { LoginProcessHttp, LoginProcessLegacy } from "./LoginProcess";
 import { IncomingMessage, ServerResponse } from "http";
 import Packets from "./enums/Packets";
 import { RedisClientType, createClient } from "redis";
 import PrivateMessage from "./packets/PrivateMessage";
 import SpectatorManager from "./managers/SpectatorManager";
 import osu from "../osuTyping";
+import { createServer } from "net";
 
 const botUser = Users.add("bot", new User(3, "SillyBot", "bot", Permissions.None));
 botUser.location = new LatLng(50, -32);
@@ -95,6 +96,247 @@ setInterval(() => {
 	}
 }, 10000);
 
+const tcpServer = createServer((socket) => {
+	console.log(`New connection from ${socket.remoteAddress}`);
+	let packetIndex = 0;
+	let username = "";
+	let passwordHash = "";
+	let clientDetails = "";
+	let clientUser: User | undefined;
+
+	socket.on("data", async data => {
+		switch (packetIndex++) {
+			case 0:
+				username = data.toString().trim();
+				break;
+			case 1:
+				passwordHash = data.toString().trim();
+				break;
+			case 2:
+				clientDetails = data.toString().trim();
+
+				const response = await LoginProcessLegacy(socket, username, passwordHash, clientDetails, String(socket.remoteAddress));
+				if (!response) {
+					socket.end();
+					return;
+				}
+
+				if (response instanceof Buffer) {
+					socket.write(response);
+				} else if (response instanceof User) {
+					clientUser = response;
+				}
+				break;
+			default:
+				if (clientUser == null) {
+					socket.end();
+					return;
+				}
+
+
+
+				await handleClientMessage(data as Buffer, clientUser);
+				break;
+		}
+	});
+});
+
+tcpServer.listen(Config.legacy.port, () => ConsoleHelper.printInfo(`Legacy server listening onclientUser port ${Config.legacy.port}`));
+
+async function handleClientMessage(packet: Buffer, user: User) {
+	// Update the session timeout time for each request
+	user.timeoutTime = Date.now() + 60000;
+
+	// Parse bancho packets
+	const osuPacketReader = osu.Client.Reader(packet);
+	const packets = osuPacketReader.Parse();
+
+	// Go through each packet sent by the client
+	for (const packet of packets) {
+		switch (packet.id) {
+			case Packets.Client_ChangeAction:
+				ChangeAction(user, packet.data);
+				break;
+
+			case Packets.Client_SendPublicMessage:
+				SendPublicMessage(user, packet.data);
+				break;
+
+			case Packets.Client_Logout:
+				await Logout(user);
+				break;
+
+			case Packets.Client_RequestStatusUpdate:
+				UserPresenceBundle(user);
+				break;
+
+			case Packets.Client_StartSpectating:
+				SpectatorManager.StartSpectating(user, packet.data);
+				break;
+
+			case Packets.Client_SpectateFrames:
+				SpectatorManager.SpectatorFrames(user, packet.data);
+				break;
+
+			case Packets.Client_StopSpectating:
+				SpectatorManager.StopSpectating(user);
+				break;
+
+			case Packets.Client_SendPrivateMessage:
+				PrivateMessage(user, packet.data);
+				break;
+
+			case Packets.Client_JoinLobby:
+				MultiplayerManager.JoinLobby(user);
+				break;
+
+			case Packets.Client_PartLobby:
+				MultiplayerManager.LeaveLobby(user);
+				break;
+
+			case Packets.Client_CreateMatch:
+				await MultiplayerManager.CreateMatch(user, packet.data);
+				break;
+
+			case Packets.Client_JoinMatch:
+				MultiplayerManager.JoinMatch(user, packet.data);
+				break;
+
+			case Packets.Client_MatchChangeSlot:
+				user.match?.moveToSlot(user, packet.data);
+				break;
+
+			case Packets.Client_MatchReady:
+				user.match?.setStateReady(user);
+				break;
+
+			case Packets.Client_MatchChangeSettings:
+				await user.match?.updateMatch(user, packet.data);
+				break;
+
+			case Packets.Client_MatchNotReady:
+				user.match?.setStateNotReady(user);
+				break;
+
+			case Packets.Client_PartMatch:
+				await MultiplayerManager.LeaveMatch(user);
+				break;
+
+			case Packets.Client_MatchLock:
+				await user.match?.lockOrKick(user, packet.data);
+				break;
+
+			case Packets.Client_MatchNoBeatmap:
+				user.match?.missingBeatmap(user);
+				break;
+
+			case Packets.Client_MatchSkipRequest:
+				user.match?.matchSkip(user);
+				break;
+
+			case Packets.Client_MatchHasBeatmap:
+				user.match?.notMissingBeatmap(user);
+				break;
+
+			case Packets.Client_MatchTransferHost:
+				user.match?.transferHost(user, packet.data);
+				break;
+
+			case Packets.Client_MatchChangeMods:
+				user.match?.updateMods(user, packet.data);
+				break;
+
+			case Packets.Client_MatchStart:
+				user.match?.startMatch();
+				break;
+
+			case Packets.Client_MatchLoadComplete:
+				user.match?.matchPlayerLoaded(user);
+				break;
+
+			case Packets.Client_MatchComplete:
+				await user.match?.onPlayerFinishMatch(user);
+				break;
+
+			case Packets.Client_MatchScoreUpdate:
+				user.match?.updatePlayerScore(user, packet.data);
+				break;
+
+			case Packets.Client_MatchFailed:
+				user.match?.matchFailed(user);
+				break;
+
+			case Packets.Client_MatchChangeTeam:
+				user.match?.changeTeam(user);
+				break;
+
+			case Packets.Client_MatchChangePassword:
+				user.match?.changePassword(user, packet.data);
+				break;
+
+			case Packets.Client_MatchAbort:
+				user.match?.abortMatch();
+				break;
+
+			case Packets.Client_ChannelJoin:
+				user.joinChannel(packet.data);
+				break;
+
+			case Packets.Client_ChannelPart:
+				user.leaveChannel(packet.data);
+				break;
+
+			case Packets.Client_SetAwayMessage:
+				//SetAwayMessage(PacketUser, CurrentPacket.data);
+				break;
+
+			case Packets.Client_FriendAdd:
+				await AddFriend(user, packet.data);
+				break;
+
+			case Packets.Client_FriendRemove:
+				await RemoveFriend(user, packet.data);
+				break;
+
+			case Packets.Client_UserStatsRequest:
+				UserStatsRequest(user, packet.data);
+				break;
+
+			case Packets.Client_SpecialMatchInfoRequest:
+				TourneyMatchSpecialInfo(user, packet.data);
+				break;
+
+			case Packets.Client_SpecialJoinMatchChannel:
+				TourneyMatchJoinChannel(user, packet.data);
+				break;
+
+			case Packets.Client_SpecialLeaveMatchChannel:
+				TourneyMatchLeaveChannel(user, packet.data);
+				break;
+
+			case Packets.Client_Invite:
+				MultiplayerInvite(user, packet.data);
+				break;
+
+			case Packets.Client_UserPresenceRequest:
+				UserPresenceRequest(user, packet.data);
+				break;
+
+			// Ignored packets
+
+			case Packets.Client_Pong:
+			case Packets.Client_BeatmapInfoRequest:
+			case Packets.Client_ReceiveUpdates:
+				break;
+
+			default:
+				// Print out unimplemented packet
+				console.dir(packet);
+				break;
+		}
+	}
+}
+
 export default async function HandleRequest(req: IncomingMessage, res: ServerResponse, packet: Buffer) {
 	// Get the client's token string and request data
 	const requestTokenString = typeof(req.headers["osu-token"]) === "string" ? req.headers["osu-token"] : undefined;
@@ -103,7 +345,7 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 	if (requestTokenString === undefined) {
 		// Client doesn't have a token yet, let's auth them!
 		
-		await LoginProcess(req, res, packet);
+		await LoginProcessHttp(req, res, packet);
 		await Database.Instance.execute("UPDATE osu_info SET value = ? WHERE name = 'online_now'", [Users.length - 1]);
 	} else {
 		let responseData: Buffer = Buffer.alloc(0);
@@ -115,197 +357,7 @@ export default async function HandleRequest(req: IncomingMessage, res: ServerRes
 
 			// Make sure the client's token isn't invalid
 			if (user != null) {
-				// Update the session timeout time for each request
-				user.timeoutTime = Date.now() + 60000;
-
-				// Parse bancho packets
-				const osuPacketReader = osu.Client.Reader(packet);
-				const packets = osuPacketReader.Parse();
-
-				// Go through each packet sent by the client
-				for (const packet of packets) {
-					switch (packet.id) {
-						case Packets.Client_ChangeAction:
-							ChangeAction(user, packet.data);
-							break;
-
-						case Packets.Client_SendPublicMessage:
-							SendPublicMessage(user, packet.data);
-							break;
-
-						case Packets.Client_Logout:
-							await Logout(user);
-							break;
-
-						case Packets.Client_RequestStatusUpdate:
-							UserPresenceBundle(user);
-							break;
-
-						case Packets.Client_StartSpectating:
-							SpectatorManager.StartSpectating(user, packet.data);
-							break;
-
-						case Packets.Client_SpectateFrames:
-							SpectatorManager.SpectatorFrames(user, packet.data);
-							break;
-
-						case Packets.Client_StopSpectating:
-							SpectatorManager.StopSpectating(user);
-							break;
-
-						case Packets.Client_SendPrivateMessage:
-							PrivateMessage(user, packet.data);
-							break;
-
-						case Packets.Client_JoinLobby:
-							MultiplayerManager.JoinLobby(user);
-							break;
-
-						case Packets.Client_PartLobby:
-							MultiplayerManager.LeaveLobby(user);
-							break;
-
-						case Packets.Client_CreateMatch:
-							await MultiplayerManager.CreateMatch(user, packet.data);
-							break;
-
-						case Packets.Client_JoinMatch:
-							MultiplayerManager.JoinMatch(user, packet.data);
-							break;
-
-						case Packets.Client_MatchChangeSlot:
-							user.match?.moveToSlot(user, packet.data);
-							break;
-
-						case Packets.Client_MatchReady:
-							user.match?.setStateReady(user);
-							break;
-
-						case Packets.Client_MatchChangeSettings:
-							await user.match?.updateMatch(user, packet.data);
-							break;
-
-						case Packets.Client_MatchNotReady:
-							user.match?.setStateNotReady(user);
-							break;
-
-						case Packets.Client_PartMatch:
-							await MultiplayerManager.LeaveMatch(user);
-							break;
-
-						case Packets.Client_MatchLock:
-							await user.match?.lockOrKick(user, packet.data);
-							break;
-
-						case Packets.Client_MatchNoBeatmap:
-							user.match?.missingBeatmap(user);
-							break;
-
-						case Packets.Client_MatchSkipRequest:
-							user.match?.matchSkip(user);
-							break;
-						
-						case Packets.Client_MatchHasBeatmap:
-							user.match?.notMissingBeatmap(user);
-							break;
-
-						case Packets.Client_MatchTransferHost:
-							user.match?.transferHost(user, packet.data);
-							break;
-
-						case Packets.Client_MatchChangeMods:
-							user.match?.updateMods(user, packet.data);
-							break;
-
-						case Packets.Client_MatchStart:
-							user.match?.startMatch();
-							break;
-
-						case Packets.Client_MatchLoadComplete:
-							user.match?.matchPlayerLoaded(user);
-							break;
-
-						case Packets.Client_MatchComplete:
-							await user.match?.onPlayerFinishMatch(user);
-							break;
-
-						case Packets.Client_MatchScoreUpdate:
-							user.match?.updatePlayerScore(user, packet.data);
-							break;
-
-						case Packets.Client_MatchFailed:
-							user.match?.matchFailed(user);
-							break;
-
-						case Packets.Client_MatchChangeTeam:
-							user.match?.changeTeam(user);
-							break;
-
-						case Packets.Client_MatchChangePassword:
-							user.match?.changePassword(user, packet.data);
-							break;
-
-						case Packets.Client_MatchAbort:
-							user.match?.abortMatch();
-							break;
-
-						case Packets.Client_ChannelJoin:
-							user.joinChannel(packet.data);
-							break;
-
-						case Packets.Client_ChannelPart:
-							user.leaveChannel(packet.data);
-							break;
-
-						case Packets.Client_SetAwayMessage:
-							//SetAwayMessage(PacketUser, CurrentPacket.data);
-							break;
-
-						case Packets.Client_FriendAdd:
-							await AddFriend(user, packet.data);
-							break;
-
-						case Packets.Client_FriendRemove:
-							await RemoveFriend(user, packet.data);
-							break;
-
-						case Packets.Client_UserStatsRequest:
-							UserStatsRequest(user, packet.data);
-							break;
-
-						case Packets.Client_SpecialMatchInfoRequest:
-							TourneyMatchSpecialInfo(user, packet.data);
-							break;
-
-						case Packets.Client_SpecialJoinMatchChannel:
-							TourneyMatchJoinChannel(user, packet.data);
-							break;
-
-						case Packets.Client_SpecialLeaveMatchChannel:
-							TourneyMatchLeaveChannel(user, packet.data);
-							break;
-
-						case Packets.Client_Invite:
-							MultiplayerInvite(user, packet.data);
-							break;
-
-						case Packets.Client_UserPresenceRequest:
-							UserPresenceRequest(user, packet.data);
-							break;
-
-						// Ignored packets
-
-						case Packets.Client_Pong:
-						case Packets.Client_BeatmapInfoRequest:
-						case Packets.Client_ReceiveUpdates:
-							break;
-
-						default:
-							// Print out unimplemented packet
-							console.dir(packet);
-							break;
-					}
-				}
+				await handleClientMessage(packet, user);
 
 				responseData = user.queue;
 				user.clearQueue();
